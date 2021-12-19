@@ -67,41 +67,51 @@ var message = ["<span style='color:red'>Come on! Do it!</span>",
             "<span style='color:dodgerblue'>Do you know this terminal is actually interactable?</span>",
             "Hello!"]
 
+var buildWithDestroyed = false;
+var technology;
 function buildWordTyping()
 {
-    if(!terminalOpened && message.length > 0) print(message.pop());
-    buildWith.destroy();
+    document.getElementById('build-with-technology').innerHTML = "";
 
-    var word = 
+    //technology.reset();
+    if(!terminalOpened && message.length > 0) print(message.pop());
+
+    if(!buildWithDestroyed){
+        buildWith.destroy();
+        buildWithDestroyed = true;
+    }
+
+    
+    technology = 
     new TypeIt("#build-with-technology", {
         speed: 80,
         startDelay: 800
-    }).type("Java", {delay: 1200, speed: 120})
+    }).type("<span style='color: dodgerblue'>Java</span>", {delay: 1200, speed: 120})
     .delete()
-    .type("C#", {delay: 800, speed: 120})
+    .type("<span style='color: dodgerblue'>C#</span>", {delay: 800, speed: 120})
     .delete()
-    .type("Unity", {delay: 800, speed: 100})
+    .type("<span style='color: dodgerblue'>Unity</span>", {delay: 800, speed: 100})
     .delete()
-    .type("Brain", {delay: 1200})
+    .type("<span style='color: dodgerblue'>Brain</span>", {delay: 1200})
     .delete()
-    .type("HTML", {delay: 800, speed: 120})
+    .type("<span style='color: dodgerblue'>HTML</span>", {delay: 800, speed: 120})
     .delete()
-    .type("CSS", {delay: 1200})
+    .type("<span style='color: dodgerblue'>CSS</span>", {delay: 1200})
     .delete()
-    .type("JavaScript", {delay: 800, speed:120})
+    .type("<span style='color: dodgerblue'>JavaScript</span>", {delay: 800, speed:120})
     .delete()
-    .type("WinForm", {delay: 500})
+    .type("<span style='color: dodgerblue'>WinForm</span>", {delay: 500})
     .delete()
-    .type("JavaFX", {delay: 800})
+    .type("<span style='color: dodgerblue'>JavaFX</span>", {delay: 800})
     .delete()
-    .type("AWS", {delay: 500})
+    .type("<span style='color: dodgerblue'>AWS</span>", {delay: 500})
     .delete()
-    .type("Brain", {delay: 1200})
+    .type("<span style='color: dodgerblue'>Brain</span>", {delay: 1200})
     .delete()
     .exec(() => buildWordTyping())
     .go();
 
-    word.reset();
+    //word.destroy();
     //buildWordTyping();
 
 }
