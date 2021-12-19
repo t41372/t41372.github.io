@@ -16,8 +16,8 @@ The version of terminal used in this website might not sync with the one in the 
 ### Todo
 
 - [ ] Size adaptation for Phone 
-
 - [ ] Set the innerHTML of titles after typing effects finished to make sure browser translation works
+- [ ] say hi when enter terminal for the first time
 
 
 ### Used Libraries
@@ -25,5 +25,4 @@ The version of terminal used in this website might not sync with the one in the 
 - jQuery
 - [string-similarity](https://www.npmjs.com/package/string-similarity)
 - [TypeIt](https://typeitjs.com/)
-
 
