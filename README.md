@@ -1,9 +1,27 @@
+# Personal Website
+
+This is Yi-Ting Chiu's personal website.
+The terminal in the background is interactable.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # fakeTerminal
 A fake terminal website
 
 https://t41372.github.io/fakeTerminal/
 
-Current Version: v.0.11
+Current Version: v.0.12
 
 <img src="https://user-images.githubusercontent.com/36402030/146664363-bf55a0a0-5eb7-4166-945e-ceef26b33297.png" height="350rem" width="350rem">
 
