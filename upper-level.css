@@ -134,6 +134,14 @@
 
 }
 
+#build-with-prompt{
+    position: absolute;
+    top: 120%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+
+}
+
 #build-with-technology{
     color: white;
 }

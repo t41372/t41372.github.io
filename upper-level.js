@@ -33,12 +33,11 @@ function switchToTerminal()
  }
 
 
-
 const helloHeading = 
 new TypeIt(".upper-heading", {
     speed: 120,
     startDelay: 800})
-    .type("Hello!", {delay:500})
+    .type('Hello!', {delay:500})
     .type("<br/>This is Yi-Ting Chiu", {delay:1000})
     .type("<span style='color:burlywood'>.</span>", {delay: 1000})
     .exec(() => buildBuildWith())
