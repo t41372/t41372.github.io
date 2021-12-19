@@ -18,6 +18,7 @@ The version of terminal used in this website might not sync with the one in the 
 - [ ] Size adaptation for Phone 
 - [ ] Set the innerHTML of titles after typing effects finished to make sure browser translation works
 - [ ] say hi when enter terminal for the first time
+- [ ] change website title
 
 
 ### Used Libraries
