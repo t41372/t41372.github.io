@@ -197,8 +197,8 @@ function about() {
         "| :::..::::....::::::::::::..::::....:..::::..::......::::::......::..:::::..:....::.......::: |<br/>" +
         "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/> </div>" +
         "<br/>" +
-        "<span style='color: dodgerblue'>Fake</span> <span style='color: rgb(0, 255, 0)'>Terminal</span> " +
-        "<a class='cmd-link' href='https://github.com/t41372/fakeTerminal' style='color:red'>" + version + "</a><br/>" +
+        "<span style='color: dodgerblue'>Fake</span> <span style='color: rgb(0, 255, 0)'>Terminal</span> " + version +
+        " <a class='cmd-link' href='https://github.com/t41372/fakeTerminal' style='color:red'>" + "GitHub Repo </a><br/>" +
         "*========================*<br/>" +
         "* GitHub: <a class='cmd-link' href='https://github.com/t41372'>t41372</a>.........*<br/>" +
         "* LinkedIn: <a class='cmd-link' href='https://www.linkedin.com/in/yi-ting-chiu/'>yi-ting-chiu</a> *<br/>" +
