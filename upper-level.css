@@ -3,6 +3,11 @@
     src: url('./CascadiaMono-Regular.otf');
 }
 
+@font-face {
+    font-family: 'CascadiaMono-Bold';
+    src: url('./CascadiaMono-Bold.otf');
+}
+
 #upper-white-canvas{
     background-color: white;
     position: absolute;
@@ -20,6 +25,7 @@
     left: 0;
     width: 100%;
     height: 100%;
+    transition: all 0.3s ease 0s;
 }
 
 .upper-heading{
@@ -61,51 +67,74 @@
 .circle-container{
     height: fit-content;
     width: fit-content;
+    border-radius: 100%;
+    transition: all 0.3s ease 0s;
+}
+
+.circle-container:hover {
+    box-shadow: 2px 7px 10px rgba(0, 0, 0, 0.603);
+    transition: all 0.3s ease 0s;
 }
 
 .circle{
-
     position: relative;
     background-color: white;
     border-radius: 100%;
     width: 60px;
     height: 60px;
     opacity: 30%;
+    transition: all 0.3s ease 0s;
 }
 
-#linkedin-icon{
+
+.icon{
     position: absolute;
     fill: #ffffff;
     opacity: 100%;
     height: 2.8em;
     width: 2.8em;
+    transform: translate(-50%,-50%);
+    transition: all 0.3s ease 0s;
+}
 
+
+#linkedin-icon{
     top:38%;
     left: 25%;
-    transform: translate(-50%,-50%);
 }
 
 #github-icon{
-    position: absolute;
-    fill: #ffffff;
-    opacity: 100%;
-    height: 2.8em;
-    width: 2.8em;
-
     top:38%;
     left: 50%;
-    transform: translate(-50%,-50%);
 }
 
 #email-icon{
-    position: absolute;
-    fill: #ffffff;
-    opacity: 100%;
-    height: 2.8em;
-    width: 2.8em;
-
     top:38%;
     left: 75%;
-    transform: translate(-50%,-50%);
+}
+
+
+#terminal-switcher{
+    font-family: "Cascadia-code";
+    position: absolute;
+    bottom:8%;
+    right:8%;
+
+    height: 5rem;
+    width: 5rem;
+
+    border: none;
+    border-radius: 100%;
+    background-color:white;
+    opacity: 40%;
+
+    box-shadow: 2px 7px 10px rgba(0, 0, 0, 0.774);
+
+    transition: all 0.3s ease 0s;
+
+}
+
+#build-with-technology{
+    color: dodgerblue;
 }
 
