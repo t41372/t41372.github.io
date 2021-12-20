@@ -1,11 +1,16 @@
 @font-face {
     font-family: 'Cascadia-Code';
-    src: url('./CascadiaMono-Regular.otf');
+    src: url('./assets/CascadiaMono-Regular.otf');
 }
 
 @font-face {
     font-family: 'CascadiaMono-Bold';
-    src: url('./CascadiaMono-Bold.otf');
+    src: url('./assets/CascadiaMono-Bold.otf');
+}
+
+@font-face{
+    font-family: 'CascadiaMonoPL-BoldItalic';
+    src: url('./assets/CascadiaMonoPL-BoldItalic.otf');
 }
 
 #upper-white-canvas{
@@ -145,4 +150,16 @@
 #build-with-technology{
     color: white;
 }
+
+#fun{
+    color: white;
+    /* filter:blur(1px); */
+}
+
+#fun-1{
+    font-family: "CascadiaMonoPL-BoldItalic";
+    filter: blur(0.3px);
+    color:aqua;
+}
+
 

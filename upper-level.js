@@ -1,6 +1,13 @@
 
 var terminalOpened = false;
 
+//message appears in the terminal
+var message = ["<span style='color:red'>Come on! Do it!</span>", 
+            "<span style='color:dodgerblue'>and you can talk to me then!!</span>", 
+            "<span style='color:dodgerblue'>Just go click 'Go to Terminal'</span>",
+            "<span style='color:dodgerblue'>Do you know this terminal is actually interactable?</span>",
+            "Hello!"]
+
 /**
  * Close the upper page and show the terminal
  */
@@ -33,17 +40,26 @@ function switchToTerminal()
  }
 
 
+
+
+
+
+// ------ Typing Effects ------
+
 const helloHeading = 
-new TypeIt(".upper-heading", {
+new TypeIt("#hello-title", {
     speed: 120,
     startDelay: 800})
     .type('Hello!', {delay:500})
     .type("<br/>This is Yi-Ting Chiu", {delay:1000})
-    .type("<span style='color:burlywood'>.</span>", {delay: 1000})
+    .type("<span style='color:burlywood'>.</span>", {delay: 900})
+    .exec(() => formatNode('hello-title', 'Hello!<br/>This is Yi-Ting Chiu<span style="color:burlywood">.</span>'))
     .exec(() => buildBuildWith())
   .go();
 
+
 var buildWith;
+//type text "A dude who build fun stuff with"
 function buildBuildWith()
 {
     helloHeading.destroy();
@@ -54,20 +70,28 @@ function buildBuildWith()
     }).type("A strange dude", {delay:1000})
     .delete(12, {delay:500})
     .type("dude", {delay:500})
-    .type(" who build <span style='background-color: dodgerblue; color: white'>fun</span> stuff with ")
+    .type(" who build <span id ='fun'>fun stuff</span> with ", {delay:500})
+    //select 'fun' and blur it
+    .exec(() => {
+        document.getElementById('fun').style.backgroundColor = "dodgerblue";
+    }, {delay:500})
+    .exec(() => {
+        document.getElementById('fun').id = 'fun-1';;
+    }, {delay: 400})
+    .exec(() => {
+        document.getElementById('fun-1').style.backgroundColor = "transparent";
+    })
     .exec(() => buildWordTyping())
     .go();
     
 }
 
-var message = ["<span style='color:red'>Come on! Do it!</span>", 
-            "<span style='color:dodgerblue'>and you can talk to me then!!</span>", 
-            "<span style='color:dodgerblue'>Just go click 'Go to Terminal'</span>",
-            "<span style='color:dodgerblue'>Do you know this terminal is actually interactable?</span>",
-            "Hello!"]
+
 
 var buildWithDestroyed = false;
 var technology;
+
+//typing text "Java, C# ...."
 function buildWordTyping()
 {
     document.getElementById('build-with-technology').innerHTML = "";
@@ -84,7 +108,8 @@ function buildWordTyping()
     technology = 
     new TypeIt("#build-with-technology", {
         speed: 80,
-        startDelay: 800
+        startDelay: 800,
+        lifelike: true
     }).type("<span style='color: dodgerblue'>Java</span>", {delay: 1200, speed: 120})
     .delete()
     .type("<span style='color: dodgerblue'>C#</span>", {delay: 800, speed: 120})
@@ -115,6 +140,15 @@ function buildWordTyping()
 
 }
 
+// utilities for typing effects
+
+//format the node. Because the TypeIt will make the node strange, and 
+// inappropriate for browser translation tool, we need to format it after used it
+function formatNode(id, innerHTML)
+{
+    console.log("the inner html is: " + document.getElementById(id).innerHTML)
+    document.getElementById(id).innerHTML = innerHTML;
+}
 
 
-
+//
