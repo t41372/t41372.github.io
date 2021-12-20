@@ -41,7 +41,8 @@
     /*align*/
     
     text-align: center;
-    font-size: xx-large;
+    font-size: 2rem;
+    
 }
 
 #upper-center-container{
@@ -85,8 +86,8 @@
     position: relative;
     background-color: white;
     border-radius: 100%;
-    width: 60px;
-    height: 60px;
+    width: 3.4rem;
+    height: 3.4rem;
     opacity: 30%;
     transition: all 0.3s ease 0s;
 }
@@ -96,26 +97,26 @@
     position: absolute;
     fill: #ffffff;
     opacity: 100%;
-    height: 2.8em;
-    width: 2.8em;
+    height: 50%;
+    width: 50%;
     transform: translate(-50%,-50%);
     transition: all 0.3s ease 0s;
 }
 
 
 #linkedin-icon{
-    top:38%;
-    left: 25%;
+    top: 35%;
+    left: 27%;
 }
 
 #github-icon{
-    top:38%;
+    top:35%;
     left: 50%;
 }
 
 #email-icon{
-    top:38%;
-    left: 75%;
+    top:35%;
+    left: 73.5%;
 }
 
 
@@ -131,9 +132,9 @@
     border: none;
     border-radius: 100%;
     background-color:white;
-    opacity: 40%;
+    opacity: 70%;
 
-    box-shadow: 2px 7px 10px rgba(0, 0, 0, 0.774);
+    box-shadow: 2px 7px 20px rgba(0, 0, 0, 0.774);
 
     transition: all 0.3s ease 0s;
 
