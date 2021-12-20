@@ -6,7 +6,7 @@
 .console-box {
     /*Position and sizing*/
     width: auto;
-    height: 94vh;
+    /* height: 94vh; */
 
     background-color: black; /*背景顏色*/
     
