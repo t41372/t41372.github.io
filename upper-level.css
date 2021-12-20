@@ -13,6 +13,33 @@
     src: url('./assets/CascadiaMonoPL-BoldItalic.otf');
 }
 
+/* Font interation effect */
+
+@font-face{
+    font-family: 'PlayfairDisplay-BlackItalic';
+    src: url('./assets/Font Iterate/PlayfairDisplay-BlackItalic.ttf');
+}
+@font-face{
+    font-family: 'PlayfairDisplay-ExtraBold';
+    src: url('./assets/Font Iterate/PlayfairDisplay-ExtraBold.ttf');
+}
+@font-face{
+    font-family: 'PlayfairDisplay-Italic';
+    src: url('./assets/Font Iterate/PlayfairDisplay-Italic.ttf');
+}
+@font-face{
+    font-family: 'Roboto-BlackItalic';
+    src: url('./assets/Font Iterate/Roboto-BlackItalic.ttf');
+}
+@font-face{
+    font-family: 'Roboto-Bold';
+    src: url('./assets/Font Iterate/Roboto-Bold.ttf');
+}
+@font-face{
+    font-family: 'Roboto-ThinItalic';
+    src: url('./assets/Font Iterate/Roboto-ThinItalic.ttf');
+}
+
 #upper-white-canvas{
     background-color: white;
     position: absolute;
@@ -159,8 +186,60 @@
 
 #fun-1{
     font-family: "CascadiaMonoPL-BoldItalic";
-    filter: blur(0.3px);
-    color:aqua;
+    /* color:aqua; */
 }
 
 
+
+/* font iteration animation */
+
+@keyframes font-iteration{
+
+    10%{
+        font-family: "Cascadia-Code";
+    }
+    20%{
+        
+        font-family: "Roboto-ThinItalic";
+    }
+    30%{
+        font-family: "CascadiaMonoPL-BoldItalic";
+    }
+    40%{
+        font-family: "PlayfairDisplay-BlackItalic";
+    }
+    50%{
+        font-family: "Roboto-Bold";
+    }
+    60%{
+        font-family: "PlayfairDisplay-Italic";
+    }
+    70%{
+        font-family: "Roboto-BlackItalic";
+    }
+    80%{
+        font-family: "PlayfairDisplay-ExtraBold";
+    }
+    90%{
+        font-family: "CascadiaMono-Bold";
+    }
+    100%{
+        
+    }
+
+}
+
+/*
+    list of fonts (9)
+
+    Cascadia-Code
+    CascadiaMono-Bold
+    CascadiaMonoPL-BoldItalic
+
+    PlayfairDisplay-BlackItalic
+    PlayfairDisplay-ExtraBold
+    PlayfairDisplay-Italic
+    Roboto-BlackItalic
+    Roboto-Bold
+    Roboto-ThinItalic
+*/
