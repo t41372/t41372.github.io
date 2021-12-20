@@ -194,6 +194,10 @@
 /* font iteration animation */
 
 @keyframes font-iteration{
+    0%{
+        color: white;
+        font-family: "Cascadia-code";
+    }
 
     10%{
         font-family: "Cascadia-Code";
@@ -224,7 +228,8 @@
         font-family: "CascadiaMono-Bold";
     }
     100%{
-        
+        font-family: "CascadiaMonoPL-BoldItalic";
+        color:rgb(177, 255, 255);
     }
 
 }

@@ -1,6 +1,9 @@
-const fontList = ["PlayfairDisplay-Italic", "CascadiaMono-Bold", "CascadiaMonoPL-BoldItalic",
+const fontList = ["PlayfairDisplay-Italic", "CascadiaMonoPL-BoldItalic",
         "PlayfairDisplay-BlackItalic", "PlayfairDisplay-ExtraBold", 
-        "PlayfairDisplay-Italic", "PlayfairDisplay-Italic", "Cascadia-Code", "Roboto-Bold", "Roboto-ThinItalic"];
+        "Cascadia-Code", "PlayfairDisplay-Italic", 
+        "PlayfairDisplay-Italic", "Roboto-ThinItalic", 
+        "Cascadia-Code", "Roboto-Bold"
+        ];
 
 
 let terminalOpened = false;
@@ -76,7 +79,7 @@ function buildBuildWith() {
             .delete(12, {delay: 500})
             .type("dude", {delay: 500})
             .type(" who build <span id ='fun' class='funText'>fun stuff</span> with ", {delay: 500})
-            //select 'fun' (blue background selection)
+            // trigger font iteration animation to 'fun stuff'
             .exec(() => {
                 document.getElementById('fun').style.backgroundColor = "dodgerblue";
                 document.getElementById('fun').style.animation = 'font-iteration 1s linear';
@@ -88,7 +91,7 @@ function buildBuildWith() {
             .exec(() => {
                 document.getElementById('fun-1').style.backgroundColor = "transparent";
                 document.getElementById('fun-1').style.animation = '';
-            })
+            }) // end of the iteration animation of 'fun stuff'
             .exec(() => buildWordTyping())
             .go();
 
@@ -170,19 +173,15 @@ function buildWordTyping() {
             .delete()
             .type("<span style='color: dodgerblue'>Brain</span>", {delay: 1200})
             
-            .exec(() => { // change 'fun stuff' font logic
-                if (fontIterationIndex >= fontList.length)
-                    fontIterationIndex = 0;
-
-                console.log("List = " + fontList);
+            // trigger font iteration animation to 'fun stuff'
+            .exec(() => {
                 document.getElementById('fun-1').style.backgroundColor = "dodgerblue";
-                document.getElementById('fun-1').style.fontFamily = fontList[fontIterationIndex++];
-
-            }, {delay: 500})
+                document.getElementById('fun-1').style.animation = 'font-iteration 1s linear';
+            }, {delay: 2300})
             .exec(() => {
                 document.getElementById('fun-1').style.backgroundColor = "transparent";
                 document.getElementById('fun-1').style.animation = '';
-            }, {delay: 1000}) //change 'fun stuff' font logic end -----
+            }) // end of the iteration animation of 'fun stuff'
 
             .delete()
             .exec(() => buildWordTyping())
