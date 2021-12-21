@@ -189,6 +189,11 @@
     color:rgb(177, 255, 255);
 }
 
+#font-loader{
+    visibility: hidden;
+    animation: font-iteration 1s linear;
+}
+
 
 
 /* font iteration animation */

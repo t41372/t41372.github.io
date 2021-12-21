@@ -177,11 +177,12 @@ function buildWordTyping() {
             .exec(() => {
                 document.getElementById('fun-1').style.backgroundColor = "dodgerblue";
                 document.getElementById('fun-1').style.animation = 'font-iteration 1s linear';
-            }, {delay: 1500})
+                document.getElementById('fun-1').style.fontFamily = fontList[fontIterationIndex++];
+            }, {delay: 2000})
             .exec(() => {
                 document.getElementById('fun-1').style.backgroundColor = "transparent";
                 document.getElementById('fun-1').style.animation = '';
-            }, {delay: 1000}) // end of the iteration animation of 'fun stuff'
+            }, {delay: 1200}) // end of the iteration animation of 'fun stuff'
 
             .delete()
             .exec(() => buildWordTyping())
