@@ -1,4 +1,6 @@
-# Personal Website
+# Yi-Ting Chiu's (mine) Website
+
+<img src='https://user-images.githubusercontent.com/36402030/146896290-31f19e50-3642-498f-ada9-6b227573895e.png' height="350rem" width="auto">
 
 ### What is this
 This is Yi-Ting Chiu's personal website.
