@@ -78,7 +78,7 @@ function buildBuildWith() {
         }).type("A strange dude", {delay: 1000})
             .delete(12, {delay: 500})
             .type("dude", {delay: 500})
-            .type(" who build <span id ='fun' class='funText'>fun stuff</span> with ", {delay: 500})
+            .type(" who build <span id ='fun' class='funText'>fun stuff</span> <br/>with ", {delay: 500})
             // trigger font iteration animation to 'fun stuff'
             .exec(() => {
                 document.getElementById('fun').style.backgroundColor = "dodgerblue";

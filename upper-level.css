@@ -74,14 +74,14 @@
 
 #upper-center-container{
     position: relative;
-    top: 40%;
+    top: 45%;
     left: 50%;
     transform: translate(-50%,-50%);
 }
 
 #build-with-prompt{
-    position: absolute;
-    top: 120%;
+    position: relative;
+    top: 0.5em;
     left: 50%;
     transform: translate(-50%,-50%);
 }
