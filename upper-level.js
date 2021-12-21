@@ -133,7 +133,6 @@ function buildWordTyping() {
                 if (fontIterationIndex >= fontList.length)
                     fontIterationIndex = 0;
 
-                console.log("List = " + fontList);
                 document.getElementById('fun-1').style.backgroundColor = "dodgerblue";
                 document.getElementById('fun-1').style.fontFamily = fontList[fontIterationIndex++];
 
@@ -154,7 +153,6 @@ function buildWordTyping() {
                 if (fontIterationIndex >= fontList.length)
                     fontIterationIndex = 0;
 
-                console.log("List = " + fontList);
                 document.getElementById('fun-1').style.backgroundColor = "dodgerblue";
                 document.getElementById('fun-1').style.fontFamily = fontList[fontIterationIndex++];
 
@@ -198,7 +196,6 @@ function buildWordTyping() {
 //format the node. Because the TypeIt will make the node strange, and 
 // inappropriate for browser translation tool, we need to format it after used it
 function formatNode(id, innerHTML) {
-    console.log("the inner html is: " + document.getElementById(id).innerHTML)
     document.getElementById(id).innerHTML = innerHTML;
 }
 

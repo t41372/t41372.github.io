@@ -3,15 +3,19 @@
     src: url('./CascadiaMono-Regular.otf');
 }
 
+body{
+    margin: 0%;
+}
+
 .console-box {
     /*Position and sizing*/
-    width: auto;
-    /* height: 94vh; */
+    width: 92vw;
+    height: 99.6vh;
 
     background-color: transparent; /*背景顏色*/
     
     /*padding*/
-    padding: 1em 2em;
+    padding: 0.2vh 4vw;
     /*overflow*/
     overflow-x: hidden;
     overflow-y: scroll;
@@ -22,19 +26,48 @@
     transition: all 0.3s ease 0s;
     /*blur*/
     filter:blur(2px);
+    transition: all 0.3s ease 0s;
 }
 
 .console-box:hover {
     box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease 0s;
+    
 }
 
 #console-text-entry {
     border: none;
-    background-color: black;
+    background-color: transparent;
     color: white;
     padding: 0%;
     width: 50%;
+}
+
+
+/* word-size = (the size of the entire art) / word count*/
+/* Fake terminal word count per line: 101 */
+.ascii-art-fake-terminal{
+    font-size: calc(100vw/101 + 0.4vw);
+    transition: all 0.3s ease 0s;
+}
+
+.ascii-art-yi-ting-chiu{
+    font-size: calc(100vw/96 + 0.2vw);
+    transition: all 0.3s ease 0s;
+}
+
+@media (orientation: landscape){
+    .ascii-art-fake-terminal{
+        font-size: calc(65vw/101);
+    }
+    .ascii-art-yi-ting-chiu{
+        font-size: calc(50vw/96);
+    }
+    .console-box{
+        padding: 3vh 3vw;
+        width: 94vw;
+        height: 94vh;
+    }
+
 }
 
 input:focus {

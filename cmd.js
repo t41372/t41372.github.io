@@ -1,5 +1,3 @@
-console.log("Hello World!!");
-
 const output = document.getElementById("cmd-output");
 
 const commandList = ["print", "get-command-list", "about", "clear", "println-debug", "close-light", "open-light"];
@@ -8,8 +6,90 @@ let commandLog = [];
 let commandLogPointer = false;
 
 let user_sig = "guest@DESKTOP";
-
 let user_data = null;
+
+
+startInfo();
+
+
+
+function startInfo()
+{
+    print('Hello! My name is Yi-Ting!' +
+    '<br/>' +
+    'Welcome to my <a class="cmd-link" href="https://en.wikipedia.org/wiki/Fake">fake</a> console)');
+
+    print('<div class="ascii-art-fake-terminal"> ' + 
+    '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *' + 
+    '<br/>' +
+    '| <span style="color: dodgerblue">███████╗░█████╗░██╗░░██╗███████╗</span> <span' + 
+    '    style="color: rgb(0, 255, 0)">████████╗███████╗██████╗░███╗░░░███╗██╗███╗░░██╗░█████╗░██╗░░░░░</span> |' +
+    '<br />' +
+    '| <span style="color: dodgerblue">██╔════╝██╔══██╗██║░██╔╝██╔════╝</span> <span' +
+    '    style="color: rgb(0, 255, 0)">╚══██╔══╝██╔════╝██╔══██╗████╗░████║██║████╗░██║██╔══██╗██║░░░░░</span> |' +
+    '<br />' +
+    '| <span style="color: dodgerblue">█████╗░░███████║█████═╝░█████╗░░</span> <span' +
+    '    style="color: rgb(0, 255, 0)">░░░██║░░░█████╗░░██████╔╝██╔████╔██║██║██╔██╗██║███████║██║░░░░░</span> |' +
+    '<br />' +
+    '| <span style="color: dodgerblue">██╔══╝░░██╔══██║██╔═██╗░██╔══╝░░</span> <span' +
+    '    style="color: rgb(0, 255, 0)">░░░██║░░░██╔══╝░░██╔══██╗██║╚██╔╝██║██║██║╚████║██╔══██║██║░░░░░</span> |' +
+    '<br />' + 
+    '| <span style="color: dodgerblue">██║░░░░░██║░░██║██║░╚██╗███████╗</span> <span' +
+    '    style="color: rgb(0, 255, 0)">░░░██║░░░███████╗██║░░██║██║░╚═╝░██║██║██║░╚███║██║░░██║███████╗</span> |' +
+    '<br />' +
+    '| <span style="color: dodgerblue">╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝</span> <span' +
+    '    style="color: rgb(0, 255, 0)">░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝</span> |' +
+    '<br />' +
+    '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *' +
+    '<br /> </div>');
+
+    print("<span style='color:dodgerblue'>Enter 'get-command-list' to get the list of command available.</span>");
+
+    print('<span style="color:red;">======================================</span>');
+
+
+    /*
+            <p class="cmd-text" id="hello">Hello! My name is Yi-Ting!
+                <br />
+                Welcome to my <a class="cmd-link" href="https://en.wikipedia.org/wiki/Fake">fake</a> console
+            </p>
+
+            <!--Start up logo-->
+            <p class="cmd-text" style="font-size:0.32em">
+                * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+                *<br />
+                | <span style="color: dodgerblue">███████╗░█████╗░██╗░░██╗███████╗</span> <span
+                    style="color: rgb(0, 255, 0)">████████╗███████╗██████╗░███╗░░░███╗██╗███╗░░██╗░█████╗░██╗░░░░░</span>
+                |<br />
+                | <span style="color: dodgerblue">██╔════╝██╔══██╗██║░██╔╝██╔════╝</span> <span
+                    style="color: rgb(0, 255, 0)">╚══██╔══╝██╔════╝██╔══██╗████╗░████║██║████╗░██║██╔══██╗██║░░░░░</span>
+                |<br />
+                | <span style="color: dodgerblue">█████╗░░███████║█████═╝░█████╗░░</span> <span
+                    style="color: rgb(0, 255, 0)">░░░██║░░░█████╗░░██████╔╝██╔████╔██║██║██╔██╗██║███████║██║░░░░░</span>
+                |<br />
+                | <span style="color: dodgerblue">██╔══╝░░██╔══██║██╔═██╗░██╔══╝░░</span> <span
+                    style="color: rgb(0, 255, 0)">░░░██║░░░██╔══╝░░██╔══██╗██║╚██╔╝██║██║██║╚████║██╔══██║██║░░░░░</span>
+                |<br />
+                | <span style="color: dodgerblue">██║░░░░░██║░░██║██║░╚██╗███████╗</span> <span
+                    style="color: rgb(0, 255, 0)">░░░██║░░░███████╗██║░░██║██║░╚═╝░██║██║██║░╚███║██║░░██║███████╗</span>
+                |<br />
+                | <span style="color: dodgerblue">╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝</span> <span
+                    style="color: rgb(0, 255, 0)">░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝</span>
+                |<br />
+                * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+                *<br />
+            </p>
+            <p class="cmd-text" style="color:dodgerblue">Enter 'get-command-list' to get the list of command available.
+            </p>
+
+            <p class="cmd-text" style="color:red;">======================================
+        </p>
+
+    */
+}
+
+
+
 //record the index of last autocomplete index. 
 //For example, if user is at "about" among ["apple", "about", "abort"], this value should be 1
 //created to allow user to switch among autocomplete options with tabs
@@ -176,7 +256,7 @@ function getCommandList() {
 
 
 function about() {
-    let info = '<div style="font-size:0.3em">' +
+    let info = '<div class = "ascii-art-fake-terminal">' +
         '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *<br/>' +
         '| <span style="color: dodgerblue">███████╗░█████╗░██╗░░██╗███████╗</span> <span style="color: rgb(0, 255, 0)">████████╗███████╗██████╗░███╗░░░███╗██╗███╗░░██╗░█████╗░██╗░░░░░</span> |<br/>' +
         '| <span style="color: dodgerblue">██╔════╝██╔══██╗██║░██╔╝██╔════╝</span> <span style="color: rgb(0, 255, 0)">╚══██╔══╝██╔════╝██╔══██╗████╗░████║██║████╗░██║██╔══██╗██║░░░░░</span> |<br/>' +
@@ -185,7 +265,7 @@ function about() {
         '| <span style="color: dodgerblue">██║░░░░░██║░░██║██║░╚██╗███████╗</span> <span style="color: rgb(0, 255, 0)">░░░██║░░░███████╗██║░░██║██║░╚═╝░██║██║██║░╚███║██║░░██║███████╗</span> |<br/>' +
         '| <span style="color: dodgerblue">╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝</span> <span style="color: rgb(0, 255, 0)">░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝</span> |<br/>' +
         '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *<br/>' +
-        "<br/>" +
+        "</div><br/><div class='ascii-art-yi-ting-chiu'>" +
         "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/>" +
         "| '##:::'##'####::::::::'########'####'##::: ##:'######:::::'######:'##::::'##'####'##::::'##: |<br/>" +
         "| . ##:'##:. ##:::::::::... ##..:. ##::###:: ##'##... ##:::'##... ##:##:::: ##. ##::##:::: ##: |<br/>" +
@@ -195,8 +275,8 @@ function about() {
         "| ::: ##:::: ##:::::::::::: ##:::: ##::##:. ###:##::: ##::::##::: ##:##:::: ##: ##::##:::: ##: |<br/>" +
         "| ::: ##:::'####::::::::::: ##:::'####:##::. ##. ######::::. ######::##:::: ##'####. #######:: |<br/>" +
         "| :::..::::....::::::::::::..::::....:..::::..::......::::::......::..:::::..:....::.......::: |<br/>" +
-        "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/> </div>" +
-        "<br/>" +
+        "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/>" +
+        "</div><br/>" +
         "<span style='color: dodgerblue'>Fake</span> <span style='color: rgb(0, 255, 0)'>Terminal</span> " + version +
         " <a class='cmd-link' href='https://github.com/t41372/fakeTerminal' style='color:red'>" + "GitHub Repo </a><br/>" +
         "*========================*<br/>" +
