@@ -1,12 +1,13 @@
-# Yi-Ting Chiu's (mine) Website
+# Yi-Ting Chiu's Website
 
-<img src='https://user-images.githubusercontent.com/36402030/146896290-31f19e50-3642-498f-ada9-6b227573895e.png' height="350rem" width="auto">
+<img src= 'https://user-images.githubusercontent.com/36402030/146896908-8c77dc70-52b4-4d49-ab2e-867aa2c8a699.jpg' height="350rem" width="auto">
+https://t41372.github.io/
 
 ### What is this
 This is Yi-Ting Chiu's personal website.
 The terminal in the background is interactable.
 
-https://t41372.github.io/
+
 
 ### The background?
 The background is a interactable terminal.
