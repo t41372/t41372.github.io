@@ -74,9 +74,35 @@
 
 #upper-center-container{
     position: relative;
-    top: 30%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%,-50%);
+}
+
+#build-with-prompt{
+    position: absolute;
+    top: 120%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+#build-with-technology{
+    color: white;
+}
+
+#fun{
+    color: white;
+    /* filter:blur(1px); */
+}
+
+#fun-1{
+    font-family: "CascadiaMonoPL-BoldItalic";
+    color:rgb(177, 255, 255);
+}
+
+#font-loader{
+    visibility: hidden;
+    animation: font-iteration 1s linear;
 }
 
 
@@ -167,32 +193,6 @@
 
 }
 
-#build-with-prompt{
-    position: absolute;
-    top: 120%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-
-}
-
-#build-with-technology{
-    color: white;
-}
-
-#fun{
-    color: white;
-    /* filter:blur(1px); */
-}
-
-#fun-1{
-    font-family: "CascadiaMonoPL-BoldItalic";
-    color:rgb(177, 255, 255);
-}
-
-#font-loader{
-    visibility: hidden;
-    animation: font-iteration 1s linear;
-}
 
 
 
