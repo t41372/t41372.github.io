@@ -54,6 +54,8 @@ The background is a interactable terminal.
 - [ ] What's new in the terminal to display new features in the terminal
 - [ ] terminal's size adaptation onto different screen size
 - [ ] change terminal background
+- [ ] add a super cool RGB glitching effect on my name with blotter.js
+- [ ] try put a neon effect on something
 
 
 
