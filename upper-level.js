@@ -62,8 +62,8 @@ const helloHeading =
         //add the glitching effect
         .exec(() => { // select my name with blue background
             document.getElementById('myName').style.backgroundColor = "dodgerblue";
-        }, {delay: 500})
-        .exec(() => constructHello_RGBGlitching()) // start the glitching effect
+        }, {delay: 800})
+        .exec(() => constructHello_RGBGlitching(), {delay: 800}) // start the glitching effect
         .exec(() => { //unselect
             document.getElementById('myName').style.backgroundColor = "transparent";
         }, {delay: 1000}) //selection animation end -----
