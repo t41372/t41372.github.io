@@ -45,10 +45,6 @@ function switchToUpperPage() {
 }
 
 
-function randomizeFontEffect(targetID) {
-    let text = document.getElementById(targetID);
-
-}
 
 
 // ------ Typing Effects ------
@@ -58,29 +54,29 @@ const helloHeading =
         speed: 120,
         startDelay: 800
     })
-        .type('<span id="upper-hello">Hello!</span>', {delay: 500})
-        .type("<br/>This is Yi-Ting Chiu", {delay: 1000})
+        .type('Hello!', {delay: 500})
+        .type("<br/>This is <span id='myName' data-text='Yi-Ting Chiu'>Yi-Ting Chiu</span>", {delay: 1000})
         .type("<span style='color:burlywood'>.</span>", {delay: 900})
-        .exec(() => formatNode('hello-title', 'Hello!<br/>This is Yi-Ting Chiu<span style="color:burlywood">.</span>'))
+        .exec(() => formatNode('hello-title', 'Hello!<br/>This is <span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
+
+        //add the glitching effect
+        .exec(() => { // select my name with blue background
+            document.getElementById('myName').style.backgroundColor = "dodgerblue";
+        }, {delay: 500})
+        .exec(() => constructHello_RGBGlitching()) // start the glitching effect
+        .exec(() => { //unselect
+            document.getElementById('myName').style.backgroundColor = "transparent";
+        }, {delay: 1000}) //selection animation end -----
+
         .exec(() => buildBuildWith())
         .go();
 
 
 function constructHello_RGBGlitching()
 {
-    var text = new Blotter.Text("Hello!", {
-        family : "serif",
-        size : 120,
-        fill : "#171717"
-      });
-
-      var material = new Blotter.ChannelSplitMaterial();
-
-      var blotter = new Blotter(material, { texts : text });
-
-      var scope = blotter.forText(text);
-
-      scope.appendTo(document.body);
+    // document.getElementById("upper-hello").dataText = "Hello!";
+    document.getElementById("myName").className = "glitch";
+    // document.getElementById("myName").animate = "glitch-skew 1s infinite linear alternate-reverse";
 }
 
 let buildWith;
