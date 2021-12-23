@@ -1,0 +1,54 @@
+/* from codepen https://codepen.io/edalgrin/pen/rNWYEbw */
+
+.text-glitch {
+	position: relative;
+	color: transparent;
+	--text-glitch-y1: 30%;
+	--text-glitch-y2: 35%;
+	--text-glitch-y3: 50%;
+	--text-glitch-y4: 55%;
+	animation: glitch 0.2s infinite;
+}
+@keyframes glitch {
+	100% {
+		--text-glitch-y1: 10%;
+		--text-glitch-y2: 50%;
+		--text-glitch-y3: 70%;
+		--text-glitch-y4: 95%;
+   }
+}
+.text-glitch:before, .text-glitch:after {
+	content: attr(data-text);
+	position: absolute;
+	left: 0;
+	top: 0;
+	color: white;
+}
+.text-glitch:before {
+	clip-path: polygon(0% 0%, 100% 0%, 100% var(--text-glitch-y1), 0% var(--text-glitch-y1), 0% var(--text-glitch-y2), 100% var(--text-glitch-y2), 100% var(--text-glitch-y3), 0% var(--text-glitch-y3), 0% var(--text-glitch-y4), 100% var(--text-glitch-y4), 100% 100%, 0% 100%);
+	animation: glitch-right var(--text-glitch-time, 1s) infinite;
+}
+@keyframes glitch-right {
+	0%, 10% {
+		transform: translateX(5px);
+		text-shadow: 5px 0 cyan;
+   }
+	11% {
+		transform: none;
+		text-shadow: none;
+   }
+}
+.text-glitch:after {
+	clip-path: polygon(0% var(--text-glitch-y1), 100% var(--text-glitch-y1), 100% var(--text-glitch-y2), 0% var(--text-glitch-y2), 0% var(--text-glitch-y3), 100% var(--text-glitch-y3), 100% var(--text-glitch-y4), 0% var(--text-glitch-y4));
+	animation: glitch-left var(--text-glitch-time, 1s) infinite;
+}
+@keyframes glitch-left {
+	0%, 10% {
+		transform: translateX(5px);
+		text-shadow: -5px 0 red;
+   }
+	11% {
+		transform: none;
+		text-shadow: none;
+   }
+}

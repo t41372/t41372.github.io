@@ -74,9 +74,7 @@ const helloHeading =
 
 function constructHello_RGBGlitching()
 {
-    // document.getElementById("upper-hello").dataText = "Hello!";
-    document.getElementById("myName").className = "glitch";
-    // document.getElementById("myName").animate = "glitch-skew 1s infinite linear alternate-reverse";
+    document.getElementById("myName").className = "text-glitch";
 }
 
 let buildWith;
