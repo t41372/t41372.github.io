@@ -58,13 +58,30 @@ const helloHeading =
         speed: 120,
         startDelay: 800
     })
-        .type('Hello!', {delay: 500})
+        .type('<span id="upper-hello">Hello!</span>', {delay: 500})
         .type("<br/>This is Yi-Ting Chiu", {delay: 1000})
         .type("<span style='color:burlywood'>.</span>", {delay: 900})
         .exec(() => formatNode('hello-title', 'Hello!<br/>This is Yi-Ting Chiu<span style="color:burlywood">.</span>'))
         .exec(() => buildBuildWith())
         .go();
 
+
+function constructHello_RGBGlitching()
+{
+    var text = new Blotter.Text("Hello!", {
+        family : "serif",
+        size : 120,
+        fill : "#171717"
+      });
+
+      var material = new Blotter.ChannelSplitMaterial();
+
+      var blotter = new Blotter(material, { texts : text });
+
+      var scope = blotter.forText(text);
+
+      scope.appendTo(document.body);
+}
 
 let buildWith;
 

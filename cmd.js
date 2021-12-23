@@ -17,7 +17,7 @@ function startInfo()
 {
     print('Hello! My name is Yi-Ting!' +
     '<br/>' +
-    'Welcome to my <a class="cmd-link" href="https://en.wikipedia.org/wiki/Fake">fake</a> console)');
+    'Welcome to my <a class="cmd-link" href="https://en.wikipedia.org/wiki/Fake">fake</a> console<span id="hello_ver"></span>');
 
     print('<div class="ascii-art-fake-terminal"> ' + 
     '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *' + 
