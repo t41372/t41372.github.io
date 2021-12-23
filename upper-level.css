@@ -267,6 +267,7 @@ text set in the data-text attribute. */
     animation: glitch-anim 5s infinite linear alternate-reverse;
   }
   .glitch::after {
+    filter:blur(0.5px);
     content: attr(data-text);
     position: absolute;
     top: 0;
