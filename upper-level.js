@@ -54,7 +54,8 @@ const helloHeading =
         speed: 120,
         startDelay: 800
     })
-        .type('Hello!<label id="hello-hand"> </label>', {delay: 120})
+        .type('Hello!', {delay: 300})
+        .type('<label id="hello-hand" style="color: grey">./wave.gif</label>', {speed: 20, delay: 50})
         .exec(() => {
             document.getElementById('hello-hand').innerHTML 
             = '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">';
