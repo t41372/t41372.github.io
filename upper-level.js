@@ -54,11 +54,18 @@ const helloHeading =
         speed: 120,
         startDelay: 800
     })
-        .type('Hello!', {delay: 500})
+        .type('Hello!<label id="hello-hand"> </label>', {delay: 120})
+        .exec(() => {
+            document.getElementById('hello-hand').innerHTML 
+            = '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">';
+        }, {delay: 500})
         .type("<br/>This is <span id='myName' data-text='Yi-Ting Chiu'>Yi-Ting Chiu</span>", {delay: 1000})
         .type("<span style='color:burlywood'>.</span>", {delay: 900})
-        .exec(() => formatNode('hello-title', 'Hello!<br/>This is <span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
-
+        .exec(() => formatNode('hello-title', 
+        'Hello!' + 
+        '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">'+
+        '<br/>This is <span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
+        
         //add the glitching effect
         .exec(() => { // select my name with blue background
             document.getElementById('myName').style.backgroundColor = "dodgerblue";
