@@ -43,7 +43,7 @@ function startInfo()
     '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *' +
     '<br /> </div>');
 
-    print("<span style='color:dodgerblue'>Enter 'help' to get the list of command available.</span>");
+    print('<span style="color:dodgerblue">Enter "help" to get the list of command available.</span>');
 
     print('<span style="color:red;">======================================</span>');
 
