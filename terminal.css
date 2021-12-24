@@ -57,10 +57,10 @@ body{
 
 @media (orientation: landscape){
     .ascii-art-fake-terminal{
-        font-size: calc(65vw/101);
+        font-size: calc(65vw / 101);
     }
     .ascii-art-yi-ting-chiu{
-        font-size: calc(50vw/96);
+        font-size: calc(50vw / 96);
     }
     .console-box{
         padding: 3vh 3vw;
