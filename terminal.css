@@ -12,17 +12,17 @@ body{
     width: 92vw;
     height: 99.6vh;
 
-    background-color: transparent; /*背景顏色*/
+    background-color: transparent;
     
     /*padding*/
     padding: 0.2vh 4vw;
     /*overflow*/
     overflow-x: hidden;
     overflow-y: scroll;
-    /*隱藏scroll bar: firefox & IE*/
+    /*hide scroll bar: firefox & IE*/
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 10+ */
-    /*hover動畫*/
+    
     transition: all 0.3s ease 0s;
     /*blur*/
     filter:blur(2px);
