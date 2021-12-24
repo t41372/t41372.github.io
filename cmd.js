@@ -1,6 +1,6 @@
 const output = document.getElementById("cmd-output");
 
-const commandList = ["print", "get-command-list", "about", "clear", "println-debug", "close-light", "open-light"];
+const commandList = ["print", "help", "about", "clear", "println-debug", "close-light", "open-light"];
 
 let commandLog = [];
 let commandLogPointer = false;
@@ -43,7 +43,7 @@ function startInfo()
     '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *' +
     '<br /> </div>');
 
-    print("<span style='color:dodgerblue'>Enter 'get-command-list' to get the list of command available.</span>");
+    print("<span style='color:dodgerblue'>Enter 'help' to get the list of command available.</span>");
 
     print('<span style="color:red;">======================================</span>');
 
@@ -191,8 +191,8 @@ function commandEvaluation(command) {
             print(command)
             break;
 
-        case 'get-command-list':
-            getCommandList();
+        case 'help':
+            help();
             break;
 
         case 'clear':
@@ -249,7 +249,7 @@ function print(s) {
 }
 
 
-function getCommandList() {
+function help() {
     for (let index = 0; index < commandList.length; index++)
         print("- command '" + commandList[index] + "'");
 }
