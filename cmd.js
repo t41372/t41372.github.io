@@ -1,6 +1,8 @@
 const output = document.getElementById("cmd-output");
 
-const commandList = ["print", "help", "about", "clear", "println-debug", "close-light", "open-light"];
+const commandList = ["print", "help", "about", "clear", 
+    "println-debug", "close-light", 
+    "open-light", "background", "background 1", "background 2"];
 
 let commandLog = [];
 let commandLogPointer = false;
@@ -10,7 +12,7 @@ let user_data = null;
 
 
 startInfo();
-
+whatsNew();
 
 
 function startInfo()
@@ -88,6 +90,18 @@ function startInfo()
     */
 }
 
+function whatsNew()
+{
+    let info =  "<span class='dodgerblue'>* -=-=- What's New? (2021.Dec.25) =-=-= *</span><br/>" + 
+                "* <span class='green'>Autocompletion!</span><br/>" +
+                "* <span class='grey'>- try typing part of the command and press 'tab'!<br/>" +
+                "* <span class='green'>New Command! 'background 1'!!</span><br/> " + 
+                "* <span class='grey'>- try typing 'Background 1'! to set starry night as the terminal background!<br/>" +
+                "<span class='dodgerblue'>* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *</span><br/>";
+
+
+    print(info);
+}
 
 
 //record the index of last autocomplete index. 
@@ -130,7 +144,7 @@ function receiveCommand(event) {
         case 9: //pressed tab
             let autocompleteWord;
             if (lastAutocompleteIndex === false) {
-                lastAutocompleteArray = autocomplete(document.getElementById("console-text-entry").value);
+                lastAutocompleteArray = autocomplete(document.getElementById("console-text-entry").value, commandList);
                 autocompleteWord = lastAutocompleteArray[0];
                 lastAutocompleteIndex = 0;
             } else {
@@ -140,8 +154,12 @@ function receiveCommand(event) {
                 autocompleteWord = lastAutocompleteArray[++lastAutocompleteIndex];
             }
             //after finalized the autocomplete word, put it onto the text entry
-            document.getElementById("console-text-entry").value = autocompleteWord;
+            if(autocompleteWord != undefined)
+            {
+                document.getElementById("console-text-entry").value = autocompleteWord;
+            }
             document.getElementById("console-text-entry").focus();
+            event.preventDefault();
             commandLogPointer = false;
             break;
 
@@ -213,6 +231,12 @@ function commandEvaluation(command) {
         
         case 'open-light':
             openLight();
+            break;
+
+        case 'background':
+            
+            command.shift()
+            background(command);
             break;
 
         default:
@@ -303,10 +327,10 @@ function clear() {
 /**
  * get a incomplete string, and return a complete command
  */
-function autocomplete(currentInput) {
+function autocomplete(currentInput, targetList) {
     if (currentInput.length == 0)
         return [""];
-    return commandList.filter(cmd => cmd.startsWith(currentInput));
+    return targetList.filter(cmd => cmd.startsWith(currentInput));
 }
 
 function closeLight()
@@ -317,6 +341,30 @@ function closeLight()
 function openLight()
 {
     document.body.style = "background-color: white";
+}
+
+//change background: options are
+// 1. starry night
+function background(option)
+{
+    // console.log(option);
+    // if(option.length == 0)
+    // console.log(option);
+    if(option[0] === '1')
+    {
+        print('hey dude');
+        background_toStarryNight();
+    }
+    else {
+        print("<span class='red'> * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
+            "'background " + option[0] + "' is not defined.</span>");
+    }
+
+}
+
+function background_toStarryNight()
+{
+    print("hoho");
 }
 
 

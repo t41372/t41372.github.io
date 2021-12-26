@@ -5,6 +5,7 @@
 
 body{
     margin: 0%;
+    background-color: black;
 }
 
 .console-box {
@@ -12,7 +13,8 @@ body{
     width: 92vw;
     height: 99.6vh;
 
-    background-color: transparent;
+    background-color: rgba(0,0,0,0.3);
+    
     
     /*padding*/
     padding: 0.2vh 4vw;
@@ -95,5 +97,23 @@ input:focus {
 /*Chrome 和 Safari 隱藏滾動條*/
 ::-webkit-scrollbar {
     display: none; /* Chrome Safari */
+}
+
+/* color shortcuts */
+
+.green{
+    color: rgba(0, 255, 0);
+}
+
+.red{
+    color: red;
+}
+
+.dodgerblue{
+    color: dodgerblue;
+}
+
+.grey{
+    color: grey;
 }
 
