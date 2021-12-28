@@ -356,6 +356,7 @@ function background(option)
         background_toStarryNight();
     }
     else {
+        // print error message
         print("<span class='red'> * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
             "'background " + option[0] + "' is not defined.</span>");
     }
@@ -364,7 +365,11 @@ function background(option)
 
 function background_toStarryNight()
 {
-    print("hoho");
+    document.body.innerHTML = '<div id="stars"></div><div id="stars2"></div><div id="stars3"></div>' + document.body.innerHTML;
+    
+    document.head.innerHTML = '<link href="./starryNight.css" type="text/css" rel="stylesheet">' + document.head.innerHTML;
+    
+
 }
 
 
