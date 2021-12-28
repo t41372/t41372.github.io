@@ -2,7 +2,7 @@ const output = document.getElementById("cmd-output");
 
 const commandList = ["print", "help", "about", "clear", 
     "println-debug", "close-light", 
-    "open-light", "background", "background 1", "background 2"];
+    "open-light", "background", "background 1", "background 0"];
 
 let commandLog = [];
 let commandLogPointer = false;
@@ -350,14 +350,21 @@ function background(option)
     // console.log(option);
     // if(option.length == 0)
     // console.log(option);
-    if(option[0] === '1')
-    {
-        print('hey dude');
-        background_toStarryNight();
-    }
-    else {
-        // print error message
-        print("<span class='red'> * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
+
+    switch(option[0]){
+        case '1':
+            background_toStarryNight();
+            print('background changed to <span style="color:dodgerblue">starry night</span>');
+            break;
+        case '0':
+            background_removeStarryNight();
+            print("background set to <span style='color:dodgerblue'>default</span>");
+            break;
+
+        default:
+            // print error message
+            print("<span class='red'> * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
+            "<span class='red'> * Command 'background 0' will change the background of the terminal to default (black). <br/>" +
             "'background " + option[0] + "' is not defined.</span>");
     }
 
@@ -365,11 +372,17 @@ function background(option)
 
 function background_toStarryNight()
 {
-    document.body.innerHTML = '<div id="stars"></div><div id="stars2"></div><div id="stars3"></div>' + document.body.innerHTML;
-    
-    document.head.innerHTML = '<link href="./starryNight.css" type="text/css" rel="stylesheet">' + document.head.innerHTML;
-    
+    // document.body.innerHTML = '<div id="stars"></div><div id="stars2"></div><div id="stars3"></div>' + document.body.innerHTML;
+    document.getElementById('star-container').hidden = '';
 
+    document.head.innerHTML = '<link id="starry-night-css" href="./starryNight.css" type="text/css" rel="stylesheet">' + document.head.innerHTML;
+}
+
+function background_removeStarryNight()
+{
+    //! issue: if the document has multiple 'starry-night-css', we can't delete the additional ones
+    document.getElementById('star-container').hidden = true;
+    document.head.removeChild(document.getElementById('starry-night-css'));
 }
 
 
