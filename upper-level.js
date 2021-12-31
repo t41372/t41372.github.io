@@ -49,6 +49,9 @@ function switchToUpperPage() {
 
 // ------ Typing Effects ------
 
+//to determine if my name need to be in the next line to make sure the glitching effect works fine
+const screenTooNarrowBr = (document.body.scrollWidth <= 396) ? '　<br/>' : ' ';
+
 const helloHeading =
     new TypeIt("#hello-title", {
         speed: 120,
@@ -60,12 +63,12 @@ const helloHeading =
             document.getElementById('hello-hand').innerHTML 
             = '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">';
         }, {delay: 500})
-        .type("<br/>This is <span id='myName' data-text='Yi-Ting Chiu'>Yi-Ting Chiu</span>", {delay: 1000})
+        .type("<br/>This is" + screenTooNarrowBr + "<span id='myName' data-text='Yi-Ting Chiu'>Yi-Ting Chiu</span>", {delay: 1000})
         .type("<span style='color:burlywood'>.</span>", {delay: 900})
         .exec(() => formatNode('hello-title', 
         'Hello!' + 
         '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">'+
-        '<br/>This is <span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
+        '<br/>This is' + screenTooNarrowBr + '<span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
         
         //add the glitching effect
         .exec(() => { // select my name with blue background
