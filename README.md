@@ -51,11 +51,12 @@ The background is a interactable terminal.
 
 
 ### Todos
-- [ ] What's new in the terminal to display new features in the terminal
+- [x] What's new in the terminal to display new features in the terminal
 - [x] terminal's size adaptation onto different screen size
-- [ ] change terminal background
+- [x] change terminal background
 - [x] add a super cool RGB glitching effect on my name
 - [ ] try put a neon effect on something
+- [ ] add a "about" page
 
 
 
@@ -64,4 +65,10 @@ The background is a interactable terminal.
 - jQuery
 - [string-similarity](https://www.npmjs.com/package/string-similarity)
 - [TypeIt](https://typeitjs.com/)
+
+### Used API
+- Geo IP LookUP API
+
+### Why do I need your IP?
+- Look at the terminal, and you'll find your IP somewhere in the page
 
