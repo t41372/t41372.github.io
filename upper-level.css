@@ -149,6 +149,28 @@
     left: 73.5%;
 }
 
+#about-me-button{
+    font-family: "Cascadia-code";
+    color: white;
+    
+    top:35%;
+    left: 80%;
+
+    height: 3.4rem;
+    width: 3.4rem;
+
+    border: none;
+    border-radius: 100%;
+    background-color:rgba(255, 255, 255, 0.40);
+    
+    text-align: center;
+    
+
+    box-shadow: 2px 7px 20px rgba(0, 0, 0, 0.774);
+
+    transition: all 0.3s ease 0s;
+}
+
 
 #terminal-switcher{
     font-family: "Cascadia-code";
