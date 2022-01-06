@@ -59,6 +59,18 @@ body{
     border-color: white;
 
     background-color: black;
+
+    /*overflow*/
+    overflow-x: hidden;
+    overflow-y: scroll;
+    /*hide scroll bar: firefox & IE*/
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+
+/*Chrome 和 Safari 隱藏滾動條*/
+::-webkit-scrollbar {
+    display: none; /* Chrome Safari */
 }
 
 #bottom-container{

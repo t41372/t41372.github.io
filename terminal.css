@@ -31,6 +31,11 @@ body{
     transition: all 0.3s ease 0s;
 }
 
+/*Chrome 和 Safari 隱藏滾動條*/
+::-webkit-scrollbar {
+    display: none; /* Chrome Safari */
+}
+
 .console-box:hover {
     box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
     
@@ -91,12 +96,6 @@ input:focus {
 .cmd-link:hover {
     transition: all 0.3s ease 0s;
     color: rgb(211, 211, 211);
-}
-
-
-/*Chrome 和 Safari 隱藏滾動條*/
-::-webkit-scrollbar {
-    display: none; /* Chrome Safari */
 }
 
 /* color shortcuts */
