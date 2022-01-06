@@ -12,8 +12,13 @@ function say(msg)
             lifelike: true,
             cursor: false
         })
-            .type(msg, {delay: 200})
+            .type(msg)
+            //format the text into translatable words
+            .exec(()=>{
+                document.getElementById("text-in-box").innerHTML = msg;
+            })
             .go();
+
 }
 
 
