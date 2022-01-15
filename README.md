@@ -56,7 +56,8 @@ The background is a interactable terminal.
 - [x] change terminal background
 - [x] add a super cool RGB glitching effect on my name
 - [ ] try put a neon effect on something
-- [ ] add a "about" page
+- [ ] add and complete the "about" page
+- [ ] add a yellow duck to report bug on the main page, and it will send things to my email, or not.
 
 
 
