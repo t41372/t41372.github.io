@@ -1,6 +1,6 @@
 # Yi-Ting Chiu's Website
 
-<img src= 'https://user-images.githubusercontent.com/36402030/152889814-5f68d940-ba7e-4d1f-b9bf-18264cb30791.jpg' height="350rem" width="auto">
+<img src= 'https://user-images.githubusercontent.com/36402030/152890145-dc7e70a2-faaa-4732-9aa4-9fcce68f590c.jpg' height="350rem" width="auto">
 
 https://yi-ting.me
 or
