@@ -1,6 +1,7 @@
 # Yi-Ting Chiu's Website
 
-<img src= 'https://user-images.githubusercontent.com/36402030/146896908-8c77dc70-52b4-4d49-ab2e-867aa2c8a699.jpg' height="350rem" width="auto">
+<img src= 'https://user-images.githubusercontent.com/36402030/152889814-5f68d940-ba7e-4d1f-b9bf-18264cb30791.jpg' height="350rem" width="auto">
+
 https://yi-ting.me
 or
 https://t41372.github.io/
