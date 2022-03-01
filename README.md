@@ -36,7 +36,7 @@ The background is a interactable terminal.
 - `background 1`
   - get you a beautiful star background
 - `background 0`
-  - go back to default black background
+  - go back to the default background and clean the stars if applicable
 
 #### Other functionality of the terminal
 
