@@ -33,7 +33,10 @@ The background is a interactable terminal.
   - turn the background color to white
 - `close-light`
   - turn the background color to black
-- 
+- `background 1`
+  - get you a beautiful star background
+- `background 0`
+  - go back to default black background
 
 #### Other functionality of the terminal
 
