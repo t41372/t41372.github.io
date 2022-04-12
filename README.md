@@ -1,6 +1,11 @@
 # Yi-Ting Chiu's Website
 
-<img src= 'https://user-images.githubusercontent.com/36402030/146896908-8c77dc70-52b4-4d49-ab2e-867aa2c8a699.jpg' height="350rem" width="auto">
+<img src= 'https://user-images.githubusercontent.com/36402030/152890145-dc7e70a2-faaa-4732-9aa4-9fcce68f590c.jpg' height="350rem" width="auto">
+<img src= 'https://user-images.githubusercontent.com/36402030/152891225-bc80365f-1ae5-469c-8a21-4ff7b6609eeb.jpg' height="350rem" width="auto">
+
+
+https://yi-ting.me
+or
 https://t41372.github.io/
 
 ### What is this
@@ -18,8 +23,8 @@ The background is a interactable terminal.
 
 - `get-command-list`
   - print all the command available
-- `print`
-  - print everything follow
+- `print` or `echo`
+  - print everything follow. HTML contents are allowed lol.
 - `about`
   - print some of my information along with some ascii arts
 - `clear`
@@ -28,7 +33,10 @@ The background is a interactable terminal.
   - turn the background color to white
 - `close-light`
   - turn the background color to black
-- 
+- `background 1`
+  - get you a beautiful star background
+- `background 0`
+  - go back to the default background and clean the stars if applicable
 
 #### Other functionality of the terminal
 

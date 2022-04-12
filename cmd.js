@@ -1,6 +1,6 @@
 const output = document.getElementById("cmd-output");
 
-const commandList = ["print", "help", "about", "clear", 
+const commandList = ["print", "echo", "help", "about", "clear", 
     "println-debug", "close-light", 
     "open-light", "background", "background 1", "background 0"];
 
@@ -207,6 +207,11 @@ function commandEvaluation(command) {
         case 'print':
             command.shift();
             print(command)
+            break;
+
+        case 'echo':
+            command.shift();
+            print(command);
             break;
 
         case 'help':
