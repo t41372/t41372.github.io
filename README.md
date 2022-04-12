@@ -23,8 +23,8 @@ The background is a interactable terminal.
 
 - `get-command-list`
   - print all the command available
-- `print`
-  - print everything follow
+- `print` or `echo`
+  - print everything follow. HTML contents are allowed lol.
 - `about`
   - print some of my information along with some ascii arts
 - `clear`
