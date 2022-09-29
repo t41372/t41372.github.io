@@ -81,7 +81,7 @@ function startInfo()
                 * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
                 *<br />
             </p>
-            <p class="cmd-text" style="color:dodgerblue">Enter 'get-command-list' to get the list of command available.
+            <p class="cmd-text" style="color:dodgerblue">Enter 'help' to get the list of command available.
             </p>
 
             <p class="cmd-text" style="color:red;">======================================
@@ -255,7 +255,7 @@ function commandEvaluation(command) {
             } else {
                 print("Command '" + command + "' not found");
             }
-            print("Enter 'get-command-list' to get the list of command available.")
+            print("Enter 'help' to get the list of command available.")
 
     }
 

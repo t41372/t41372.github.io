@@ -66,6 +66,7 @@ The background is a interactable terminal.
 - [ ] try put a neon effect on something
 - [ ] add and complete the "about" page
 - [ ] add a yellow duck to report bug on the main page, and it will send things to my email, or not.
+- [ ] add "neofetch" command
 
 
 
