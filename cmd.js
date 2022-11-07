@@ -2,7 +2,7 @@ const output = document.getElementById("cmd-output");
 
 const commandList = ["print", "echo", "help", "about", "clear", 
     "println-debug", "close-light", 
-    "open-light", "background", "background 1", "background 0"];
+    "open-light", "background", "background 2", "background 1", "background 0"];
 
 let commandLog = [];
 let commandLogPointer = false;
@@ -357,12 +357,17 @@ function background(option)
     // console.log(option);
 
     switch(option[0]){
+        case '2':
+            print("option 2 particle")
+            background_toParticles();
+            print('background changed to <span style="color:dodgerblue">particles</span>')
+            break;
         case '1':
             background_toStarryNight();
             print('background changed to <span style="color:dodgerblue">starry night</span>');
             break;
         case '0':
-            background_removeStarryNight();
+            background_removeBackground();
             print("background set to <span style='color:dodgerblue'>default</span>");
             break;
 
@@ -377,17 +382,49 @@ function background(option)
 
 function background_toStarryNight()
 {
+    //remove background
+    background_removeBackground();
     // document.body.innerHTML = '<div id="stars"></div><div id="stars2"></div><div id="stars3"></div>' + document.body.innerHTML;
     document.getElementById('star-container').hidden = '';
 
     document.head.innerHTML = '<link id="starry-night-css" href="./starryNight.css" type="text/css" rel="stylesheet">' + document.head.innerHTML;
 }
 
-function background_removeStarryNight()
+function background_removeBackground()
 {
+    // remove starry night
     //! issue: if the document has multiple 'starry-night-css', we can't delete the additional ones
     document.getElementById('star-container').hidden = true;
-    document.head.removeChild(document.getElementById('starry-night-css'));
+
+    if(document.getElementById('starry-night-css') != null)
+        document.getElementById('starry-night-css').remove()
+
+    // remove particles
+    if(document.getElementById('particlesEmbed') != null)
+        document.getElementById('particlesEmbed').remove();
 }
 
+function background_toParticles()
+{
+    // remove background
+    background_removeBackground();
+
+    //document.write('<embed type="text/html" src="./particle-background.html" style="position: absolute; z-index: 0; width: 100%; height: 100%;">')
+    let embd = document.createElement("embed")
+    embd.id = "particlesEmbed"
+    embd.type = "text/html" 
+    embd.src = "./particle-background.html"
+    embd.style = "position: absolute; z-index: -1; width: 100%; height: 100%;"
+    // 	// Create element:
+    // const particleDiv = document.createElement("canvas");
+    // const particleAttri = document.createAttribute("id");
+    // particleAttri.value = "particles-js";
+    
+    // particleDiv.setAttributeNode(particleAttri);
+
+    // // Append to body:
+    document.body.insertBefore(embd, document.getElementById("terminal"))
+    // //document.body.innerHTML = particleDiv.innerHTML + document.body.innerHTML;
+    
+}
 
