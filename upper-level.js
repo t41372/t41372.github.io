@@ -174,8 +174,13 @@ function buildWordTyping() {
 
             .delete()
             .exec(() => {
-                if(typingCycle == 0 && !terminalOpened && background_state != 2)
-                    background_toParticles();
+                if(!terminalOpened)
+                {
+                    if(typingCycle == 0 && background_state != 2)
+                        background_toParticles();
+                    else if(typingCycle == 1 && background_state == 2)
+                        background_removeBackground()
+                }
             }, {delay: 2000})
             .type("<span style='color: dodgerblue'>HTML</span>", {delay: 800, speed: 120})
             .delete()
