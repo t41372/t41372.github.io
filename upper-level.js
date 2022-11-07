@@ -99,7 +99,7 @@ function buildBuildWith() {
             speed: 80,
         }).type("A weird guy", {delay: 1000})
             .delete(9, {delay: 500})
-            .type("person", {delay: 500})
+            .type("nice guy", {delay: 500})
             .type(" who build <span id ='fun' class='funText'>fun stuff</span> <br/>with ", {delay: 500})
             // trigger font iteration animation to 'fun stuff'
             .exec(() => {
@@ -149,9 +149,11 @@ function buildWordTyping() {
             .delete()
             .type("<span style='color: dodgerblue'>C#</span>", {delay: 800, speed: 120})
             .delete()
-            .type("<span style='color: dodgerblue'>Unity</span>", {delay: 800, speed: 100})
+            .type("<span style='color: dodgerblue'>Node.js</span>", {delay: 1200, speed: 100})
             .delete()
-            .type("<span style='color: dodgerblue'>Brain</span>", {delay: 1200})
+            .type("<span style='color: dodgerblue'>Express.js</span>", {delay: 1200, speed: 120})
+            .delete()
+            .type("<span style='color: dodgerblue'>SQLite</span>", {delay: 1200, speed: 120})
 
             .exec(() => { // change 'fun stuff' font logic
                 if (fontIterationIndex >= fontList.length)
@@ -186,6 +188,8 @@ function buildWordTyping() {
                 document.getElementById('fun-1').style.animation = '';
             }, {delay: 1000}) //change 'fun stuff' font logic end -----
 
+            .delete()
+            .type("<span style='color: dodgerblue'>Unity</span>", {delay: 800, speed: 100})
             .delete()
             .type("<span style='color: dodgerblue'>WinForm</span>", {delay: 500})
             .delete()
