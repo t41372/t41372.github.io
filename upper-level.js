@@ -123,13 +123,17 @@ function buildBuildWith() {
 let buildWithDestroyed = false;
 let technology;
 let fontIterationIndex = 0;
+let typingCycle = 0;
 
 //typing text "Java, C# ...."
 function buildWordTyping() {
     document.getElementById('build-with-technology').innerHTML = "";
 
     //technology.reset();
-    if (!terminalOpened && message.length > 0) print(message.pop());
+    if (!terminalOpened && message.length > 0) 
+    {
+        print(message.pop());
+    }
 
     if (!buildWithDestroyed) {
         buildWith.destroy();
@@ -169,6 +173,10 @@ function buildWordTyping() {
             }, {delay: 1000}) //change 'fun stuff' font logic end -----
 
             .delete()
+            .exec(() => {
+                if(typingCycle == 0 && !terminalOpened && background_state != 2)
+                    background_toParticles();
+            }, {delay: 2000})
             .type("<span style='color: dodgerblue'>HTML</span>", {delay: 800, speed: 120})
             .delete()
             .type("<span style='color: dodgerblue'>CSS</span>", {delay: 1200})
@@ -211,7 +219,10 @@ function buildWordTyping() {
             }, {delay: 1200}) // end of the iteration animation of 'fun stuff'
 
             .delete()
-            .exec(() => buildWordTyping())
+            .exec(() => {
+                typingCycle ++;
+                buildWordTyping()
+            })
             .go();
 
     //word.destroy();

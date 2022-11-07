@@ -94,9 +94,10 @@ function whatsNew()
 {
     let info =  "<span class='dodgerblue'>* -=-=- What's New? (2021.Dec.25) =-=-= *</span><br/>" + 
                 "* <span class='green'>Autocompletion!</span><br/>" +
-                "* <span class='grey'>- try typing part of the command and press 'tab'!<br/>" +
-                "* <span class='green'>New Command! 'background 1'!!</span><br/> " + 
-                "* <span class='grey'>- try typing 'Background 1'! to set starry night as the terminal background!<br/>" +
+                "* <span class='grey'>- try typing part of the command and press 'tab'!</span><br/>" +
+                "* <span class='green'>New Commands!</span><br/> " + 
+                "* <span class='grey'>- try typing 'Background 2'! to set particle.js as the terminal background!</span><br/>" +
+                "* <span class='grey'>- try typing 'Background 1'! to set starry night as the terminal background!</span><br/>" +
                 "<span class='dodgerblue'>* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *</span><br/>";
 
 
@@ -348,6 +349,8 @@ function openLight()
     document.body.style = "background-color: white";
 }
 
+
+let background_state = 0;
 //change background: options are
 // 1. starry night
 function background(option)
@@ -358,23 +361,20 @@ function background(option)
 
     switch(option[0]){
         case '2':
-            print("option 2 particle")
             background_toParticles();
-            print('background changed to <span style="color:dodgerblue">particles</span>')
             break;
         case '1':
             background_toStarryNight();
-            print('background changed to <span style="color:dodgerblue">starry night</span>');
             break;
         case '0':
             background_removeBackground();
-            print("background set to <span style='color:dodgerblue'>default</span>");
             break;
 
         default:
             // print error message
-            print("<span class='red'> * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
-            "<span class='red'> * Command 'background 0' will change the background of the terminal to default (black). <br/>" +
+            print("<span> * Command 'background 2' will change the background of the terminal to particles. <br/>" +
+            " * Command 'background 1' will change the background of the terminal to starry night. <br/>" + 
+            " * Command 'background 0' will change the background of the terminal to default (black). <br/><br/>" +
             "'background " + option[0] + "' is not defined.</span>");
     }
 
@@ -388,20 +388,30 @@ function background_toStarryNight()
     document.getElementById('star-container').hidden = '';
 
     document.head.innerHTML = '<link id="starry-night-css" href="./starryNight.css" type="text/css" rel="stylesheet">' + document.head.innerHTML;
+    background_state = 1;
+    print('background changed to <span style="color:dodgerblue">starry night</span>');
 }
 
 function background_removeBackground()
 {
     // remove starry night
-    //! issue: if the document has multiple 'starry-night-css', we can't delete the additional ones
-    document.getElementById('star-container').hidden = true;
-
-    if(document.getElementById('starry-night-css') != null)
-        document.getElementById('starry-night-css').remove()
+    if(background_state == 1)
+    {
+        //! issue: if the document has multiple 'starry-night-css', we can't delete the additional ones
+        document.getElementById('star-container').hidden = true;
+        if(document.getElementById('starry-night-css') != null)
+            document.getElementById('starry-night-css').remove()
+    }
 
     // remove particles
-    if(document.getElementById('particlesEmbed') != null)
-        document.getElementById('particlesEmbed').remove();
+    if(background_state == 2)
+    {
+        if(document.getElementById('particlesEmbed') != null)
+            document.getElementById('particlesEmbed').remove();
+    }
+    
+    background_state = 0;
+    print("background set to <span style='color:dodgerblue'>default</span>");
 }
 
 function background_toParticles()
@@ -425,6 +435,7 @@ function background_toParticles()
     // // Append to body:
     document.body.insertBefore(embd, document.getElementById("terminal"))
     // //document.body.innerHTML = particleDiv.innerHTML + document.body.innerHTML;
-    
+    background_state = 2;
+    print('background changed to <span style="color:dodgerblue">particles</span>')
 }
 
