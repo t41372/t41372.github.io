@@ -4,9 +4,11 @@
 <img src= 'https://user-images.githubusercontent.com/36402030/152891225-bc80365f-1ae5-469c-8a21-4ff7b6609eeb.jpg' height="350rem" width="auto">
 
 
-https://yi-ting.me
+https://yi-ting.live
 or
 https://t41372.github.io/
+
+> Note: old domain yi-ting.me will be expired on Feb 1, 2023
 
 ### What is this
 This is Yi-Ting Chiu's personal website.
