@@ -1,8 +1,13 @@
 const output = document.getElementById("cmd-output");
 
-const commandList = ["print", "echo", "help", "about", "clear", 
-    "println-debug", "close-light", 
-    "open-light", "background", "background 2", "background 1", "background 0"];
+const commandList = ["print", "ls", "echo", "pwd", "cd", "help", "about", "clear",
+    "neofetch", "whoami", "println-debug", "close-light", 
+    "open-light", "background", "background 2", "background 1", "background 0",
+    "cat", "cat neofetch.txt", "cat well.md", "cat coolFeatures.txt", "cat about.txt"];
+
+// useless but implemented commands: sudo, 
+
+const fileList = ["neofetch.txt", "well.md", "coolFeatures.txt", "about.txt"]
 
 let commandLog = [];
 let commandLogPointer = false;
@@ -91,17 +96,8 @@ function startInfo()
 }
 
 function whatsNew()
-{
-    let info =  "<span class='dodgerblue'>* -=-=- What's New? (2021.Dec.25) =-=-= *</span><br/>" + 
-                "* <span class='green'>Autocompletion!</span><br/>" +
-                "* <span class='grey'>- try typing part of the command and press 'tab'!</span><br/>" +
-                "* <span class='green'>New Commands!</span><br/> " + 
-                "* <span class='grey'>- try typing 'Background 2'! to set particle.js as the terminal background!</span><br/>" +
-                "* <span class='grey'>- try typing 'Background 1'! to set starry night as the terminal background!</span><br/>" +
-                "<span class='dodgerblue'>* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *</span><br/>";
-
-
-    print(info);
+{   
+    cat("coolFeatures.txt");
 }
 
 
@@ -214,6 +210,30 @@ function commandEvaluation(command) {
             command.shift();
             print(command);
             break;
+        
+        case 'ls':
+            ls();
+            break;
+        
+        case 'cd':
+            command.shift();
+            cd(command);
+            break;
+
+        case 'cat':
+            command.shift();
+            cat(command);
+            break;
+        
+        case 'pwd':
+            pwd();
+            break;
+        
+        case 'sudo':
+            print("You are already the root user!");
+            command.shift()
+            commandEvaluation(command.join(" "));
+            break;
 
         case 'help':
             help();
@@ -225,6 +245,15 @@ function commandEvaluation(command) {
 
         case 'about':
             about();
+            break;
+
+        case 'whoami':
+            print("I'm <span style='color: dodgerblue'>Yi-Ting Chiu</span>, and you are <span style='color :dodgerblue; font-style:italic'>WHO YOU ARE!</span>")
+            print("<span style='font-weight:bold; font-style:italic'>#BE_YOURSELF")
+            break;
+
+        case 'neofetch':
+            neofetch();
             break;
             
         case 'println-debug':
@@ -254,7 +283,7 @@ function commandEvaluation(command) {
                 print("Command '" + command + "' not found, did you mean:");
                 print("- command '" + bestMatch.target + "'? (similarity: " + bestMatch.rating + ")");
             } else {
-                print("Command '" + command + "' not found");
+                print(`${command}: command not found`);
             }
             print("Enter 'help' to get the list of command available.")
 
@@ -262,6 +291,17 @@ function commandEvaluation(command) {
 
 
 }
+
+/**
+ * get a incomplete string, and return a complete command
+ */
+function autocomplete(currentInput, targetList) {
+    if (currentInput.length == 0)
+        return [""];
+    return targetList.filter(cmd => cmd.startsWith(currentInput));
+}
+
+//! ============ Commands in the Fake Terminal =============
 
 function print(s) {
     if (Array.isArray(s)) {
@@ -278,6 +318,21 @@ function print(s) {
     output.appendChild(newNode);
 }
 
+function printText(s) {
+    if (Array.isArray(s)) {
+        let cache = "";
+        for (let index = 0; index < s.length; index++) {
+            cache = cache + " " + s[index];
+        }
+        s = cache;
+    }
+
+    let newNode = document.createElement("p");
+    newNode.setAttribute("class", "cmd-text");
+    newNode.innerText = s;
+    output.appendChild(newNode);
+}
+
 
 function help() {
     for (let index = 0; index < commandList.length; index++)
@@ -286,43 +341,16 @@ function help() {
 
 
 function about() {
-    let info = '<div class = "ascii-art-fake-terminal">' +
-        '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *<br/>' +
-        '| <span style="color: dodgerblue">███████╗░█████╗░██╗░░██╗███████╗</span> <span style="color: rgb(0, 255, 0)">████████╗███████╗██████╗░███╗░░░███╗██╗███╗░░██╗░█████╗░██╗░░░░░</span> |<br/>' +
-        '| <span style="color: dodgerblue">██╔════╝██╔══██╗██║░██╔╝██╔════╝</span> <span style="color: rgb(0, 255, 0)">╚══██╔══╝██╔════╝██╔══██╗████╗░████║██║████╗░██║██╔══██╗██║░░░░░</span> |<br/>' +
-        '| <span style="color: dodgerblue">█████╗░░███████║█████═╝░█████╗░░</span> <span style="color: rgb(0, 255, 0)">░░░██║░░░█████╗░░██████╔╝██╔████╔██║██║██╔██╗██║███████║██║░░░░░</span> |<br/>' +
-        '| <span style="color: dodgerblue">██╔══╝░░██╔══██║██╔═██╗░██╔══╝░░</span> <span style="color: rgb(0, 255, 0)">░░░██║░░░██╔══╝░░██╔══██╗██║╚██╔╝██║██║██║╚████║██╔══██║██║░░░░░</span> |<br/>' +
-        '| <span style="color: dodgerblue">██║░░░░░██║░░██║██║░╚██╗███████╗</span> <span style="color: rgb(0, 255, 0)">░░░██║░░░███████╗██║░░██║██║░╚═╝░██║██║██║░╚███║██║░░██║███████╗</span> |<br/>' +
-        '| <span style="color: dodgerblue">╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝</span> <span style="color: rgb(0, 255, 0)">░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚═╝░░╚═╝╚══════╝</span> |<br/>' +
-        '* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= *<br/>' +
-        "</div><br/><div class='ascii-art-yi-ting-chiu'>" +
-        "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/>" +
-        "| '##:::'##'####::::::::'########'####'##::: ##:'######:::::'######:'##::::'##'####'##::::'##: |<br/>" +
-        "| . ##:'##:. ##:::::::::... ##..:. ##::###:: ##'##... ##:::'##... ##:##:::: ##. ##::##:::: ##: |<br/>" +
-        "| :. ####::: ##:::::::::::: ##:::: ##::####: ##:##:::..:::::##:::..::##:::: ##: ##::##:::: ##: |<br/>" +
-        "| ::. ##:::: ##:'#######::: ##:::: ##::## ## ##:##::'####:::##:::::::#########: ##::##:::: ##: |<br/>" +
-        "| ::: ##:::: ##:........::: ##:::: ##::##. ####:##::: ##::::##:::::::##.... ##: ##::##:::: ##: |<br/>" +
-        "| ::: ##:::: ##:::::::::::: ##:::: ##::##:. ###:##::: ##::::##::: ##:##:::: ##: ##::##:::: ##: |<br/>" +
-        "| ::: ##:::'####::::::::::: ##:::'####:##::. ##. ######::::. ######::##:::: ##'####. #######:: |<br/>" +
-        "| :::..::::....::::::::::::..::::....:..::::..::......::::::......::..:::::..:....::.......::: |<br/>" +
-        "* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *<br/>" +
-        "</div><br/>" +
-        "<span style='color: dodgerblue'>Fake</span> <span style='color: rgb(0, 255, 0)'>Terminal</span> " + version +
-        " <a class='cmd-link' href='https://github.com/t41372/fakeTerminal' style='color:red'>" + "GitHub Repo </a><br/>" +
-        "*========================*<br/>" +
-        "* GitHub: <a class='cmd-link' href='https://github.com/t41372'>t41372</a>.........*<br/>" +
-        "* LinkedIn: <a class='cmd-link' href='https://www.linkedin.com/in/yi-ting-chiu/'>yi-ting-chiu</a> *<br/>" +
-        "*========================*<br/>" +
-        "<br/>" +
-        //user data
-        "* " + user_data.ip + "<br/>" +
-        "* " + user_data.hostname + "<br/>" +
-        "* " + user_data.timezone_name + ", " +
-        (new Date).toUTCString();
 
-//{"ip":"220.134.67.69","isp":"Chunghwa Telecom Co., Ltd.","org":"Chunghwa Telecom Co. Ltd.","hostname":"220-134-67-69.hinet-ip.hinet.net","latitude":25.0331,"longitude":121.545,"postal_code":"","city":"Poxin","country_code":"TW","country_name":"Taiwan","continent_code":"AS","continent_name":"Asia","region":"Taiwan","district":"Taipei City","timezone_name":"Asia/Taipei","connection_type":"Corporate","asn_number":3462,"asn_org":"Chunghwa Telecom Co., Ltd.","asn":"AS3462 - Chunghwa Telecom Co., Ltd.","currency_code":"TWD","currency_name":"New Taiwan Dollar","success":true,"premium":false}
+    cat("about.txt", function(content){
+            content = content.replace("#version", version);
+            content = content.replace("user_data.ip", user_data.ip);
+            content = content.replace("user_data.hostname", user_data.hostname);
+            content = content.replace("user_data.timezone_name", user_data.timezone_name);
+            content = content.replace("(new Date).toUTCString()", (new Date).toUTCString());
+            return content
+        });
 
-    print(info);
 }
 
 
@@ -330,14 +358,6 @@ function clear() {
     output.innerHTML = "";
 }
 
-/**
- * get a incomplete string, and return a complete command
- */
-function autocomplete(currentInput, targetList) {
-    if (currentInput.length == 0)
-        return [""];
-    return targetList.filter(cmd => cmd.startsWith(currentInput));
-}
 
 function closeLight()
 {
@@ -438,4 +458,95 @@ function background_toParticles()
     background_state = 2;
     print('background changed to <span style="color:dodgerblue">particles</span>')
 }
+
+
+function ls()
+{
+    // print("<span style='color: dodgerblue'>you_know_this_is_fake.txt");
+    // print("<span style='color: dodgerblue'>because_a_static_website_written_by_a_lazy_guy.txt</span>")
+    // print("<span style='color: dodgerblue'>does_not_always_have_a_real_file_system.txt</span>")
+    for(let i = 0; i < fileList.length; i++)
+    {
+        print(`<span style='color: dodgerblue'>${fileList[i]}</span>`);
+    }
+
+}
+
+function cd(s)
+{
+    if(s == './' || s == '~' || s == '') {}
+    else if(s == '..' || s == '../' || s == "/")
+        print(`cd: permission denied: /`)
+    else
+        print(`cd: no such file or directory: ${s}`)
+}
+
+function pwd()
+{
+    print("/root");
+}
+
+// cat: concatenate files and print on the standard output
+// postProcess: a function that takes in the content of the file and return the processed content
+// it can be used to fill in real data into the cat result
+// this commant can also take in a url and print the content of the url
+function cat(fileName, postProcess = null)
+{
+    fileName = fileName.toString();
+
+    // if the file name is not a url, convert it into local file path
+    if( !(/(http:\/\/|https:\/\/)/.test(fileName)) )
+    {
+        // if the file name is a local file, get the file and print it
+        fileName.replace(/(\.\/|~\/|\/root\/)/g, '');
+
+        fileName = "./fs/" + fileName;
+    }
+
+    // get the neofetch file and print it
+    var xhr = new XMLHttpRequest();
+    // set request type and url
+    xhr.open('GET', fileName, true);
+
+    // define success callback
+    xhr.onload = function() {
+    if (xhr.status === 200) {
+        // file content retrieved successfully
+        let neofetchText = "<div style='white-space: pre'>" + xhr.responseText + "</div>"
+        
+        // fill in real data with postProcess function, if provided
+        if(postProcess)
+        {
+            try {
+                neofetchText = postProcess(neofetchText)
+            } catch (error) {
+                console.error("Failed to process data")
+            }
+        }
+
+        print(neofetchText);
+    } else {
+        // failed
+        print(`cat: ${fileName}: Permission denied. No such file or directory`);
+        print('Execution Failed： I/O Error: ' + xhr.status);
+    }
+    };
+
+    // send request
+    xhr.send();
+}
+
+
+function neofetch()
+{
+    cat("neofetch.txt", function(neofetchText) {
+        // this is the post process fuction in cat
+        // replace the data tag with real data
+        neofetchText = neofetchText.replace("user_sig", user_sig);
+        neofetchText = neofetchText.replace("user_data.ip", user_data.ip);
+        return neofetchText;
+    });
+}
+
+
 
