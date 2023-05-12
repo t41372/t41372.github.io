@@ -1,0 +1,19 @@
+
+                                       <span style="color: #82e399">user_sig</span>
+                                       ---------------
+         .,cxkOOOOOO0OOkxo:,.          <span style="color: #ebe04b">OS</span>: Fake OS 5.12.2
+       :kXWWMMMMMMMMMMMMMMMWXOxc.      <span style="color: #ebe04b">Host</span>: KVM Virtual Machine virt-4.2
+     .kWMMWWMMMMMMMMMMMMMMMMMMMMK:     <span style="color: #ebe04b">Kernel</span>: 5.15.0-fake
+    .kWMMO0;KMMMMMW0;.XMMMMMMMMMMK;    <span style="color: #ebe04b">Uptime</span>: -1 days, 25 hours, 10 mins
+    lWMMM0; XMMMMMXc .oWMMMMMMMMMWk.   <span style="color: #ebe04b">Packages</span>: no package manager installed
+   .kMMMMMMMMMMMMMMNKKNMMMMMMMMMMMX:   <span style="color: #ebe04b">Shell</span>: fake_terminal_shell
+   .OMMMMMMMMMMMMMMMMMMMMMMMMMMMMMN:   <span style="color: #ebe04b">Resolution</span>: 1024x768
+   .xMMMMMMMMMMMMMMMMMMMMMMMMMMMMM0&#39;   <span style="color: #ebe04b">Terminal</span>: &#47;cmd.js
+    :XMMMMM0clKMMMMNKxcOMMMMMMMMMXc    <span style="color: #ebe04b">CPU</span>: (0)
+      lNMMMMO. ;0NXx,.  oWMMMMMMMXl    <span style="color: #ebe04b">GPU</span>: WebGPU
+      ;0WMMWk&#39; .&#39;.  .&#39;dNMMMMMMW0;      <span style="color: #ebe04b">Memory</span>: Undefined MiB &#47; Undefined MiB
+       .lKWMMXxlccok0XWMMMMMWKl.
+         .cONMMMMMMMMMMMMMNOc. 
+            ,oOKNWWWWNXOxc&#39; 
+              ,,;;;;;.
+

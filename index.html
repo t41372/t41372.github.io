@@ -26,6 +26,7 @@
     
 
     <div id = "terminal" class="console-box" onclick="setFocusOnCmdEntry()">
+    <!-- <div id = "terminal" class="console-box"> -->
 
         <!--cmd output area-->
         <div id="cmd-output">
@@ -127,7 +128,8 @@
     <script>
         $.getJSON('https://json.geoiplookup.io/?callback=?', function (data) {
             // console.log("ip == " + data.ip);
-            user_sig = "root_" + data.country_code + "@" + data.ip;
+            // user_sig = "root_" + data.country_code + "@" + data.ip;
+            user_sig = "root@" + data.ip;
             user_data = data;
             document.getElementById("user-sig").innerHTML = user_sig;
             // console.log(JSON.stringify(data));
