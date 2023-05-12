@@ -1,0 +1,11 @@
+<span class='dodgerblue'>* -=-=- Some cool features (2023.05.12) =-=-= *</span>
+* <span class='green'>Autocompletion and command history!</span>
+* <span class='grey'>- try your 'tab' and your arrow key!</span>
+* <span class='green'>New commands!</span>
+* <span class='grey'>- cat, ls, neofetch, pwd, whoami</span>
+* <span class='green'>Fake File System!</span>
+* <span class='grey'>- A fake file system was inplemented! Check it out with ls or cat</span>
+* <span class='green'>New background!</span>
+* <span class='grey'>- 'Background 2'! to set particle.js as the terminal background!</span>
+* <span class='grey'>- 'Background 1'! to set starry night as the terminal background!</span>
+<span class='dodgerblue'>* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *</span>
