@@ -4,11 +4,11 @@
 <img src= 'https://user-images.githubusercontent.com/36402030/152891225-bc80365f-1ae5-469c-8a21-4ff7b6609eeb.jpg' height="350rem" width="auto">
 
 
-https://yi-ting.live
+https://yi-ting.com (hosted on cloudflare page)
 or
-https://t41372.github.io/
+https://t41372.github.io/ (hosted on github page)
 
-> Note: old domain yi-ting.me will be expired on Feb 1, 2023
+> Note: old domain yi-ting.live will be expired on Jan 29, 2024, while yi-ting.me was expired on Feb 1, 2023
 
 ### What is this
 This is Yi-Ting Chiu's personal website.
