@@ -99,7 +99,8 @@ function buildBuildWith() {
             speed: 80,
         }).type("A weird guy", {delay: 1000})
             .delete(9, {delay: 500})
-            .type("nice guy", {delay: 500})
+            .type("nice guy", {delay: 300})
+            .type(" <small id ='sad-face' style='color: grey'>(🥲)</small>", {delay: 500})
             .type(" who build <span id ='fun' class='funText'>fun stuff</span> <br/>with ", {delay: 500})
             // trigger font iteration animation to 'fun stuff'
             .exec(() => {
@@ -210,7 +211,8 @@ function buildWordTyping() {
             .delete()
             .type("<span style='color: dodgerblue'>AWS</span>", {delay: 500})
             .delete()
-            .type("<span style='color: dodgerblue'>Brain</span>", {delay: 1200})
+            .type("<span style='color: dodgerblue'>Brain</span>", {delay: 500})
+            .type("<span style='color: dodgerblue'>🧠</span>", {delay: 1200})
             
             // trigger font iteration animation to 'fun stuff'
             .exec(() => {
