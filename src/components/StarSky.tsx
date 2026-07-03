@@ -69,8 +69,9 @@ vec3 starLayer(vec2 p, float t, float minBright) {
       // size & brightness: mostly tiny, rare big ones (cubic bias)
       float sel = (h - minBright) / (1.0 - minBright);
       float mag = pow(sel, 3.0);
-      float size = mix(0.045, 0.16, mag);
-      float core = exp(-dist * dist / (size * size));
+      float size = mix(0.045, 0.14, mag);
+      // crisp disc with a thin anti-aliased rim — no gaussian halo
+      float core = smoothstep(size, size * 0.55, dist);
 
       // compound twinkle: two incommensurate frequencies -> organic flicker
       float ph = h * 43.7;
@@ -126,25 +127,33 @@ void main() {
   scene += starLayer(suv * 22.0 + 47.0, uTime, 0.978) * 0.95;
 
   // ---------- aurora curtain (painted at the top of the scroll) ----------
+  // Aurora coordinate: on portrait screens the true aspect (< 1) makes the
+  // noise domain so narrow that the ray fbm barely varies across the screen —
+  // whole minutes can pass with no visible curtain. Clamping the horizontal
+  // span to at least ~1.5 "landscape units" guarantees every viewport,
+  // portrait or ultrawide, always spans enough noise features to show a
+  // proper curtain. Stars keep the true aspect (they must stay round).
+  float ax = uv.x * max(aspect, 1.5);
+
   // undulating base line of the curtain, drifting slowly
-  float baseY = 0.24 + 0.16 * (fbm(vec2(suv.x * 0.9 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0;
+  float baseY = 0.24 + 0.16 * (fbm(vec2(ax * 0.9 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0;
   float hgt = wy - baseY; // height above the curtain's lower edge
 
   // domain warp -> drapery folds
-  float warp = (fbm(vec2(suv.x * 1.6 - uTime * 0.035, wy * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
+  float warp = (fbm(vec2(ax * 1.6 - uTime * 0.035, wy * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
 
   // vertical rays: anisotropic noise (high freq in x, stretched in y)
-  float rays = fbm(vec2((suv.x + warp) * 5.5, wy * 0.22 - uTime * 0.045));
+  float rays = fbm(vec2((ax + warp) * 5.5, wy * 0.22 - uTime * 0.045));
   rays = smoothstep(0.28, 0.78, rays);
   // finer secondary ray detail
-  float rays2 = vnoise(vec2((suv.x + warp * 1.4) * 22.0, wy * 0.6 - uTime * 0.07));
+  float rays2 = vnoise(vec2((ax + warp * 1.4) * 22.0, wy * 0.6 - uTime * 0.07));
   rays *= 0.72 + 0.28 * rays2;
 
   // vertical profile: sharp bright lower edge, long fade upward
   float profile = smoothstep(-0.015, 0.045, hgt) * exp(-max(hgt, 0.0) * 2.6);
 
   // waves of brightness traveling along the curtain
-  float shimmer = 0.78 + 0.22 * sin(suv.x * 9.0 - uTime * 0.55 + warp * 8.0);
+  float shimmer = 0.78 + 0.22 * sin(ax * 9.0 - uTime * 0.55 + warp * 8.0);
 
   // gentle horizontal mask (fades only at the far edges)
   float edgeMask = smoothstep(0.0, 0.18, uv.x) * smoothstep(1.0, 0.80, uv.x);
@@ -154,7 +163,7 @@ void main() {
   // second, fainter and higher curtain for depth
   float baseY2 = baseY + 0.30 + 0.05 * sin(uTime * 0.05 + 2.0);
   float hgt2 = wy - baseY2;
-  float rays2b = fbm(vec2((suv.x - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.03));
+  float rays2b = fbm(vec2((ax - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.03));
   rays2b = smoothstep(0.42, 0.85, rays2b);
   float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 4.5);
   float aur2 = clamp(rays2b * profile2 * edgeMask * 1.4, 0.0, 1.0);
@@ -254,11 +263,16 @@ export default function StarSky() {
     const uScroll = gl.getUniformLocation(prog, 'uScroll')
     const uSkyH = gl.getUniformLocation(prog, 'uSkyH')
 
+    // Stable viewport reference. The canvas is sized with 100lvh (the LARGE
+    // viewport), so its clientHeight does NOT change while the iOS address
+    // bar collapses/expands mid-scroll. Using it (instead of the live
+    // window.innerHeight) for all scroll math kills the "sky slightly zooms /
+    // jitters while scrolling on iPhone" feedback loop.
+    let vhRef = 1
     let skyH = 1
     const measureDoc = () => {
-      const vh = Math.max(window.innerHeight, 1)
-      const sMax = Math.max(document.documentElement.scrollHeight - vh, 0)
-      skyH = 1 + (SKY_SCROLL_FACTOR * sMax) / vh
+      const sMax = Math.max(document.documentElement.scrollHeight - vhRef, 0)
+      skyH = 1 + (SKY_SCROLL_FACTOR * sMax) / vhRef
     }
 
     const resize = () => {
@@ -270,23 +284,24 @@ export default function StarSky() {
         canvas.height = h
         gl.viewport(0, 0, w, h)
       }
+      vhRef = Math.max(canvas.clientHeight, 1)
       measureDoc()
     }
     resize()
-    window.addEventListener('resize', resize)
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
     let last = 0
     let frame = 0
+    let lastTimeSec = reduced ? 2.0 : 0
     const frameInterval = 1000 / 40 // 40 fps cap
     const start = performance.now()
 
     const draw = (timeSec: number) => {
-      const vh = Math.max(window.innerHeight, 1)
+      lastTimeSec = timeSec
       // clamp overscroll so the painting never rolls past its bottom edge
       const offset = Math.min(
-        (SKY_SCROLL_FACTOR * Math.max(window.scrollY, 0)) / vh,
+        (SKY_SCROLL_FACTOR * Math.max(window.scrollY, 0)) / vhRef,
         skyH - 1,
       )
       gl.uniform2f(uRes, canvas.width, canvas.height)
@@ -296,12 +311,31 @@ export default function StarSky() {
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
+    // Resizing the drawing buffer clears the canvas to black; if the next
+    // paint waited for the 40fps loop, every resize event would flash black
+    // (the "high-frequency starfield/black flicker" during window resize).
+    // Resize + redraw synchronously in the same handler instead.
+    const onResize = () => {
+      resize()
+      draw(lastTimeSec)
+    }
+    window.addEventListener('resize', onResize)
+
+    // ClientRouter swaps pages without reloading: the persisted sky just
+    // re-measures its painting length for the new page's scroll height
+    const onPageLoad = () => {
+      resize()
+      draw(lastTimeSec)
+    }
+    document.addEventListener('astro:page-load', onPageLoad)
+
     const render = (now: number) => {
       raf = requestAnimationFrame(render)
       if (now - last < frameInterval) return
       last = now
-      resize()
-      // layout below can change height (async content); re-measure cheaply
+      // layout below can change height (async content); re-measure cheaply.
+      // NOTE: no per-frame resize() here — clientWidth/Height reads force
+      // layout and the iOS URL-bar animation would thrash the buffer size.
       if (++frame % 40 === 0) measureDoc()
       draw((now - start) / 1000)
     }
@@ -313,7 +347,6 @@ export default function StarSky() {
       if (scrollRaf) return
       scrollRaf = requestAnimationFrame(() => {
         scrollRaf = 0
-        resize()
         draw(2.0)
       })
     }
@@ -329,7 +362,8 @@ export default function StarSky() {
       cancelAnimationFrame(raf)
       cancelAnimationFrame(scrollRaf)
       window.removeEventListener('scroll', onScrollReduced)
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', onResize)
+      document.removeEventListener('astro:page-load', onPageLoad)
       gl.deleteProgram(prog)
       gl.deleteShader(vs)
       gl.deleteShader(fs)
@@ -340,7 +374,9 @@ export default function StarSky() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full"
+      // 100lvh (large viewport): the canvas keeps a constant size while the
+      // mobile address bar collapses, so scrolling never resizes the buffer
+      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-lvh w-full"
       aria-hidden="true"
     />
   )

@@ -2,6 +2,7 @@
 import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import '../styles/global.css'
+import { ClientRouter } from 'astro:transitions'
 import StarSky from '../components/StarSky'
 
 interface Props {
@@ -28,24 +29,39 @@ const {
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <ClientRouter />
   </head>
   <!-- body carries NO background-color: the fixed StarSky canvas at -z-10 is
        the page background; html keeps the fallback color while WebGL boots -->
   <body class="min-h-svh text-foreground antialiased">
-    <StarSky client:load />
+    <!-- transition:persist keeps the WebGL canvas (and its scroll painting)
+         alive across client-side navigations — the sky never reloads, it just
+         re-measures its length for the new page -->
+    <StarSky client:load transition:persist="star-sky" />
     <slot />
     <script>
-      import { initPostHog } from '../lib/posthog'
+      import { initPostHog, capturePageView } from '../lib/posthog'
       initPostHog()
+      // ClientRouter swaps pages without full loads; capture SPA pageviews
+      document.addEventListener('astro:page-load', capturePageView)
     </script>
     <script>
       import Rellax from 'rellax'
-      if (
-        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-        document.querySelector('.rellax')
-      ) {
-        new Rellax('.rellax', { center: true })
+      let rellax: { destroy: () => void } | null = null
+      const initRellax = () => {
+        if (rellax) {
+          rellax.destroy()
+          rellax = null
+        }
+        if (
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+          document.querySelector('.rellax')
+        ) {
+          rellax = new Rellax('.rellax', { center: true })
+        }
       }
+      // fires on initial load AND after every client-side navigation
+      document.addEventListener('astro:page-load', initRellax)
     </script>
   </body>
 </html>

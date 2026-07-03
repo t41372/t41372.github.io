@@ -115,7 +115,8 @@ export default function AsciiSmoke({
           wobbleAmp: 3.5 + Math.random() * 5,
           baseRadius: 9 + Math.random() * 6,
           age,
-          life: 8 + Math.random() * 4,
+          // long life: the plume climbs high before it dissolves
+          life: 14 + Math.random() * 5,
           splits: 2,
         })
       }
@@ -156,7 +157,8 @@ export default function AsciiSmoke({
         const t = p.age / p.life
         const R = p.baseRadius * (1 + t * 1.7)
         const fadeIn = Math.min(1, p.age / 0.45)
-        const A = fadeIn * Math.pow(Math.max(0, 1 - t), 1.15)
+        // hold density through most of the ascent, dissolve only near the end
+        const A = fadeIn * Math.max(0, 1 - t * t)
         if (A <= 0.01) continue
         const cr = Math.ceil(R / CELL)
         const cx = Math.round(p.x / CELL - 0.5)
@@ -179,7 +181,7 @@ export default function AsciiSmoke({
       ctx.font = FONT
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      const topFade = rows * 0.22
+      const topFade = rows * 0.14
       const sideFade = cols * 0.08
       for (let gy = 0; gy < rows; gy++) {
         for (let gx = 0; gx < cols; gx++) {
@@ -220,7 +222,10 @@ export default function AsciiSmoke({
       }
     }
 
-    // pre-warm so the plume already exists when it scrolls into view
+    // pre-warm so the full-height plume already exists when it scrolls into view
+    spawnCluster(11)
+    spawnCluster(9)
+    spawnCluster(7.2)
     spawnCluster(5.2)
     spawnCluster(3.9)
     spawnCluster(2.6)

@@ -23,6 +23,12 @@ import AsciiSmoke from './AsciiSmoke'
         <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.8" />
         <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
       </radialGradient>
+      <!-- tight, white-hot bloom hugging the window pane ("HDR" core) -->
+      <radialGradient id="glow-core" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff6e4" stop-opacity="0.95" />
+        <stop offset="45%" stop-color="#ffcf7d" stop-opacity="0.45" />
+        <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
+      </radialGradient>
       <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.25" />
         <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
@@ -95,12 +101,22 @@ import AsciiSmoke from './AsciiSmoke'
         <polygon points="46,-18 54,-18 54,11 46,3" fill="#06080c"/>
         <polygon points="54,-18 60,-16 60,13 54,11" fill="#080a0f"/>
 
-        <!-- Window Glow -->
-        <ellipse cx="74" cy="52" rx="46" ry="30" fill="url(#glow)" opacity="0.25"/>
+        <!-- Window Glow: wide ambient wash + tight white-hot bloom.
+             The pane itself is pushed to near-white (display-p3 on wide-gamut
+             screens) so it reads as the single brightest thing in the scene —
+             a faux-HDR highlight without shifting the warm hue. -->
+        <ellipse cx="74" cy="52" rx="46" ry="30" fill="url(#glow)" opacity="0.3"/>
+        <ellipse cx="74" cy="52" rx="22" ry="15" fill="url(#glow-core)" opacity="0.85"/>
 
         <!-- Window -->
-        <polygon points="62,40 86,48 86,64 62,56" fill="#ffb74d"/>
-        <polygon points="62,40 86,48 86,64 62,56" fill="#ffffff" opacity="0.4"/>
+        <polygon
+          points="62,40 86,48 86,64 62,56"
+          fill="#ffcb70"
+          style="fill: color(display-p3 1 0.8 0.42)"
+        />
+        <polygon points="62,40 86,48 86,64 62,56" fill="#ffffff" opacity="0.55"/>
+        <!-- hot center of the pane -->
+        <polygon points="66,44.5 82,50 82,60 66,55" fill="#fffdf5" opacity="0.85"/>
 
         <!-- Window Frame (Cross) -->
         <line x1="74" y1="44" x2="74" y2="60" stroke="#06080c" stroke-width="2" />
@@ -126,20 +142,29 @@ import AsciiSmoke from './AsciiSmoke'
 </section>
 
 <script>
-  const section = document.getElementById('valley-scene')!
-  const svg = section.querySelector('svg')!
-  const layers = Array.from(section.querySelectorAll<SVGGElement>('g[data-depth]'))
-  const smokeWrap = document.getElementById('smoke-wrap')!
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  // Re-runs after every ClientRouter navigation (the footer DOM is swapped
+  // out each time); previous listeners are removed via `cleanup`.
+  let cleanup: (() => void) | null = null
 
-  const SCENE_W = 1440
-  const SCENE_H = 600
-  const MOUTH = { x: 753, y: 351 } // chimney mouth, scene coords (261 + the 90 scene shift)
-  const SMOKE = { w: 440, h: 430 } // smoke canvas box, scene units
-  const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
+  const setup = () => {
+    cleanup?.()
+    cleanup = null
 
-  let scale = 1
-  let sMax = 0
+    const section = document.getElementById('valley-scene')
+    if (!section) return
+    const svg = section.querySelector('svg')!
+    const layers = Array.from(section.querySelectorAll<SVGGElement>('g[data-depth]'))
+    const smokeWrap = document.getElementById('smoke-wrap')!
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const SCENE_W = 1440
+    const SCENE_H = 600
+    const MOUTH = { x: 753, y: 351 } // chimney mouth, scene coords (261 + the 90 scene shift)
+    const SMOKE = { w: 440, h: 620 } // smoke canvas box, scene units (tall: the plume climbs high)
+    const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
+
+    let scale = 1
+    let sMax = 0
 
   // Anchor the smoke canvas over the chimney: its horizontal center and 88%
   // height mark sit on the chimney mouth (the smoke component emits from
@@ -178,29 +203,37 @@ import AsciiSmoke from './AsciiSmoke'
     smokeWrap.style.transform = `translateY(${(e * NEAR_DEPTH * scale).toFixed(2)}px)`
   }
 
-  layout()
-  if (reduced) {
-    window.addEventListener('resize', layout)
-  } else {
-    update()
-    let ticking = false
-    const onScroll = () => {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(() => {
-        ticking = false
+    layout()
+    if (reduced) {
+      window.addEventListener('resize', layout)
+      cleanup = () => window.removeEventListener('resize', layout)
+    } else {
+      update()
+      let ticking = false
+      const onScroll = () => {
+        if (ticking) return
+        ticking = true
+        requestAnimationFrame(() => {
+          ticking = false
+          update()
+        })
+      }
+      const onResize = () => {
+        layout()
         update()
-      })
+      }
+      window.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('resize', onResize)
+      // page height (hence sMax) can grow after fonts/images load
+      window.addEventListener('load', onResize)
+      cleanup = () => {
+        window.removeEventListener('scroll', onScroll)
+        window.removeEventListener('resize', onResize)
+        window.removeEventListener('load', onResize)
+      }
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', () => {
-      layout()
-      update()
-    })
-    // page height (hence sMax) can grow after fonts/images load
-    window.addEventListener('load', () => {
-      layout()
-      update()
-    })
   }
+
+  // fires on initial load AND after every client-side navigation
+  document.addEventListener('astro:page-load', setup)
 </script>
