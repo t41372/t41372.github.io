@@ -1,0 +1,184 @@
+---
+import AsciiSmoke from './AsciiSmoke'
+
+// hand-set ASCII house with a chimney on the left of its roof
+const HOUSE = String.raw`         _____
+        |:::::|
+        |:::::|
+   _____|:::::|_________
+  /::::::::::::::::::::::\
+ /::::::::::::::::::::::::\
+/::::::::::::::::::::::::::\
+|--------------------------|
+|  ___    ______    ___    |
+| |###|  |::::::|  |###|   |
+| |###|  |: [] :|  |###|   |
+| |###|  |::::::|  |###|   |
+|_|___|__|______|__|___|___|`
+---
+
+<section
+  class="relative overflow-hidden bg-background"
+  aria-label="A quiet valley at night with a small house"
+>
+  <!-- tall scroll runway so the parallax has room to breathe -->
+  <div class="relative h-[160svh]">
+    <!-- sticky viewport-height stage -->
+    <div class="sticky top-0 h-svh overflow-hidden">
+      <!-- sky gradient continuing the night theme -->
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-background via-[oklch(0.15_0.035_262)] to-[oklch(0.17_0.04_258)]"
+        aria-hidden="true"
+      >
+      </div>
+
+      <!-- a few CSS stars so the sky isn't empty -->
+      <div class="valley-stars absolute inset-x-0 top-0 h-1/2" aria-hidden="true"></div>
+
+      <!-- ridge layer 1: farthest -->
+      <svg
+        class="valley-ridge-far absolute inset-x-0 bottom-0 h-[46%] w-full"
+        viewBox="0 0 1440 400"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,400 L0,220 L180,140 L360,210 L520,110 L720,190 L900,90 L1100,180 L1280,120 L1440,200 L1440,400 Z"
+          fill="oklch(0.20 0.038 262)"></path>
+      </svg>
+
+      <!-- ridge layer 2: middle -->
+      <svg
+        class="valley-ridge-mid absolute inset-x-0 bottom-0 h-[38%] w-full"
+        viewBox="0 0 1440 400"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,400 L0,260 L200,180 L420,260 L640,150 L860,250 L1080,160 L1300,240 L1440,190 L1440,400 Z"
+          fill="oklch(0.165 0.035 263)"></path>
+      </svg>
+
+      <!-- house layer (rides with mid-near depth), positioned right -->
+      <div class="valley-house absolute bottom-[9%] right-[6%] md:right-[12%]" aria-hidden="true">
+        <div class="relative">
+          <!-- smoke canvas anchored above the chimney (top-left of the house art) -->
+          <AsciiSmoke
+            client:visible
+            className="absolute -top-72 left-[calc(2ch)] h-72 w-48 -translate-x-1/2 md:left-[calc(3ch)]"
+          />
+          <pre
+            class="ascii-flicker select-none font-mono text-[7px] leading-[1.15] text-aurora-teal/90 sm:text-[9px] md:text-[11px]"
+            style="text-shadow: 0 0 12px oklch(0.8 0.12 195 / 0.35)">{HOUSE}</pre>
+          <!-- warm window glow -->
+          <div
+            class="absolute bottom-[18%] left-1/2 h-6 w-10 -translate-x-1/2 rounded-full bg-[oklch(0.75_0.13_75)] opacity-25 blur-xl"
+          >
+          </div>
+        </div>
+      </div>
+
+      <!-- ridge layer 3: near ground the house sits on -->
+      <svg
+        class="valley-ridge-near absolute inset-x-0 bottom-0 h-[22%] w-full"
+        viewBox="0 0 1440 300"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,300 L0,140 L260,190 L520,120 L780,180 L1040,110 L1250,170 L1440,130 L1440,300 Z"
+          fill="oklch(0.135 0.03 264)"></path>
+      </svg>
+
+      <!-- foreground occluder: rises on scroll and swallows the house -->
+      <svg
+        class="valley-occluder absolute inset-x-0 bottom-0 h-[70%] w-full"
+        viewBox="0 0 1440 600"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M0,600 L0,180 L200,120 L480,220 L760,90 L1000,200 L1240,110 L1440,190 L1440,600 Z"
+          fill="oklch(0.10 0.025 265)"></path>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* tiny star field via layered box-shadows on pseudo dots */
+  .valley-stars {
+    background-image:
+      radial-gradient(1px 1px at 12% 30%, oklch(0.9 0.01 250 / 0.7) 50%, transparent 50%),
+      radial-gradient(1px 1px at 28% 62%, oklch(0.9 0.01 250 / 0.5) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 44% 22%, oklch(0.9 0.01 250 / 0.8) 50%, transparent 50%),
+      radial-gradient(1px 1px at 58% 48%, oklch(0.9 0.01 250 / 0.45) 50%, transparent 50%),
+      radial-gradient(1px 1px at 70% 28%, oklch(0.9 0.01 250 / 0.65) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 84% 55%, oklch(0.9 0.01 250 / 0.75) 50%, transparent 50%),
+      radial-gradient(1px 1px at 92% 18%, oklch(0.9 0.01 250 / 0.5) 50%, transparent 50%);
+  }
+
+  /* scroll-driven parallax: each layer translates at its own rate while
+     the sticky stage is pinned. Falls back to a static scene. */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .valley-ridge-far,
+      .valley-ridge-mid,
+      .valley-house,
+      .valley-ridge-near,
+      .valley-occluder {
+        animation-fill-mode: both;
+        animation-timing-function: linear;
+        animation-timeline: view();
+        animation-range: entry 0% exit 100%;
+      }
+      .valley-ridge-far {
+        animation-name: ridge-drift;
+        --drift-from: 3%;
+        --drift-to: -1%;
+      }
+      .valley-ridge-mid {
+        animation-name: ridge-drift;
+        --drift-from: 8%;
+        --drift-to: -3%;
+      }
+      .valley-house {
+        animation-name: ridge-drift;
+        --drift-from: 14%;
+        --drift-to: -5%;
+      }
+      .valley-ridge-near {
+        animation-name: ridge-drift;
+        --drift-from: 22%;
+        --drift-to: -6%;
+      }
+      /* the star: rises from fully below to covering most of the stage */
+      .valley-occluder {
+        animation-name: occluder-rise;
+      }
+    }
+  }
+
+  @keyframes ridge-drift {
+    from {
+      transform: translateY(var(--drift-from, 0));
+    }
+    to {
+      transform: translateY(var(--drift-to, 0));
+    }
+  }
+
+  @keyframes occluder-rise {
+    from {
+      transform: translateY(105%);
+    }
+    to {
+      transform: translateY(4%);
+    }
+  }
+
+  /* without scroll-driven animation support the occluder stays low */
+  .valley-occluder {
+    transform: translateY(60%);
+  }
+</style>

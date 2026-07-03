@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Header from '../../components/Header.astro'
+import Footer from '../../components/Footer.astro'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft)
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }))
+}
+
+const { post } = Astro.props
+const { Content } = await render(post)
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+---
+
+<BaseLayout title={`${post.data.title} — Yi-Ting Chiu`} description={post.data.description}>
+  <Header active="blog" />
+  <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
+    <article>
+      <header class="mb-10 flex flex-col gap-4">
+        <a
+          href="/blog"
+          class="font-mono text-sm text-muted transition-colors hover:text-aurora"
+        >
+          ← back to writings
+        </a>
+        <h1
+          class="text-balance font-mono text-3xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl"
+        >
+          {post.data.title}
+        </h1>
+        <div class="flex flex-wrap items-center gap-3">
+          <time
+            datetime={post.data.pubDate.toISOString()}
+            class="font-mono text-sm text-muted-dark"
+          >
+            {fmt(post.data.pubDate)}
+          </time>
+          {
+            post.data.tags.map((tag) => (
+              <span class="rounded-full border border-border-subtle px-2.5 py-0.5 font-mono text-[11px] text-muted">
+                {tag}
+              </span>
+            ))
+          }
+        </div>
+      </header>
+
+      <div class="prose-night">
+        <Content />
+      </div>
+    </article>
+  </main>
+  <Footer />
+</BaseLayout>

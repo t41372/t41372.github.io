@@ -1,0 +1,50 @@
+---
+const year = new Date().getFullYear()
+---
+
+<footer class="relative bg-background-deep" aria-label="Footer">
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16 md:px-10">
+    <!-- quiet ascii echo of the valley above -->
+    <pre
+      class="select-none font-mono text-[10px] leading-relaxed text-muted-dark"
+      aria-hidden="true">{`~ ° · ~     ·  °   ~`}</pre>
+
+    <div class="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+      <div class="flex flex-col gap-2">
+        <p class="font-mono text-sm text-foreground">Yi-Ting Chiu</p>
+        <p class="font-mono text-xs text-muted-dark">
+          © {year} · builds fun stuff · somewhere in a quiet valley
+        </p>
+      </div>
+
+      <nav aria-label="Social links" class="flex items-center gap-6">
+        <a
+          href="https://github.com/t41372"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-mono text-sm text-muted transition-colors hover:text-aurora"
+        >
+          GitHub
+        </a>
+        <a
+          href="https://www.linkedin.com/in/yi-ting-chiu/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-mono text-sm text-muted transition-colors hover:text-aurora"
+        >
+          LinkedIn
+        </a>
+        <a
+          href="mailto:ychiu34@asu.edu"
+          class="font-mono text-sm text-muted transition-colors hover:text-aurora"
+        >
+          Email
+        </a>
+      </nav>
+    </div>
+
+    <p class="font-mono text-[11px] text-muted-dark">
+      Built with Astro · deployed by GitHub Actions · night sky rendered in WebGL
+    </p>
+  </div>
+</footer>

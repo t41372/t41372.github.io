@@ -1,0 +1,72 @@
+---
+import ProjectCard from './ProjectCard.astro'
+
+const projects = [
+  {
+    title: 'Open-LLM-VTuber',
+    tag: 'AI VTuber',
+    description:
+      'Talk to any LLM with hands-free voice interaction, voice interruption, and a Live2D talking face — running locally across platforms.',
+    repo: 'Open-LLM-VTuber/Open-LLM-VTuber',
+    accent: 'green' as const,
+  },
+  {
+    title: 'PathKeep',
+    tag: 'Desktop App',
+    description:
+      'Browsers delete your history after 3 months. PathKeep keeps it for you — a local-first desktop app written in Rust that preserves your browser history and shows analytics.',
+    repo: 't41372/PathKeep',
+    accent: 'teal' as const,
+  },
+  {
+    title: 'Standard ASR',
+    tag: 'Speech',
+    description:
+      'The open standard interface between apps and speech-to-text engines. Integrate once, switch ASR engines without code changes.',
+    repo: 'standard-voice/standard_asr',
+    accent: 'purple' as const,
+  },
+]
+---
+
+<section
+  id="projects"
+  class="noise-overlay relative overflow-hidden bg-background py-28 md:py-36"
+  aria-label="Projects"
+>
+  <div class="mx-auto w-full max-w-6xl px-6 md:px-10">
+    <div class="parallax-slow mb-14 flex flex-col gap-3">
+      <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
+        {'// projects'}
+      </span>
+      <h2 class="text-balance font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+        Things I build &amp; maintain
+      </h2>
+      <p class="max-w-xl text-pretty text-muted">
+        Creator &amp; maintainer. These are the ones I&apos;m most serious about right now.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+      {
+        projects.map((p, i) => (
+          <div class={i % 2 === 0 ? 'parallax-mid' : 'parallax-slow'}>
+            <ProjectCard {...p} />
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="parallax-slow mt-12">
+      <a
+        href="https://github.com/t41372"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-aurora"
+      >
+        more on github
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
