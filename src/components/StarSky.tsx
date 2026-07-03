@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { SKY_SCROLL_FACTOR } from '../lib/sky'
 
 const VERT = /* glsl */ `
 attribute vec2 aPos;
@@ -12,6 +13,8 @@ precision highp float;
 
 uniform vec2 uRes;
 uniform float uTime;
+uniform float uScroll; // how far the sky painting is rolled up, in viewport-heights
+uniform float uSkyH;   // the painting's total height, in viewport-heights
 
 // ---------- noise ----------
 float hash21(vec2 p) {
@@ -95,36 +98,46 @@ vec3 starLayer(vec2 p, float t, float minBright) {
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   float aspect = uRes.x / uRes.y;
-  vec2 suv = vec2(uv.x * aspect, uv.y);
+
+  // One long scroll painting: everything here lives in painting space and
+  // moves together. wy = this pixel's height in the painting (up-positive,
+  // painting top at wy=1); d = depth below the painting's top edge. The
+  // painting bottom (d = uSkyH) carries the dark band where the far mountain
+  // ridge (SkyMountains.astro, same offset law) sits.
+  float wy = uv.y - uScroll;
+  float d = uScroll + (1.0 - uv.y);
+  vec2 suv = vec2(uv.x * aspect, wy);
 
   // ---------- night sky ----------
+  // the sky itself never darkens toward the page bottom — the "dusk near the
+  // mountains" gradient lives in the valley layer, in front of this canvas
   vec3 nTop = vec3(0.045, 0.075, 0.225);
   vec3 nLow = vec3(0.10, 0.145, 0.33);
-  float skyGrad = smoothstep(0.0, 1.0, uv.y);
-  vec3 scene = mix(nLow, nTop, skyGrad);
+  // first viewport of the painting: the bright aurora horizon
+  vec3 scene = mix(nLow, nTop, smoothstep(0.0, 1.0, 1.0 - min(d, 1.0)));
 
   // faint milky haze for depth
   float haze = fbm(suv * 2.2 + vec2(3.1, 8.7));
   scene += vec3(0.05, 0.07, 0.13) * haze * haze * 0.5;
 
-  // ---------- stars: two depth layers ----------
+  // ---------- stars: two depth layers (painted on the scroll) ----------
   // distant dense faint layer + near sparse bright layer (with glints)
   scene += starLayer(suv * 55.0, uTime, 0.985) * 0.45;
   scene += starLayer(suv * 22.0 + 47.0, uTime, 0.978) * 0.95;
 
-  // ---------- aurora curtain ----------
+  // ---------- aurora curtain (painted at the top of the scroll) ----------
   // undulating base line of the curtain, drifting slowly
   float baseY = 0.24 + 0.16 * (fbm(vec2(suv.x * 0.9 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0;
-  float hgt = uv.y - baseY; // height above the curtain's lower edge
+  float hgt = wy - baseY; // height above the curtain's lower edge
 
   // domain warp -> drapery folds
-  float warp = (fbm(vec2(suv.x * 1.6 - uTime * 0.035, uv.y * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
+  float warp = (fbm(vec2(suv.x * 1.6 - uTime * 0.035, wy * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
 
   // vertical rays: anisotropic noise (high freq in x, stretched in y)
-  float rays = fbm(vec2((suv.x + warp) * 5.5, uv.y * 0.22 - uTime * 0.045));
+  float rays = fbm(vec2((suv.x + warp) * 5.5, wy * 0.22 - uTime * 0.045));
   rays = smoothstep(0.28, 0.78, rays);
   // finer secondary ray detail
-  float rays2 = vnoise(vec2((suv.x + warp * 1.4) * 22.0, uv.y * 0.6 - uTime * 0.07));
+  float rays2 = vnoise(vec2((suv.x + warp * 1.4) * 22.0, wy * 0.6 - uTime * 0.07));
   rays *= 0.72 + 0.28 * rays2;
 
   // vertical profile: sharp bright lower edge, long fade upward
@@ -140,8 +153,8 @@ void main() {
 
   // second, fainter and higher curtain for depth
   float baseY2 = baseY + 0.30 + 0.05 * sin(uTime * 0.05 + 2.0);
-  float hgt2 = uv.y - baseY2;
-  float rays2b = fbm(vec2((suv.x - warp * 0.8) * 5.0 + 31.0, uv.y * 0.4 + uTime * 0.03));
+  float hgt2 = wy - baseY2;
+  float rays2b = fbm(vec2((suv.x - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.03));
   rays2b = smoothstep(0.42, 0.85, rays2b);
   float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 4.5);
   float aur2 = clamp(rays2b * profile2 * edgeMask * 1.4, 0.0, 1.0);
@@ -189,11 +202,14 @@ void main() {
 `
 
 /**
- * Night-sky aurora WebGL background.
- * Halftone-dot aurora curtains + twinkling gaussian stars.
- * 40fps cap, DPR clamped at 1.5, frozen frame under prefers-reduced-motion.
+ * StarSky — the site's scroll-painting background (see lib/sky.ts). Stars,
+ * aurora (painting top) and the bottom dark band all live in painting space
+ * and scroll together at SKY_SCROLL_FACTOR; every mountain sits in front, in
+ * the valley footer. 40fps cap, DPR clamped at 1.5; under
+ * prefers-reduced-motion the frame is frozen but still re-renders on scroll
+ * (the painting must keep its position).
  */
-export default function AuroraBackground() {
+export default function StarSky() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -235,6 +251,15 @@ export default function AuroraBackground() {
 
     const uRes = gl.getUniformLocation(prog, 'uRes')
     const uTime = gl.getUniformLocation(prog, 'uTime')
+    const uScroll = gl.getUniformLocation(prog, 'uScroll')
+    const uSkyH = gl.getUniformLocation(prog, 'uSkyH')
+
+    let skyH = 1
+    const measureDoc = () => {
+      const vh = Math.max(window.innerHeight, 1)
+      const sMax = Math.max(document.documentElement.scrollHeight - vh, 0)
+      skyH = 1 + (SKY_SCROLL_FACTOR * sMax) / vh
+    }
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
@@ -245,6 +270,7 @@ export default function AuroraBackground() {
         canvas.height = h
         gl.viewport(0, 0, w, h)
       }
+      measureDoc()
     }
     resize()
     window.addEventListener('resize', resize)
@@ -252,24 +278,57 @@ export default function AuroraBackground() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
     let last = 0
+    let frame = 0
     const frameInterval = 1000 / 40 // 40 fps cap
     const start = performance.now()
+
+    const draw = (timeSec: number) => {
+      const vh = Math.max(window.innerHeight, 1)
+      // clamp overscroll so the painting never rolls past its bottom edge
+      const offset = Math.min(
+        (SKY_SCROLL_FACTOR * Math.max(window.scrollY, 0)) / vh,
+        skyH - 1,
+      )
+      gl.uniform2f(uRes, canvas.width, canvas.height)
+      gl.uniform1f(uTime, timeSec)
+      gl.uniform1f(uScroll, offset)
+      gl.uniform1f(uSkyH, skyH)
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+    }
 
     const render = (now: number) => {
       raf = requestAnimationFrame(render)
       if (now - last < frameInterval) return
       last = now
       resize()
-      gl.uniform2f(uRes, canvas.width, canvas.height)
-      // reduced motion: render a single frozen frame
-      gl.uniform1f(uTime, reduced ? 2.0 : (now - start) / 1000)
-      gl.drawArrays(gl.TRIANGLES, 0, 3)
-      if (reduced) cancelAnimationFrame(raf)
+      // layout below can change height (async content); re-measure cheaply
+      if (++frame % 40 === 0) measureDoc()
+      draw((now - start) / 1000)
     }
-    raf = requestAnimationFrame(render)
+
+    // reduced motion: frozen time, but keep the aurora world-anchored by
+    // re-rendering on scroll
+    let scrollRaf = 0
+    const onScrollReduced = () => {
+      if (scrollRaf) return
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0
+        resize()
+        draw(2.0)
+      })
+    }
+
+    if (reduced) {
+      draw(2.0)
+      window.addEventListener('scroll', onScrollReduced, { passive: true })
+    } else {
+      raf = requestAnimationFrame(render)
+    }
 
     return () => {
       cancelAnimationFrame(raf)
+      cancelAnimationFrame(scrollRaf)
+      window.removeEventListener('scroll', onScrollReduced)
       window.removeEventListener('resize', resize)
       gl.deleteProgram(prog)
       gl.deleteShader(vs)
@@ -278,5 +337,11 @@ export default function AuroraBackground() {
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
+  return (
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 -z-10 h-full w-full"
+      aria-hidden="true"
+    />
+  )
 }

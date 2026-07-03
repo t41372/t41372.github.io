@@ -2,6 +2,7 @@
 import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import '../styles/global.css'
+import StarSky from '../components/StarSky'
 
 interface Props {
   title?: string
@@ -28,11 +29,23 @@ const {
     <meta property="og:type" content="website" />
     <link rel="sitemap" href="/sitemap-index.xml" />
   </head>
-  <body class="min-h-svh bg-background text-foreground antialiased">
+  <!-- body carries NO background-color: the fixed StarSky canvas at -z-10 is
+       the page background; html keeps the fallback color while WebGL boots -->
+  <body class="min-h-svh text-foreground antialiased">
+    <StarSky client:load />
     <slot />
     <script>
       import { initPostHog } from '../lib/posthog'
       initPostHog()
+    </script>
+    <script>
+      import Rellax from 'rellax'
+      if (
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        document.querySelector('.rellax')
+      ) {
+        new Rellax('.rellax', { center: true })
+      }
     </script>
   </body>
 </html>

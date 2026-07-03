@@ -26,10 +26,14 @@ html {
   background-color: var(--color-background);
   color-scheme: dark;
   scroll-behavior: smooth;
+  /* kill the rubber-band overscroll bounce: without it, bouncing past the
+     page bottom exposes the fixed star sky below the black mountains */
+  overscroll-behavior-y: none;
 }
 
 body {
-  background-color: var(--color-background);
+  /* no background-color here: the fixed StarSky canvas (-z-10) is the page
+     background and body paint would cover it; html carries the fallback */
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -212,53 +216,6 @@ body {
   }
   97% {
     opacity: 0.85;
-  }
-}
-
-/* ---------- scroll-driven parallax (progressive enhancement) ---------- */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .parallax-slow,
-    .parallax-mid,
-    .parallax-fast,
-    .parallax-rise {
-      animation-timeline: view();
-      animation-fill-mode: both;
-      animation-timing-function: linear;
-    }
-    .parallax-slow {
-      animation-name: parallax-y;
-      --parallax-from: 6rem;
-      --parallax-to: -2rem;
-      animation-range: entry 0% exit 100%;
-    }
-    .parallax-mid {
-      animation-name: parallax-y;
-      --parallax-from: 10rem;
-      --parallax-to: -4rem;
-      animation-range: entry 0% exit 100%;
-    }
-    .parallax-fast {
-      animation-name: parallax-y;
-      --parallax-from: 16rem;
-      --parallax-to: -6rem;
-      animation-range: entry 0% exit 100%;
-    }
-    /* foreground ridge that rises up to occlude the house */
-    .parallax-rise {
-      animation-name: parallax-y;
-      --parallax-from: 55%;
-      --parallax-to: -8%;
-      animation-range: entry 30% exit 100%;
-    }
-  }
-}
-@keyframes parallax-y {
-  from {
-    transform: translateY(var(--parallax-from, 0));
-  }
-  to {
-    transform: translateY(var(--parallax-to, 0));
   }
 }
 

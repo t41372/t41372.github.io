@@ -29,13 +29,15 @@ const projects = [
 ]
 ---
 
+<!-- a foreground panel sliding over the fixed starfield: rounded top edge,
+     hairline + lifted shadow against the sky, rellax layers inside -->
 <section
   id="projects"
-  class="noise-overlay relative overflow-hidden bg-background py-28 md:py-36"
+  class="noise-overlay relative z-10 overflow-hidden rounded-t-[2.5rem] border-t border-border-subtle/50 bg-background py-28 shadow-[0_-40px_80px_-24px_rgba(0,0,0,0.8)] md:py-36"
   aria-label="Projects"
 >
   <div class="mx-auto w-full max-w-6xl px-6 md:px-10">
-    <div class="parallax-slow mb-14 flex flex-col gap-3">
+    <div class="rellax mb-14 flex flex-col gap-3" data-rellax-speed="0.7">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
         {'// projects'}
       </span>
@@ -50,14 +52,14 @@ const projects = [
     <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
       {
         projects.map((p, i) => (
-          <div class={i % 2 === 0 ? 'parallax-mid' : 'parallax-slow'}>
+          <div class="rellax" data-rellax-speed={i % 2 === 0 ? '1.8' : '0.9'}>
             <ProjectCard {...p} />
           </div>
         ))
       }
     </div>
 
-    <div class="parallax-slow mt-12">
+    <div class="rellax mt-12" data-rellax-speed="0.7">
       <a
         href="https://github.com/t41372"
         target="_blank"
