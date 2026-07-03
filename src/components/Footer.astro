@@ -1,14 +1,20 @@
 ---
+import ValleyScene from './valley/ValleyScene.astro'
+
 const year = new Date().getFullYear()
 ---
 
-<footer class="relative bg-[#05070B]" aria-label="Footer">
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16 md:px-10">
+<footer class="relative" aria-label="Footer">
+  <!-- shared valley scene: the footer's sky stays transparent to the page
+       background; only the content strip below carries the ground color -->
+  <ValleyScene />
+  <div class="relative w-full bg-[#05070B]">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10 md:px-10">
     <div class="flex flex-col justify-between gap-8 md:flex-row md:items-end">
       <div class="flex flex-col gap-2">
         <h2 class="font-outfit text-xl font-medium tracking-wide text-foreground">Yi-Ting Chiu</h2>
         <p class="font-inter text-sm text-muted-dark">
-          © {year} · builds fun stuff · somewhere in a quiet valley
+          © {year} · building fun stuff · somewhere on earth
         </p>
       </div>
 
@@ -41,5 +47,6 @@ const year = new Date().getFullYear()
     <p class="font-inter text-xs tracking-wide text-muted-dark">
       Built with Astro · deployed by GitHub Actions
     </p>
+    </div>
   </div>
 </footer>

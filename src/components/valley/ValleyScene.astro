@@ -1,16 +1,21 @@
 ---
 // ValleyScene.astro
 // A minimalist, handcrafted poly-style SVG illustration of a valley and cabin.
+// The scene is split into depth layers that shift at different rates while the
+// section scrolls into view (2.5D parallax), and an ASCII smoke canvas is
+// anchored to the chimney mouth.
+import AsciiSmoke from './AsciiSmoke'
 ---
 
 <section
+  id="valley-scene"
   class="relative w-full z-10 flex flex-col justify-end"
   aria-label="A quiet valley at night with a small cabin"
 >
-  <svg 
-    viewBox="0 0 1440 600" 
-    preserveAspectRatio="xMidYMax slice" 
-    class="w-full h-[50vh] md:h-[65vh] lg:h-[80vh] block object-bottom pointer-events-none select-none" 
+  <svg
+    viewBox="0 0 1440 600"
+    preserveAspectRatio="xMidYMax slice"
+    class="w-full h-[50vh] md:h-[65vh] lg:h-[80vh] block object-bottom pointer-events-none select-none"
     xmlns="http://www.w3.org/2000/svg"
   >
     <defs>
@@ -34,64 +39,168 @@
         <stop offset="0%" stop-color="#0b0e17" />
         <stop offset="100%" stop-color="#07090f" />
       </linearGradient>
+      <linearGradient id="valley-dusk" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0.35" stop-color="#020409" stop-opacity="0" />
+        <stop offset="1" stop-color="#020409" stop-opacity="0.75" />
+      </linearGradient>
       <linearGradient id="mnt-ground" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stop-color="#07090f" />
         <stop offset="100%" stop-color="#05070b" />
       </linearGradient>
     </defs>
 
+    <!-- Dusk: the darkening near the mountains belongs to the valley layer,
+         not the sky behind it -->
+    <rect x="0" y="0" width="1440" height="600" fill="url(#valley-dusk)" />
+
+    <!-- Whole scene sits 90 units lower so the composition hugs the page
+         bottom instead of leaving dead ground space under the cabin -->
+    <g transform="translate(0, 90)">
     <!-- Far Mountains (Mnt 1) -->
-    <path d="M0,600 L0,280 L200,210 L350,320 L500,180 L650,290 L800,150 L950,280 L1100,190 L1300,300 L1440,240 L1440,600 Z" fill="url(#mnt1)" />
-    <path d="M200,210 L350,320 L300,600 L0,600 Z" fill="#171b2d" opacity="0.4" />
-    <path d="M500,180 L650,290 L600,600 L350,600 Z" fill="#171b2d" opacity="0.4" />
-    <path d="M800,150 L950,280 L900,600 L650,600 Z" fill="#171b2d" opacity="0.4" />
-    <path d="M1100,190 L1300,300 L1250,600 L950,600 Z" fill="#171b2d" opacity="0.4" />
-
-    <!-- Mid Mountains (Mnt 2) -->
-    <path d="M0,600 L0,380 L300,250 L450,380 L600,220 L800,400 L950,280 L1150,420 L1250,350 L1440,430 L1440,600 Z" fill="url(#mnt2)" />
-    <path d="M300,250 L450,380 L400,600 L100,600 Z" fill="#0f121e" opacity="0.5" />
-    <path d="M600,220 L800,400 L750,600 L450,600 Z" fill="#0f121e" opacity="0.5" />
-    <path d="M950,280 L1150,420 L1100,600 L800,600 Z" fill="#0f121e" opacity="0.5" />
-
-    <!-- Near Mountains / Hills (Mnt 3) -->
-    <path d="M0,600 L0,480 L450,420 L695,345 L770,345 L1050,450 L1440,400 L1440,600 Z" fill="url(#mnt3)" />
-    <path d="M450,420 L695,345 L730,600 L250,600 Z" fill="#080b12" opacity="0.6" />
-    <path d="M770,345 L1050,450 L1250,600 L800,600 Z" fill="#080b12" opacity="0.6" />
-
-    <!-- Ground -->
-    <path d="M0,600 L0,550 L300,500 L600,550 L1000,490 L1440,540 L1440,600 Z" fill="url(#mnt-ground)" />
-    <path d="M300,500 L600,550 L550,600 L100,600 Z" fill="#05070a" opacity="0.4" />
-    <path d="M1000,490 L1440,540 L1440,600 L800,600 Z" fill="#05070a" opacity="0.4" />
-
-    <!-- Cabin on the plateau at x=695..770, y=345 -->
-    <g transform="translate(700, 280)">
-      <!-- Cabin Front -->
-      <polygon points="0,65 0,25 25,0 50,25 50,65" fill="#06080c"/>
-      <!-- Cabin Side -->
-      <polygon points="50,25 110,45 110,85 50,65" fill="#080a0f"/>
-      
-      <!-- Roof Front (gable end, rake parallel to the wall gable) -->
-      <polygon points="-11,29 25,-7 61,29" fill="#0d111a"/>
-      <!-- Roof Side -->
-      <polygon points="25,-7 85,13 121,49 61,29" fill="#161b2e"/>
-
-      <!-- Chimney (on the near slope, beside the ridge) -->
-      <polygon points="46,-18 54,-18 54,11 46,3" fill="#06080c"/>
-      <polygon points="54,-18 60,-16 60,13 54,11" fill="#080a0f"/>
-
-      <!-- Window Glow -->
-      <ellipse cx="74" cy="52" rx="46" ry="30" fill="url(#glow)" opacity="0.25"/>
-
-      <!-- Window -->
-      <polygon points="62,40 86,48 86,64 62,56" fill="#ffb74d"/>
-      <polygon points="62,40 86,48 86,64 62,56" fill="#ffffff" opacity="0.4"/>
-      
-      <!-- Window Frame (Cross) -->
-      <line x1="74" y1="44" x2="74" y2="60" stroke="#06080c" stroke-width="2" />
-      <line x1="62" y1="48" x2="86" y2="56" stroke="#06080c" stroke-width="2" />
+    <g data-depth="30">
+      <path d="M0,600 L0,280 L200,210 L350,320 L500,180 L650,290 L800,150 L950,280 L1100,190 L1300,300 L1440,240 L1440,600 Z" fill="url(#mnt1)" />
+      <path d="M200,210 L350,320 L300,600 L0,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M500,180 L650,290 L600,600 L350,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M800,150 L950,280 L900,600 L650,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M1100,190 L1300,300 L1250,600 L950,600 Z" fill="#171b2d" opacity="0.4" />
     </g>
 
-    <!-- Ground Flat Base to ensure it seamlessly connects with footer -->
-    <rect x="0" y="580" width="1440" height="20" fill="#05070B" />
+    <!-- Mid Mountains (Mnt 2) -->
+    <g data-depth="100">
+      <path d="M0,600 L0,380 L300,250 L450,380 L600,220 L800,400 L950,280 L1150,420 L1250,350 L1440,430 L1440,600 Z" fill="url(#mnt2)" />
+      <path d="M300,250 L450,380 L400,600 L100,600 Z" fill="#0f121e" opacity="0.5" />
+      <path d="M600,220 L800,400 L750,600 L450,600 Z" fill="#0f121e" opacity="0.5" />
+      <path d="M950,280 L1150,420 L1100,600 L800,600 Z" fill="#0f121e" opacity="0.5" />
+    </g>
+
+    <!-- Near Mountains / Hills (Mnt 3) + the cabin that sits on them -->
+    <g data-depth="180">
+      <path d="M0,600 L0,480 L450,420 L695,345 L770,345 L1050,450 L1440,400 L1440,600 Z" fill="url(#mnt3)" />
+      <path d="M450,420 L695,345 L730,600 L250,600 Z" fill="#080b12" opacity="0.6" />
+      <path d="M770,345 L1050,450 L1250,600 L800,600 Z" fill="#080b12" opacity="0.6" />
+
+      <!-- Cabin on the plateau at x=695..770, y=345 -->
+      <g transform="translate(700, 280)">
+        <!-- Cabin Front -->
+        <polygon points="0,65 0,25 25,0 50,25 50,65" fill="#06080c"/>
+        <!-- Cabin Side -->
+        <polygon points="50,25 110,45 110,85 50,65" fill="#080a0f"/>
+
+        <!-- Roof Front (gable end, rake parallel to the wall gable) -->
+        <polygon points="-11,29 25,-7 61,29" fill="#0d111a"/>
+        <!-- Roof Side -->
+        <polygon points="25,-7 85,13 121,49 61,29" fill="#161b2e"/>
+
+        <!-- Chimney (on the near slope, beside the ridge) -->
+        <polygon points="46,-18 54,-18 54,11 46,3" fill="#06080c"/>
+        <polygon points="54,-18 60,-16 60,13 54,11" fill="#080a0f"/>
+
+        <!-- Window Glow -->
+        <ellipse cx="74" cy="52" rx="46" ry="30" fill="url(#glow)" opacity="0.25"/>
+
+        <!-- Window -->
+        <polygon points="62,40 86,48 86,64 62,56" fill="#ffb74d"/>
+        <polygon points="62,40 86,48 86,64 62,56" fill="#ffffff" opacity="0.4"/>
+
+        <!-- Window Frame (Cross) -->
+        <line x1="74" y1="44" x2="74" y2="60" stroke="#06080c" stroke-width="2" />
+        <line x1="62" y1="48" x2="86" y2="56" stroke="#06080c" stroke-width="2" />
+      </g>
+    </g>
+
+    <!-- Ground -->
+    <g data-depth="255">
+      <path d="M0,600 L0,495 L300,445 L600,495 L1000,435 L1440,485 L1440,600 Z" fill="url(#mnt-ground)" />
+      <path d="M300,445 L600,495 L550,600 L100,600 Z" fill="#05070a" opacity="0.4" />
+      <path d="M1000,435 L1440,485 L1440,600 L800,600 Z" fill="#05070a" opacity="0.4" />
+      <!-- Ground Flat Base to ensure it seamlessly connects with footer -->
+      <rect x="0" y="490" width="1440" height="110" fill="#05070B" />
+    </g>
+    </g>
   </svg>
+
+  <!-- ASCII smoke, bottom-center of this box = chimney mouth (positioned by script) -->
+  <div id="smoke-wrap" class="pointer-events-none absolute" aria-hidden="true">
+    <AsciiSmoke className="block h-full w-full" client:visible />
+  </div>
 </section>
+
+<script>
+  const section = document.getElementById('valley-scene')!
+  const svg = section.querySelector('svg')!
+  const layers = Array.from(section.querySelectorAll<SVGGElement>('g[data-depth]'))
+  const smokeWrap = document.getElementById('smoke-wrap')!
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  const SCENE_W = 1440
+  const SCENE_H = 600
+  const MOUTH = { x: 753, y: 351 } // chimney mouth, scene coords (261 + the 90 scene shift)
+  const SMOKE = { w: 440, h: 430 } // smoke canvas box, scene units
+  const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
+
+  let scale = 1
+  let sMax = 0
+
+  // Anchor the smoke canvas over the chimney: its horizontal center and 88%
+  // height mark sit on the chimney mouth (the smoke component emits from
+  // there, leaving 12% below so blobs aren't clipped flat).
+  // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
+  const layout = () => {
+    const sect = section.getBoundingClientRect()
+    const r = svg.getBoundingClientRect()
+    scale = Math.max(r.width / SCENE_W, r.height / SCENE_H)
+    sMax = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
+    const mx = r.left - sect.left + r.width / 2 + (MOUTH.x - SCENE_W / 2) * scale
+    const my = r.top - sect.top + r.height - (SCENE_H - MOUTH.y) * scale
+    const w = SMOKE.w * scale
+    const h = SMOKE.h * scale
+    smokeWrap.style.width = `${w}px`
+    smokeWrap.style.height = `${h}px`
+    smokeWrap.style.left = `${mx - w / 2}px`
+    smokeWrap.style.top = `${my - h * 0.88}px`
+  }
+
+  // Continuous parallax: progress is driven by how close we are to the very
+  // bottom of the page, over an activation window of ~1.4 viewports. The
+  // layers keep separating the whole way down and reach their resting,
+  // footer-aligned composition (e = 0) exactly at max scroll — they never
+  // freeze partway and sync up, which is what killed the effect before.
+  const update = () => {
+    const vh = window.innerHeight
+    const s = Math.min(Math.max(window.scrollY, 0), sMax)
+    const win = Math.max(Math.min(sMax, vh * 1.4), 1)
+    const p = 1 - Math.min(1, Math.max(0, (sMax - s) / win))
+    const e = 1 - p // fully offset while approaching, 0 at the page bottom
+    for (const g of layers) {
+      g.style.transform = `translateY(${(e * Number(g.dataset.depth)).toFixed(2)}px)`
+    }
+    // keep the smoke glued to the cabin's layer
+    smokeWrap.style.transform = `translateY(${(e * NEAR_DEPTH * scale).toFixed(2)}px)`
+  }
+
+  layout()
+  if (reduced) {
+    window.addEventListener('resize', layout)
+  } else {
+    update()
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        ticking = false
+        update()
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', () => {
+      layout()
+      update()
+    })
+    // page height (hence sMax) can grow after fonts/images load
+    window.addEventListener('load', () => {
+      layout()
+      update()
+    })
+  }
+</script>
