@@ -351,6 +351,22 @@ export default function StarSky() {
       })
     }
 
+    // pause the WebGL loop while the tab is backgrounded (rAF already throttles
+    // in hidden tabs, but this stops the draw calls entirely)
+    let paused = false
+    const onVisibility = () => {
+      if (reduced) return
+      if (document.hidden && !paused) {
+        paused = true
+        cancelAnimationFrame(raf)
+      } else if (!document.hidden && paused) {
+        paused = false
+        last = 0 // don't force an immediate frame after resume
+        raf = requestAnimationFrame(render)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     if (reduced) {
       draw(2.0)
       window.addEventListener('scroll', onScrollReduced, { passive: true })
@@ -364,6 +380,7 @@ export default function StarSky() {
       window.removeEventListener('scroll', onScrollReduced)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('astro:page-load', onPageLoad)
+      document.removeEventListener('visibilitychange', onVisibility)
       gl.deleteProgram(prog)
       gl.deleteShader(vs)
       gl.deleteShader(fs)

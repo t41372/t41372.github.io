@@ -80,7 +80,23 @@ export default function AsciiSmoke({
       for (let i = 0; i < cellJitter.length; i++) {
         cellJitter[i] = 0.75 + Math.random() * 0.5
       }
-      if (reduced) drawStatic()
+      if (reduced) {
+        drawStatic()
+      } else {
+        // Seed a full standing plume the first time the chimney has real
+        // dimensions, so smoke is already drifting out the instant the footer
+        // is seen — regardless of when the animation loop starts.
+        if (!warmed && width > 0 && height > 0) {
+          warmUp()
+          warmed = true
+        }
+        // Reassigning canvas.width above CLEARS the canvas. Repaint the current
+        // plume on every resize so it survives the valley script re-sizing the
+        // wrapper (e.g. on a hard jump to the footer) even while the loop is
+        // paused off-screen — otherwise the plume would blink out until the
+        // next animation tick.
+        if (warmed) renderField()
+      }
     }
     // the wrapper is positioned/sized by the valley scene script, so watch the
     // element itself rather than the window
@@ -222,26 +238,40 @@ export default function AsciiSmoke({
       }
     }
 
-    // pre-warm so the full-height plume already exists when it scrolls into view
-    spawnCluster(11)
-    spawnCluster(9)
-    spawnCluster(7.2)
-    spawnCluster(5.2)
-    spawnCluster(3.9)
-    spawnCluster(2.6)
-    spawnCluster(1.3)
-    spawnCluster(0)
+    // Seed a full standing plume spanning the whole life span, so the very
+    // first sight of the chimney already shows smoke drifting out — no waiting
+    // for it to build up.
+    //
+    // This is DEFERRED to the loop's first tick rather than run here: the
+    // emitter position depends on width/height, which the ResizeObserver only
+    // fills in after layout. Seeding synchronously at mount would spawn every
+    // puff at (0,0). And because puffs don't age while the loop is paused
+    // off-screen, this pre-warmed plume stays fresh no matter how long the user
+    // takes to scroll down to the footer.
+    let warmed = false
+    const warmUp = () => {
+      for (const a of [13, 11.5, 10, 8.5, 7, 5.5, 4, 2.6, 1.3, 0]) spawnCluster(a)
+    }
 
     let raf = 0
     let last = performance.now()
     let clusterAcc = 0
-    let clusterNext = 1.2
+    let clusterNext = 1.6
+    let running = false
+    let onScreen = false
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick)
       const dt = Math.min((now - last) / 1000, 0.05)
       last = now
       if (!width || !height) return
+
+      // seed the standing plume on the first frame that has valid dimensions,
+      // so the footer is never shown mid-build with a half-empty chimney
+      if (!warmed) {
+        warmUp()
+        warmed = true
+      }
 
       clusterAcc += dt
       if (clusterAcc >= clusterNext) {
@@ -322,11 +352,44 @@ export default function AsciiSmoke({
 
       renderField()
     }
-    raf = requestAnimationFrame(tick)
+
+    const start = () => {
+      if (running) return
+      running = true
+      last = performance.now() // reset so the first frame's dt isn't huge
+      raf = requestAnimationFrame(tick)
+    }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(raf)
+    }
+
+    // The footer sits below the fold for most of the visit — only simulate the
+    // plume while it's actually near the viewport. rootMargin pre-starts it
+    // just before it scrolls in so it's already alive on arrival.
+    const io = new IntersectionObserver(
+      (entries) => {
+        onScreen = entries[entries.length - 1]!.isIntersecting
+        if (onScreen && !document.hidden) start()
+        else stop()
+      },
+      { rootMargin: '200px' },
+    )
+    io.observe(canvas)
+
+    // don't burn CPU/battery animating in a backgrounded tab
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else if (onScreen) start()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
-      cancelAnimationFrame(raf)
+      stop()
+      io.disconnect()
       ro.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerout', onPointerLeave)
     }

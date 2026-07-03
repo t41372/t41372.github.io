@@ -135,9 +135,13 @@ import AsciiSmoke from './AsciiSmoke'
     </g>
   </svg>
 
-  <!-- ASCII smoke, bottom-center of this box = chimney mouth (positioned by script) -->
+  <!-- ASCII smoke, bottom-center of this box = chimney mouth (positioned by script).
+       client:load (not client:visible): hydrate immediately so the plume warms
+       up to full height right away. It then pauses off-screen (paused particles
+       don't age), so the standing plume is preserved and already drifting the
+       moment the chimney is first scrolled into view. -->
   <div id="smoke-wrap" class="pointer-events-none absolute" aria-hidden="true">
-    <AsciiSmoke className="block h-full w-full" client:visible />
+    <AsciiSmoke className="block h-full w-full" client:load />
   </div>
 </section>
 
