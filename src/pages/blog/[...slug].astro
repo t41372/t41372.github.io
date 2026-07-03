@@ -22,7 +22,9 @@ const fmt = (d: Date) =>
 <BaseLayout title={`${post.data.title} — Yi-Ting Chiu`} description={post.data.description}>
   <Header active="blog" />
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
-    <article>
+    <!-- frosted glass over the sky: the aurora at the painting's top glows
+         through around and behind the article -->
+    <article class="rounded-3xl border border-border-subtle/60 bg-surface/50 p-6 backdrop-blur-md md:p-10">
       <header class="mb-10 flex flex-col gap-4">
         <a
           href="/blog"

@@ -1,14 +1,14 @@
 ---
-import AuroraBackground from './AuroraBackground'
 import HeroIntro from './HeroIntro'
 ---
 
-<section class="relative h-svh w-full overflow-hidden bg-background" aria-label="Introduction">
-  <AuroraBackground client:load />
-
+<!-- a transparent "skylight": the fixed StarSky canvas shows through; the
+     intro text parallaxes slower than the page (rellax) so the projects
+     panel visibly slides over it -->
+<section class="relative h-svh w-full overflow-hidden" aria-label="Introduction">
   <div class="absolute inset-0 flex items-center">
     <div class="mx-auto w-full max-w-6xl px-6 md:px-10">
-      <div class="max-w-3xl">
+      <div class="rellax max-w-3xl" data-rellax-speed="-2">
         <HeroIntro client:load />
       </div>
     </div>
@@ -22,12 +22,5 @@ import HeroIntro from './HeroIntro'
       Scroll
     </span>
     <span class="scroll-line block h-8 w-px bg-foreground/30"></span>
-  </div>
-
-  <!-- soft fade into the projects section -->
-  <div
-    class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background"
-    aria-hidden="true"
-  >
   </div>
 </section>

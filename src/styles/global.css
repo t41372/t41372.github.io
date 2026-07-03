@@ -160,6 +160,37 @@ body {
   color: var(--color-background);
 }
 
+/* ---------- hero "fun stuff" font-iteration (restored from the old site) ---------- */
+@font-face { font-family: 'Cascadia-Code'; src: url('/fonts/CascadiaMono-Regular.otf'); font-display: swap; }
+@font-face { font-family: 'CascadiaMono-Bold'; src: url('/fonts/CascadiaMono-Bold.otf'); font-display: swap; }
+@font-face { font-family: 'CascadiaMonoPL-BoldItalic'; src: url('/fonts/CascadiaMonoPL-BoldItalic.otf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-BlackItalic'; src: url('/fonts/PlayfairDisplay-BlackItalic.ttf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-ExtraBold'; src: url('/fonts/PlayfairDisplay-ExtraBold.ttf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-Italic'; src: url('/fonts/PlayfairDisplay-Italic.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-BlackItalic'; src: url('/fonts/Roboto-BlackItalic.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-Bold'; src: url('/fonts/Roboto-Bold.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-ThinItalic'; src: url('/fonts/Roboto-ThinItalic.ttf'); font-display: swap; }
+
+/* name highlight kept UNDER the glitch (bg only, so text-glitch's transparent color wins) */
+.name-hl { background-color: var(--color-aurora-teal); }
+
+/* the "fun stuff" word: settles into an icy bold-italic, flashes + cycles fonts */
+.fun-settled { font-family: 'CascadiaMonoPL-BoldItalic'; color: rgb(177, 255, 255); }
+.fun-flash { background-color: var(--color-aurora-teal); }
+.fun-animate { animation: font-iteration 1s linear; }
+@keyframes font-iteration {
+  0%   { color: #fff; font-family: 'Cascadia-Code'; }
+  20%  { font-family: 'Roboto-ThinItalic'; }
+  30%  { font-family: 'CascadiaMonoPL-BoldItalic'; }
+  40%  { font-family: 'PlayfairDisplay-BlackItalic'; }
+  50%  { font-family: 'Roboto-Bold'; }
+  60%  { font-family: 'PlayfairDisplay-Italic'; }
+  70%  { font-family: 'Roboto-BlackItalic'; }
+  80%  { font-family: 'PlayfairDisplay-ExtraBold'; }
+  90%  { font-family: 'CascadiaMono-Bold'; }
+  100% { font-family: 'CascadiaMonoPL-BoldItalic'; color: rgb(177, 255, 255); }
+}
+
 /* ---------- typing cursor ---------- */
 .type-cursor {
   display: inline-block;
@@ -228,6 +259,7 @@ body {
   .text-glitch::after,
   .scroll-line,
   .ascii-flicker,
+  .fun-animate,
   .type-cursor {
     animation: none;
   }
