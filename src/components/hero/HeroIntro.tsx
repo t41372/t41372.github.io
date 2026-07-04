@@ -13,7 +13,7 @@ import { useEffect, useRef } from 'react'
  *         wave gif -> "This is Yi-Ting Chiu." -> the name gets selected, then
  *         RGB-glitches forever.
  * Line 2: "A weird guy" -> deletes to "A nice guy" -> " (🥲)" ->
- *         " who build [fun stuff] with " where "fun stuff" runs a font-iteration
+ *         " building [fun stuff] with " where "fun stuff" runs a font-iteration
  *         animation -> an endless cycle of tech words, re-flashing "fun stuff"'s
  *         font at set points.
  */
@@ -107,7 +107,7 @@ export default function HeroIntro() {
       el.dot.textContent = '.'
       el.l2a.textContent = 'A nice guy'
       el.sad.textContent = ' (🥲)'
-      el.l2b.textContent = ' who build '
+      el.l2b.textContent = ' building '
       el.fun.textContent = 'fun stuff'
       el.fun.classList.add('fun-settled')
       el.l2c.textContent = ' with '
@@ -217,7 +217,7 @@ export default function HeroIntro() {
       await sleep(300)
       await type(el.sad, ' (🥲)', 80)
       await sleep(500)
-      await type(el.l2b, ' who build ', 80)
+      await type(el.l2b, ' building ', 80)
       await type(el.fun, 'fun stuff', 80)
       await type(el.l2c, ' with ', 80)
       await sleep(500)
@@ -269,7 +269,7 @@ export default function HeroIntro() {
 
       <p
         ref={l2Ref}
-        aria-label="A nice guy who builds fun stuff."
+        aria-label="A nice guy building fun stuff."
         className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
       >
         <span ref={l2aRef} />

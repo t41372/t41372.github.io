@@ -6,29 +6,11 @@ import HeroIntro from './HeroIntro'
      intro text parallaxes slower than the page (rellax) so the projects
      panel visibly slides over it -->
 <section class="relative h-svh w-full overflow-hidden" aria-label="Introduction">
-  <!-- readability scrim: a black gradient rising from the bottom so the grey
-       intro text never fights the bright aurora behind it -->
-  <div
-    class="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-black/80 via-black/40 to-transparent"
-    aria-hidden="true"
-  >
-  </div>
-
   <div class="absolute inset-0 flex items-end">
     <div class="mx-auto w-full max-w-6xl px-6 pb-24 md:px-10 md:pb-28">
       <div class="rellax max-w-3xl" data-rellax-speed="-2">
         <HeroIntro client:load />
       </div>
     </div>
-  </div>
-
-  <div
-    class="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
-    aria-hidden="true"
-  >
-    <span class="font-mono text-[10px] font-medium uppercase tracking-[0.35em] text-muted">
-      Scroll
-    </span>
-    <span class="scroll-line block h-8 w-px bg-foreground/30"></span>
   </div>
 </section>

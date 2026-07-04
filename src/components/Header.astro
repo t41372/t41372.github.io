@@ -1,8 +1,9 @@
 ---
-const { active = 'home' } = Astro.props as { active?: 'home' | 'blog' }
+const { active = 'home' } = Astro.props as { active?: 'home' | 'projects' | 'blog' }
 
 const links = [
   { href: '/', label: 'Home', key: 'home' },
+  { href: '/projects', label: 'Projects', key: 'projects' },
   { href: '/blog', label: 'Blog', key: 'blog' },
 ]
 ---
