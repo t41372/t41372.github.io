@@ -4,15 +4,19 @@ import '@fontsource-variable/geist-mono'
 import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
 import StarSky from '../components/StarSky'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
 
 interface Props {
   title?: string
   description?: string
+  active?: 'home' | 'projects' | 'blog'
 }
 
 const {
   title = "Yi-Ting Chiu — builds fun stuff",
   description = 'Personal website of Yi-Ting Chiu. Creator of Open-LLM-VTuber, PathKeep, and Standard ASR. Builds fun stuff with AI, speech, and code.',
+  active = 'home',
 } = Astro.props
 ---
 
@@ -38,12 +42,117 @@ const {
          alive across client-side navigations — the sky never reloads, it just
          re-measures its length for the new page -->
     <StarSky client:load transition:persist="star-sky" />
-    <slot />
+    <Header active={active} />
+    <!-- page content swaps with a staggered fade+drift (keyframes in
+         global.css): old content fades out fully before new content fades in,
+         so the translucent glass panels never double-expose over the sky -->
+    <div class="vt-page">
+      <slot />
+      <Footer />
+    </div>
     <script>
       import { initPostHog, capturePageView } from '../lib/posthog'
       initPostHog()
       // ClientRouter swaps pages without full loads; capture SPA pageviews
       document.addEventListener('astro:page-load', capturePageView)
+    </script>
+    <script>
+      // Keep the glass cards' backdrop-blur alive through page transitions —
+      // AND keep the original fade-in + drift.
+      //
+      // Chromium snapshots .vt-page into a flat image during a native view
+      // transition; backdrop-filter can't sample the persisted starfield across
+      // that snapshot, so the incoming glass cards render flat and only pop to
+      // blurred once the real DOM takes over. The outgoing snapshot is fine —
+      // its blur is baked into the screenshot.
+      //
+      // The subtlety (verified empirically): backdrop-filter survives `opacity`
+      // on the blurred element ITSELF (it just dims the frosted result), but is
+      // destroyed by `opacity < 1` on any ANCESTOR — that isolates the card into
+      // its own group, cut off from the sky behind. `transform` on an ancestor
+      // is always safe. So we animate the REAL DOM in once the transition ends:
+      //   • drift  → `transform` on .vt-page (whole page slides as one unit)
+      //   • fade   → `opacity` on LEAF targets only: each blurred card (own
+      //              opacity is safe) and every content block that contains no
+      //              blurred descendant. Never a card's ancestor.
+      //
+      // Browsers without native VT use Astro's real-DOM fallback, which already
+      // keeps the blur — skip them.
+      import type { TransitionBeforeSwapEvent } from 'astro:transitions/client'
+
+      const nativeVT = 'startViewTransition' in document
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
+      const ENTER_FROM = 'translateY(12px)'
+      const TIMING = { duration: 300, easing: 'cubic-bezier(0, 0, 0.2, 1)' }
+      // blur is applied via Tailwind's `backdrop-blur-*` utilities in this repo
+      const BLUR_SEL = '[class*="backdrop-blur"]'
+
+      // The highest elements under `root` that hold NO blurred descendant — i.e.
+      // the deepest we can safely fade via opacity. A blurred element qualifies
+      // (its own opacity keeps its blur); we stop before ever fading a card's
+      // ancestor, which would flatten it.
+      const fadeTargets = (root: HTMLElement): HTMLElement[] => {
+        const blurred = Array.from(root.querySelectorAll(BLUR_SEL))
+        const holdsBlur = (el: Element) =>
+          blurred.some((b) => b !== el && el.contains(b))
+        const out: HTMLElement[] = []
+        const walk = (el: Element) => {
+          if (!holdsBlur(el)) {
+            out.push(el as HTMLElement)
+            return
+          }
+          for (const child of Array.from(el.children)) walk(child)
+        }
+        for (const child of Array.from(root.children)) walk(child)
+        return out
+      }
+
+      let armed = false
+      let pending: HTMLElement[] = []
+
+      // Pre-position the freshly-swapped page at the enter's start while the
+      // outgoing snapshot still covers the viewport, so there's no flash at the
+      // hand-off. Only when a transition is actually running (`armed`), else the
+      // page could be stranded hidden on a swap that never animates.
+      document.addEventListener('astro:after-swap', () => {
+        if (!armed) return
+        const page = document.querySelector<HTMLElement>('.vt-page')
+        if (!page) return
+        page.style.transform = ENTER_FROM
+        pending = fadeTargets(page)
+        for (const t of pending) t.style.opacity = '0'
+      })
+
+      // The instant the transition's pseudo-elements are gone (real DOM live
+      // again), play the enter on the real DOM — same timing/easing as before.
+      document.addEventListener('astro:before-swap', (event) => {
+        armed = false
+        const { viewTransition } = event as TransitionBeforeSwapEvent
+        if (!nativeVT || reduce.matches || !viewTransition) return
+        armed = true
+        const reveal = () => {
+          const page = document.querySelector<HTMLElement>('.vt-page')
+          if (page) {
+            const drift = page.animate(
+              [{ transform: ENTER_FROM }, { transform: 'translateY(0)' }],
+              TIMING,
+            )
+            drift.finished.finally(() => {
+              page.style.transform = ''
+            })
+          }
+          for (const t of pending) {
+            const fade = t.animate([{ opacity: 0 }, { opacity: 1 }], TIMING)
+            fade.finished.finally(() => {
+              t.style.opacity = ''
+            })
+          }
+          pending = []
+        }
+        // reveal on BOTH settle paths — a rejected transition must never leave
+        // the page stuck at the transform/opacity we set in astro:after-swap
+        viewTransition.finished.then(reveal, reveal)
+      })
     </script>
     <script>
       import Rellax from 'rellax'

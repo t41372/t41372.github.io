@@ -280,6 +280,63 @@ body {
   }
 }
 
+/* ---------- client-side page transitions (ClientRouter) ----------
+
+   Only the page content gets a view-transition-name — nothing else. Per-card
+   morphs and a named nav pill were tried and reverted: snapshot pseudo
+   elements render ABOVE the page and stretch between old/new sizes, which
+   produced covered nav text, giant mid-flight text, and floating blur ghosts
+   (backdrop-filter panels snapshotted against nothing).
+
+   The name is scoped behind Astro's own html[data-astro-transition]
+   attribute because Chromium disables backdrop-filter on elements carrying a
+   persistent view-transition-name. The attribute is set just before the old
+   page is captured, survives the document swap (a custom <html> class does
+   not), and is removed when the transition ends. */
+
+html[data-astro-transition] .vt-page {
+  view-transition-name: page;
+}
+
+/* header (persisted) + sky (persisted) are identical across pages: freeze
+   the root pair so only the page group animates */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* page content: old exits fully BEFORE new enters — a plain cross-fade
+   double-exposes the translucent glass panels against the persisted sky */
+@keyframes page-exit {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+::view-transition-old(page) {
+  animation: page-exit 0.18s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+/* The NEW page is deliberately NOT animated as a snapshot. A snapshot is a flat
+   image, and backdrop-filter can't sample the persisted starfield across the
+   snapshot boundary — so the incoming glass cards render blur-less for the whole
+   transition, then pop in once the real DOM takes over. Instead we hide the new
+   snapshot entirely (opacity here is on the pseudo, so it doesn't touch the real
+   cards) and play the enter on the REAL DOM: a transform drift on .vt-page plus
+   an opacity fade on leaf targets only, so the cards keep their blur the whole
+   way in. See BaseLayout's before-swap handler. */
+::view-transition-new(page) {
+  animation: none;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}
+
 /* ---------- blog prose ---------- */
 .prose-night {
   color: var(--color-foreground);

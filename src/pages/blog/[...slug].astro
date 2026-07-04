@@ -1,8 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import Header from '../../components/Header.astro'
-import Footer from '../../components/Footer.astro'
+import TagPill from '../../components/TagPill.astro'
+import { formatDate } from '../../lib/format'
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft)
@@ -14,17 +14,20 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props
 const { Content } = await render(post)
-
-const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 ---
 
-<BaseLayout title={`${post.data.title} — Yi-Ting Chiu`} description={post.data.description}>
-  <Header active="blog" />
+<BaseLayout
+  title={`${post.data.title} — Yi-Ting Chiu`}
+  description={post.data.description}
+  active="blog"
+>
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
     <!-- frosted glass over the sky: the aurora at the painting's top glows
-         through around and behind the article -->
-    <article class="rounded-3xl border border-border-subtle/60 bg-surface/50 p-6 backdrop-blur-md md:p-10">
+         through around and behind the article. Enter/exit rides the shared
+         page fade+drift (global.css) — no per-card morph. -->
+    <article
+      class="rounded-3xl border border-border-subtle/60 bg-surface/50 p-6 backdrop-blur-md md:p-10"
+    >
       <header class="mb-10 flex flex-col gap-4">
         <a
           href="/blog"
@@ -42,15 +45,9 @@ const fmt = (d: Date) =>
             datetime={post.data.pubDate.toISOString()}
             class="font-mono text-sm text-muted-dark"
           >
-            {fmt(post.data.pubDate)}
+            {formatDate(post.data.pubDate, 'long')}
           </time>
-          {
-            post.data.tags.map((tag) => (
-              <span class="rounded-full border border-border-subtle px-2.5 py-0.5 font-mono text-[11px] text-muted">
-                {tag}
-              </span>
-            ))
-          }
+          {post.data.tags.map((tag) => <TagPill tag={tag} />)}
         </div>
       </header>
 
@@ -59,5 +56,4 @@ const fmt = (d: Date) =>
       </div>
     </article>
   </main>
-  <Footer />
 </BaseLayout>

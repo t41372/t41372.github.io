@@ -1,14 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import Header from '../components/Header.astro'
 import HeroSection from '../components/hero/HeroSection.astro'
-import Footer from '../components/Footer.astro'
 ---
 
-<BaseLayout>
-  <Header active="home" />
+<BaseLayout active="home">
   <main>
     <HeroSection />
   </main>
-  <Footer />
 </BaseLayout>

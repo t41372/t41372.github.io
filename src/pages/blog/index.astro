@@ -1,19 +1,15 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import Header from '../../components/Header.astro'
-import Footer from '../../components/Footer.astro'
+import TagPill from '../../components/TagPill.astro'
+import { formatDate } from '../../lib/format'
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 )
-
-const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 ---
 
-<BaseLayout title="Blog — Yi-Ting Chiu" description="Writings by Yi-Ting Chiu.">
-  <Header active="blog" />
+<BaseLayout title="Blog — Yi-Ting Chiu" description="Writings by Yi-Ting Chiu." active="blog">
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
     <div class="mb-12 flex flex-col gap-3">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
@@ -44,7 +40,7 @@ const fmt = (d: Date) =>
                     datetime={post.data.pubDate.toISOString()}
                     class="font-mono text-xs text-muted-dark"
                   >
-                    {fmt(post.data.pubDate)}
+                    {formatDate(post.data.pubDate)}
                   </time>
                 </div>
                 {post.data.description && (
@@ -55,9 +51,7 @@ const fmt = (d: Date) =>
                 {post.data.tags.length > 0 && (
                   <div class="mt-1 flex flex-wrap gap-2">
                     {post.data.tags.map((tag) => (
-                      <span class="rounded-full border border-border-subtle px-2.5 py-0.5 font-mono text-[11px] text-muted">
-                        {tag}
-                      </span>
+                      <TagPill tag={tag} />
                     ))}
                   </div>
                 )}
@@ -68,5 +62,4 @@ const fmt = (d: Date) =>
       )
     }
   </main>
-  <Footer />
 </BaseLayout>

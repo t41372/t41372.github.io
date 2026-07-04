@@ -1,7 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import Header from '../components/Header.astro'
-import Footer from '../components/Footer.astro'
 import ProjectCard from '../components/projects/ProjectCard.astro'
 import { projects } from '../data/projects'
 ---
@@ -9,8 +7,8 @@ import { projects } from '../data/projects'
 <BaseLayout
   title="Projects — Yi-Ting Chiu"
   description="Projects created and maintained by Yi-Ting Chiu: Open-LLM-VTuber, PathKeep, Standard ASR, and more."
+  active="projects"
 >
-  <Header active="projects" />
   <main class="mx-auto w-full max-w-4xl px-6 pb-24 pt-32 md:px-8">
     <div class="mb-14 flex flex-col gap-3">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
@@ -40,5 +38,4 @@ import { projects } from '../data/projects'
       </a>
     </div>
   </main>
-  <Footer />
 </BaseLayout>
