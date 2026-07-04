@@ -15,6 +15,9 @@ uniform vec2 uRes;
 uniform float uTime;
 uniform float uScroll; // how far the sky painting is rolled up, in viewport-heights
 uniform float uSkyH;   // the painting's total height, in viewport-heights
+uniform vec4 uAvoid[4]; // hero text LINE rects in screen uv (x0,y0,x1,y1), y up;
+                        // unused slots are parked far off-screen
+uniform float uAvoidK;  // how deeply the aurora thins behind them (0 = off)
 
 // ---------- noise ----------
 float hash21(vec2 p) {
@@ -126,7 +129,13 @@ void main() {
   scene += starLayer(suv * 55.0, uTime, 0.985) * 0.45;
   scene += starLayer(suv * 22.0 + 47.0, uTime, 0.978) * 0.95;
 
-  // ---------- aurora curtain (painted at the top of the scroll) ----------
+  // ---------- aurora curtains (painted at the top of the scroll) ----------
+  // Viewpoint: an observer STANDING in the valley, looking out across the
+  // mountains — not lying under the corona. Seen side-on, a curtain is a
+  // ribbon sweeping across the sky: a crisp, undulating lower edge, thin
+  // vertical rays hanging from it, and fold heights that vary wildly along
+  // the ribbon so the tops dissolve raggedly at different altitudes instead
+  // of at one uniform ceiling.
   // Aurora coordinate: on portrait screens the true aspect (< 1) makes the
   // noise domain so narrow that the ray fbm barely varies across the screen —
   // whole minutes can pass with no visible curtain. Clamping the horizontal
@@ -135,22 +144,35 @@ void main() {
   // proper curtain. Stars keep the true aspect (they must stay round).
   float ax = uv.x * max(aspect, 1.5);
 
-  // undulating base line of the curtain, drifting slowly
-  float baseY = 0.24 + 0.16 * (fbm(vec2(ax * 0.9 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0;
+  // lower edge of the curtain: one long swooping arc plus per-fold dips —
+  // without the second term the fringe straightens into a ruler line
+  float baseY = 0.26
+    + 0.26 * (fbm(vec2(ax * 0.7 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0
+    + 0.09 * (fbm(vec2(ax * 2.3 + 11.0, uTime * 0.045)) - 0.5) * 2.0;
   float hgt = wy - baseY; // height above the curtain's lower edge
 
   // domain warp -> drapery folds
   float warp = (fbm(vec2(ax * 1.6 - uTime * 0.035, wy * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
 
+  // folds lean sideways a little more with altitude — the gentle shear that
+  // sells "drapery seen at an angle" rather than "patches straight overhead"
+  float lean = (fbm(vec2(ax * 0.4 + 21.0, uTime * 0.015)) - 0.5) * 0.9;
+  float rx = ax + warp + max(hgt, 0.0) * lean;
+
   // vertical rays: anisotropic noise (high freq in x, stretched in y)
-  float rays = fbm(vec2((ax + warp) * 5.5, wy * 0.22 - uTime * 0.045));
-  rays = smoothstep(0.28, 0.78, rays);
+  float rays = fbm(vec2(rx * 5.5, wy * 0.5 - uTime * 0.045));
+  rays = smoothstep(0.30, 0.75, rays);
   // finer secondary ray detail
-  float rays2 = vnoise(vec2((ax + warp * 1.4) * 22.0, wy * 0.6 - uTime * 0.07));
+  float rays2 = vnoise(vec2(rx * 22.0, wy * 0.6 - uTime * 0.07));
   rays *= 0.72 + 0.28 * rays2;
 
-  // vertical profile: sharp bright lower edge, long fade upward
-  float profile = smoothstep(-0.015, 0.045, hgt) * exp(-max(hgt, 0.0) * 2.6);
+  // per-fold ray height: some folds climb far past the screen top, others
+  // stay short — heights come from their own noise, never from the viewport
+  float tall = 0.30 + 1.30 * fbm(vec2(ax * 1.1 + 7.0, uTime * 0.018));
+  float profile = smoothstep(-0.015, 0.045, hgt) * exp(-max(hgt, 0.0) * 2.2 / tall);
+
+  // the side view's signature: a hot, crisp rim right at the lower edge
+  float rim = smoothstep(-0.012, 0.02, hgt) * exp(-max(hgt, 0.0) * 10.0);
 
   // waves of brightness traveling along the curtain
   float shimmer = 0.78 + 0.22 * sin(ax * 9.0 - uTime * 0.55 + warp * 8.0);
@@ -158,22 +180,38 @@ void main() {
   // gentle horizontal mask (fades only at the far edges)
   float edgeMask = smoothstep(0.0, 0.18, uv.x) * smoothstep(1.0, 0.80, uv.x);
 
-  float aur = clamp(rays * profile * shimmer * edgeMask * 2.4, 0.0, 1.0);
+  // hero-text exclusion: the curtain "happens" to run thin behind the intro
+  // text. One rect PER TEXT LINE (distance to the nearest), so a short line
+  // like "Hello!" doesn't drag a big empty quiet zone across the sky to the
+  // right of it; a long, soft feather makes the falloff read as a gradient.
+  vec2 ap = vec2(uv.x * aspect, uv.y);
+  float ad = 1e3;
+  for (int i = 0; i < 4; i++) {
+    vec2 alo = vec2(uAvoid[i].x * aspect, uAvoid[i].y);
+    vec2 ahi = vec2(uAvoid[i].z * aspect, uAvoid[i].w);
+    ad = min(ad, distance(ap, clamp(ap, alo, ahi)));
+  }
+  float avoid = 1.0 - uAvoidK * (1.0 - smoothstep(0.0, 0.24, ad));
+
+  // rim weight follows ray density, so the hot fringe lights up only under
+  // the strongest folds instead of underlining the whole curtain
+  float aur = clamp((profile + rim * (0.2 + 0.8 * rays)) * rays * shimmer * edgeMask * 2.2, 0.0, 1.0) * avoid;
 
   // second, fainter and higher curtain for depth
-  float baseY2 = baseY + 0.30 + 0.05 * sin(uTime * 0.05 + 2.0);
+  float baseY2 = baseY + 0.32 + 0.05 * sin(uTime * 0.05 + 2.0);
   float hgt2 = wy - baseY2;
   float rays2b = fbm(vec2((ax - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.03));
   rays2b = smoothstep(0.42, 0.85, rays2b);
-  float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 4.5);
-  float aur2 = clamp(rays2b * profile2 * edgeMask * 1.4, 0.0, 1.0);
+  float tall2 = 0.25 + 0.85 * fbm(vec2(ax * 1.3 + 43.0, uTime * 0.02));
+  float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 2.6 / tall2);
+  float aur2 = clamp(rays2b * profile2 * edgeMask * 1.3, 0.0, 1.0) * avoid;
 
   // ---------- aurora color ramp (by height above lower edge) ----------
   vec3 cFringe = vec3(0.92, 0.45, 0.62); // pink fringe at the very bottom
   vec3 cGreen  = vec3(0.32, 0.94, 0.55); // oxygen green
   vec3 cTeal   = vec3(0.30, 0.84, 0.86); // teal mid
   vec3 cPurple = vec3(0.52, 0.38, 0.88); // purple top
-  float ch = clamp(hgt * 1.9, 0.0, 1.0);
+  float ch = clamp(hgt * 1.2, 0.0, 1.0);
   vec3 aurCol = mix(cGreen, cTeal, smoothstep(0.05, 0.45, ch));
   aurCol = mix(aurCol, cPurple, smoothstep(0.45, 1.0, ch));
   aurCol = mix(cFringe, aurCol, smoothstep(-0.005, 0.05, hgt));
@@ -262,6 +300,21 @@ export default function StarSky() {
     const uTime = gl.getUniformLocation(prog, 'uTime')
     const uScroll = gl.getUniformLocation(prog, 'uScroll')
     const uSkyH = gl.getUniformLocation(prog, 'uSkyH')
+    const uAvoid = gl.getUniformLocation(prog, 'uAvoid')
+    const uAvoidK = gl.getUniformLocation(prog, 'uAvoidK')
+
+    // the elements the aurora keeps its distance from (the hero intro text);
+    // re-queried after every client-side navigation — pages without any
+    // simply run with the exclusion off. Their INLINE CONTENTS are measured
+    // (Range API), not their boxes: h1/p are block elements spanning the full
+    // container width, and a box-based rect read as an invisible billboard.
+    let avoidEls: Element[] = []
+    const findAvoid = () => {
+      avoidEls = Array.from(document.querySelectorAll('[data-aurora-avoid]'))
+    }
+    findAvoid()
+    const avoidRange = document.createRange()
+    const avoidData = new Float32Array(16) // 4 line rects × (x0,y0,x1,y1)
 
     // Stable viewport reference. The canvas is sized with 100lvh (the LARGE
     // viewport), so its clientHeight does NOT change while the iOS address
@@ -304,10 +357,60 @@ export default function StarSky() {
         (SKY_SCROLL_FACTOR * Math.max(window.scrollY, 0)) / vhRef,
         skyH - 1,
       )
+      // measured per frame: the hero text rides a rellax transform AND the
+      // typewriter grows it character by character. getClientRects() gives
+      // one rect per inline fragment; fragments sharing a line are merged, so
+      // each TEXT LINE becomes its own snug exclusion rect — a short line
+      // ("Hello!") never widens the quiet zone of the lines below it.
+      avoidData.fill(-9) // park unused slots far off-screen
+      let ak = 0
+      if (avoidEls.length > 0) {
+        const lines: { l: number; t: number; r: number; b: number }[] = []
+        for (const el of avoidEls) {
+          avoidRange.selectNodeContents(el)
+          for (const r of avoidRange.getClientRects()) {
+            if (r.width <= 0 || r.height <= 0) continue
+            let merged = false
+            for (const q of lines) {
+              const overlap = Math.min(r.bottom, q.b) - Math.max(r.top, q.t)
+              if (overlap > 0.5 * Math.min(r.height, q.b - q.t)) {
+                q.l = Math.min(q.l, r.left)
+                q.t = Math.min(q.t, r.top)
+                q.r = Math.max(q.r, r.right)
+                q.b = Math.max(q.b, r.bottom)
+                merged = true
+                break
+              }
+            }
+            if (!merged) lines.push({ l: r.left, t: r.top, r: r.right, b: r.bottom })
+          }
+        }
+        // more lines than slots (deep mobile wrapping): union the overflow
+        // into the last slot rather than dropping it
+        while (lines.length > 4) {
+          const extra = lines.pop()!
+          const last = lines[lines.length - 1]!
+          last.l = Math.min(last.l, extra.l)
+          last.t = Math.min(last.t, extra.t)
+          last.r = Math.max(last.r, extra.r)
+          last.b = Math.max(last.b, extra.b)
+        }
+        const w = Math.max(canvas.clientWidth, 1)
+        for (let i = 0; i < lines.length; i++) {
+          const q = lines[i]!
+          avoidData[i * 4] = q.l / w
+          avoidData[i * 4 + 1] = 1 - q.b / vhRef
+          avoidData[i * 4 + 2] = q.r / w
+          avoidData[i * 4 + 3] = 1 - q.t / vhRef
+        }
+        if (lines.length > 0) ak = 0.6
+      }
       gl.uniform2f(uRes, canvas.width, canvas.height)
       gl.uniform1f(uTime, timeSec)
       gl.uniform1f(uScroll, offset)
       gl.uniform1f(uSkyH, skyH)
+      gl.uniform4fv(uAvoid, avoidData)
+      gl.uniform1f(uAvoidK, ak)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
@@ -324,6 +427,7 @@ export default function StarSky() {
     // ClientRouter swaps pages without reloading: the persisted sky just
     // re-measures its painting length for the new page's scroll height
     const onPageLoad = () => {
+      findAvoid()
       resize()
       draw(lastTimeSec)
     }

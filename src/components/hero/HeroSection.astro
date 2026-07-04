@@ -8,7 +8,12 @@ import HeroIntro from './HeroIntro'
 <section class="relative h-svh w-full overflow-hidden" aria-label="Introduction">
   <div class="absolute inset-0 flex items-end">
     <div class="mx-auto w-full max-w-6xl px-6 pb-24 md:px-10 md:pb-28">
-      <div class="rellax max-w-3xl" data-rellax-speed="-2">
+      <!-- text-shadow-night: navy glyph halo (legibility layer 2; layer 1 is
+           the aurora exclusion — see data-aurora-avoid inside HeroIntro,
+           placed on the text elements themselves, not this container: StarSky
+           measures the actual inline text via Range, so the quiet zone hugs
+           the glyphs instead of this full-width box) -->
+      <div class="rellax max-w-3xl text-shadow-night" data-rellax-speed="-2">
         <HeroIntro client:load />
       </div>
     </div>

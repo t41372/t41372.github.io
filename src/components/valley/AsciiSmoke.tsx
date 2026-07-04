@@ -103,36 +103,53 @@ export default function AsciiSmoke({
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
 
-    // chimney mouth: horizontally centered, 12% above the canvas bottom so
+    // chimney mouth: horizontally centered, 7% above the canvas bottom so
     // blob bottoms aren't clipped flat by the canvas edge
     const emitterX = () => width * 0.5
-    const emitterY = () => height * 0.88
+    const emitterY = () => height * 0.93
 
     const puffs: Puff[] = []
-    const maxPuffs = isMobile ? 36 : 64 // cap counts shards from split blobs
+    const maxPuffs = isMobile ? 44 : 80 // cap counts shards from split blobs
 
-    // a chimney "exhale": 2-3 overlapping blobs forming one little cloud
+    // buoyant rise: puffs speed UP with age (0.55x at birth -> 3.15x at end of
+    // life), so consecutive clouds keep pulling apart vertically as they climb
+    // toward the hero. climbAt integrates that speed law for pre-aged spawns.
+    const riseFactor = (t: number) => 0.55 + 2.6 * t
+    const climbAt = (riseSpeed: number, age: number, life: number) =>
+      riseSpeed * (0.55 * age + (1.3 * age * age) / life)
+
+    // a chimney "exhale": one distinct little cloud of 3-5 overlapping blobs.
+    // The whole cloud shares one base rise speed — blobs stay huddled together
+    // while the long gap to the next exhale keeps neighbouring clouds from
+    // smearing into a column.
     const spawnCluster = (preAge = 0) => {
-      const n = 2 + Math.floor(Math.random() * 2)
+      const n = 3 + Math.floor(Math.random() * 3)
+      const rise = 22 + Math.random() * 8 // px/s, shared by the whole cloud
+      const cx = (Math.random() - 0.5) * 10
       for (let i = 0; i < n; i++) {
-        const age = preAge + Math.random() * 0.4
-        const riseSpeed = 16 + Math.random() * 8
+        const age = preAge + Math.random() * 0.5
+        const riseSpeed = rise * (0.92 + Math.random() * 0.16)
+        const life = 24 + Math.random() * 5
         puffs.push({
           x:
             emitterX() +
-            (Math.random() - 0.5) * 8 +
-            (i > 0 ? (Math.random() - 0.5) * 18 : 0),
-          y: emitterY() - age * riseSpeed - (i > 0 ? Math.random() * 10 : 0),
+            cx +
+            (i > 0 ? (Math.random() - 0.5) * 20 : (Math.random() - 0.5) * 6),
+          y:
+            emitterY() -
+            climbAt(riseSpeed, Math.min(age, life), life) -
+            (i > 0 ? Math.random() * 12 : 0),
           driftX: 0,
           driftY: 0,
           riseSpeed,
           wobblePhase: Math.random() * Math.PI * 2,
           wobbleFreq: 0.2 + Math.random() * 0.3,
           wobbleAmp: 3.5 + Math.random() * 5,
-          baseRadius: 9 + Math.random() * 6,
+          baseRadius: 10 + Math.random() * 7,
           age,
-          // long life: the plume climbs high before it dissolves
-          life: 14 + Math.random() * 5,
+          // long life + accelerating rise: the plume climbs all the way up
+          // into the hero viewport before it dissolves
+          life,
           splits: 2,
         })
       }
@@ -171,10 +188,11 @@ export default function AsciiSmoke({
       density.fill(0)
       for (const p of puffs) {
         const t = p.age / p.life
-        const R = p.baseRadius * (1 + t * 1.7)
+        const R = p.baseRadius * (1 + t * 2.6)
         const fadeIn = Math.min(1, p.age / 0.45)
-        // hold density through most of the ascent, dissolve only near the end
-        const A = fadeIn * Math.max(0, 1 - t * t)
+        // thin steadily with altitude (the high plume must read as scattered
+        // wisps, not a solid column), then dissolve fully near end of life
+        const A = fadeIn * Math.max(0, 1 - t * t) * (1 - 0.5 * t)
         if (A <= 0.01) continue
         const cr = Math.ceil(R / CELL)
         const cx = Math.round(p.x / CELL - 0.5)
@@ -222,9 +240,10 @@ export default function AsciiSmoke({
     // static smoke for reduced motion: a few frozen puffs, rendered once
     function drawStatic() {
       puffs.length = 0
-      spawnCluster(4.5)
-      spawnCluster(2.5)
-      spawnCluster(1)
+      spawnCluster(16)
+      spawnCluster(10)
+      spawnCluster(5)
+      spawnCluster(1.5)
       renderField()
       puffs.length = 0
     }
@@ -250,13 +269,13 @@ export default function AsciiSmoke({
     // takes to scroll down to the footer.
     let warmed = false
     const warmUp = () => {
-      for (const a of [13, 11.5, 10, 8.5, 7, 5.5, 4, 2.6, 1.3, 0]) spawnCluster(a)
+      for (const a of [23.5, 20, 16.5, 13.2, 10, 7, 4.5, 2.2, 0]) spawnCluster(a)
     }
 
     let raf = 0
     let last = performance.now()
     let clusterAcc = 0
-    let clusterNext = 1.6
+    let clusterNext = 2.6
     let running = false
     let onScreen = false
 
@@ -276,7 +295,8 @@ export default function AsciiSmoke({
       clusterAcc += dt
       if (clusterAcc >= clusterNext) {
         clusterAcc = 0
-        clusterNext = 1.6 + Math.random() * 0.9
+        // long gaps between exhales: distinct clouds, not a column
+        clusterNext = 2.6 + Math.random() * 1.8
         spawnCluster()
       }
 
@@ -285,7 +305,7 @@ export default function AsciiSmoke({
       mouse.vy *= 1 - Math.min(1, 5 * dt)
       const mouseSpeed = Math.hypot(mouse.vx, mouse.vy)
 
-      const wind = Math.sin(now * 0.00015) * 3
+      const wind = Math.sin(now * 0.00015) * 5
 
       for (let i = puffs.length - 1; i >= 0; i--) {
         const p = puffs[i]!
@@ -295,7 +315,7 @@ export default function AsciiSmoke({
           continue
         }
         const t = p.age / p.life
-        const R = p.baseRadius * (1 + t * 1.7)
+        const R = p.baseRadius * (1 + t * 2.6)
 
         const dx = p.x - mouse.x
         const dy = p.y - mouse.y
@@ -342,12 +362,15 @@ export default function AsciiSmoke({
         p.driftX *= 1 - Math.min(1, 2.2 * dt)
         p.driftY *= 1 - Math.min(1, 2.2 * dt)
 
+        // wobble and wind both strengthen with altitude, so clouds that left
+        // the chimney in the same lane scatter sideways as they climb — the
+        // high plume meanders instead of stacking into a straight column
         const wobble =
           Math.sin(p.age * p.wobbleFreq * Math.PI * 2 + p.wobblePhase) *
-          p.wobbleAmp
-        // wind strengthens with altitude so the plume top trails away
-        p.x += (wobble + wind * (0.4 + t * 1.6) + p.driftX) * dt
-        p.y += (-p.riseSpeed * (1 - t * 0.3) + p.driftY) * dt
+          p.wobbleAmp *
+          (1 + t * 1.8)
+        p.x += (wobble + wind * (0.4 + t * 2.2) + p.driftX) * dt
+        p.y += (-p.riseSpeed * riseFactor(t) + p.driftY) * dt
       }
 
       renderField()

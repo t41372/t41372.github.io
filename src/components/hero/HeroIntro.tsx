@@ -254,9 +254,13 @@ export default function HeroIntro() {
 
   return (
     <div className="flex flex-col gap-5 text-left">
+      {/* data-aurora-avoid: StarSky measures the INLINE CONTENTS of these two
+          blocks (Range API) and thins the aurora behind their union — the
+          rect tracks the glyphs as the typewriter grows them */}
       <h1
         aria-label="Hello! This is Yi-Ting Chiu."
         className="font-mono text-3xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl md:text-5xl"
+        data-aurora-avoid
       >
         <span ref={helloRef} />
         <span ref={waveRef} />
@@ -271,6 +275,7 @@ export default function HeroIntro() {
         ref={l2Ref}
         aria-label="A nice guy building fun stuff."
         className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
+        data-aurora-avoid
       >
         <span ref={l2aRef} />
         <small ref={sadRef} className="text-muted-dark" />

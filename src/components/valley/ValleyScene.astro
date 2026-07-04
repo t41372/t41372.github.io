@@ -164,15 +164,18 @@ import AsciiSmoke from './AsciiSmoke'
     const SCENE_W = 1440
     const SCENE_H = 600
     const MOUTH = { x: 753, y: 351 } // chimney mouth, scene coords (261 + the 90 scene shift)
-    const SMOKE = { w: 440, h: 620 } // smoke canvas box, scene units (tall: the plume climbs high)
+    // smoke canvas box, scene units. VERY tall on purpose: the plume climbs
+    // all the way past the valley into the hero viewport — drifting wisps up
+    // there are the scroll clue that something lives below the fold
+    const SMOKE = { w: 620, h: 1200 }
     const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
 
     let scale = 1
     let sMax = 0
 
-  // Anchor the smoke canvas over the chimney: its horizontal center and 88%
+  // Anchor the smoke canvas over the chimney: its horizontal center and 93%
   // height mark sit on the chimney mouth (the smoke component emits from
-  // there, leaving 12% below so blobs aren't clipped flat).
+  // there, leaving 7% below so blobs aren't clipped flat).
   // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
   const layout = () => {
     const sect = section.getBoundingClientRect()
@@ -186,7 +189,7 @@ import AsciiSmoke from './AsciiSmoke'
     smokeWrap.style.width = `${w}px`
     smokeWrap.style.height = `${h}px`
     smokeWrap.style.left = `${mx - w / 2}px`
-    smokeWrap.style.top = `${my - h * 0.88}px`
+    smokeWrap.style.top = `${my - h * 0.93}px`
   }
 
   // Continuous parallax: progress is driven by how close we are to the very
