@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Yi-Ting Chiu's personal website (v2), a static Astro site at https://yi-ting.live. v2 shipped in 2026, replacing the hand-written "interactive terminal" site (v1, 2021–2026). v1 is preserved twice: its source on the `archive/v1-terminal` branch (tag `v1-terminal`), and a browsable snapshot served at `/archive/v1/` from `public/archive/v1/`.
+Yi-Ting Chiu's personal website (v2), a static Astro site at https://yi-ting.com (also t41372.github.io; the old yi-ting.live domain expired). v2 shipped in 2026, replacing the hand-written "interactive terminal" site (v1, 2021–2026). v1 is preserved twice: its source on the `archive/v1-terminal` branch (tag `v1-terminal`), and a browsable snapshot served at `/archive/v1/` from `public/archive/v1/`.
 
 ## Commands
 
@@ -20,7 +20,7 @@ There is no linter or formatter configured. Type-check with `bunx astro check` (
 
 ## Architecture
 
-- **Astro 7, static output** (`output: 'static'` in `astro.config.mjs`), `site: 'https://yi-ting.live'`. Deploys to GitHub Pages via `.github/workflows/deploy.yml` on push to `main`; custom domain in `public/CNAME`. `@astrojs/sitemap` emits `/sitemap-index.xml`. All workflows must stay zizmor-clean (SHA-pinned actions, least-privilege permissions) — check with `uvx zizmor .github/workflows/*.yml`.
+- **Astro 7, static output** (`output: 'static'` in `astro.config.mjs`), `site: 'https://yi-ting.com'`. Push to `main` deploys **twice, deliberately uncoupled**: GitHub Actions (`.github/workflows/deploy.yml`) → t41372.github.io, and Cloudflare Pages (git-connected to this repo) → yi-ting.com. **Never set a custom domain on the GitHub Pages side and never add a `public/CNAME`** — the github.io copy must stay a full standalone mirror (no redirect to a domain that can lapse) so the site outlives domain ownership. `@astrojs/sitemap` emits `/sitemap-index.xml`. All workflows must stay zizmor-clean (SHA-pinned actions, least-privilege permissions) — check with `uvx zizmor .github/workflows/*.yml`.
 - **React 19 islands** — most of the page is static `.astro`; interactivity is opt-in via islands with explicit hydration directives. Keep JS shipped to the client minimal — only make something an island when it needs runtime behavior.
 - **Page transitions are swup, NOT Astro's ClientRouter** — swup swaps only `<main>`; the WebGL sky, header, and footer persist outside it. The bridge script in `BaseLayout.astro` re-emits the `astro:*` navigation events and choreographs the WAAPI fade/drift. Read the comments in `BaseLayout.astro` and `astro.config.mjs` before touching navigation, and never animate opacity on a backdrop-blur element or transform/opacity on its ancestors (documented "empirical law" in BaseLayout — it blanks the glass for a frame).
 - **Pages** — `/` (hero), `/projects` (`src/data/projects.ts`; each entry has an optional `media` field), `/blog`, `/archive` (the version museum), plus the raw v1 snapshot under `public/archive/v1/`. Components grouped under `src/components/{hero,projects,valley}/`. `BaseLayout.astro` wraps every page (fonts, global.css, `<head>` meta + OG tags, PostHog init).

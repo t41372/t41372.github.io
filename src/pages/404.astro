@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="404 — Yi-Ting Chiu" description="This page does not exist." active="none">
+  <main class="mx-auto flex w-full max-w-3xl flex-col items-start gap-6 px-6 pb-24 pt-40 md:px-8">
+    <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
+      {'// 404'}
+    </span>
+    <h1
+      data-aurora-avoid
+      class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl"
+    >
+      Page not found
+    </h1>
+    <p data-aurora-avoid class="text-muted">
+      Whatever was here is gone, moved, or never existed. The stars are still up though.
+    </p>
+    <nav class="flex flex-wrap items-center gap-6 font-mono text-sm">
+      <a href="/" class="text-muted transition-colors hover:text-aurora">← home</a>
+      <a href="/blog" class="text-muted transition-colors hover:text-aurora">blog</a>
+    </nav>
+  </main>
+</BaseLayout>

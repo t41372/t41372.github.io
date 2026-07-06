@@ -342,7 +342,7 @@ That's it. I hope this article gives you some food for thought.
 - [Ilya Sutskever: Deep Learning | Lex Fridman Podcast #94](https://www.youtube.com/watch?v=13CZPWmke6A)
 - [Max Tegmark: The Case for Halting AI Development | Lex Fridman Podcast](https://www.youtube.com/watch?v=VcVfceTsD0A)
 - Ji, Jiaming, et al. “AI Alignment: A Comprehensive Survey.” _arXiv.org_, 30 Oct. 2023, arxiv.org/abs/2310.19852.
-- MICHAEL J, HOLTZMAN A, PARRISH A, et al. What do NLP researchers believe? results of the NLP community metasurvey[C/OL]//ROGERS A, BOYD-GRABER J L, OKAZAKI N. Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2023, Toronto, Canada, July 9-14, 2023. Association for Computational Linguistics, 2023: 16334-16368. https://doi.org/10.18653/v1/2023.acl-long. 903.
+- MICHAEL J, HOLTZMAN A, PARRISH A, et al. What do NLP researchers believe? results of the NLP community metasurvey[C/OL]//ROGERS A, BOYD-GRABER J L, OKAZAKI N. Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), ACL 2023, Toronto, Canada, July 9-14, 2023. Association for Computational Linguistics, 2023: 16334-16368. https://doi.org/10.18653/v1/2023.acl-long.903.
 - David Rozado et al. "The Political Biases of ChatGPT." _Social Sciences_ (2023). https://doi.org/10.3390/socsci12030148.
 - Hartmann, Jochen, et al. “The Political Ideology of Conversational AI: Converging Evidence on ChatGPT’s Pro-environmental, Left-libertarian Orientation.” _arXiv.org_, 5 Jan. 2023, arxiv.org/abs/2301.01768.
 - Motoki, Fabio, et al. “More Human Than Human: Measuring ChatGPT Political Bias.” _SSRN Electronic Journal_, Jan. 2023, https://doi.org/10.2139/ssrn.4372349.

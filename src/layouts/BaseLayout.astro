@@ -9,7 +9,9 @@ import Footer from '../components/Footer.astro'
 interface Props {
   title?: string
   description?: string
-  active?: 'home' | 'projects' | 'blog' | 'archive'
+  active?: 'home' | 'projects' | 'blog' | 'archive' | 'none'
+  /** document language — the site chrome is English; zh article pages pass 'zh' */
+  lang?: 'en' | 'zh'
   /** language variants of this page (site-relative paths) for hreflang links.
       Pass ALL variants including the current page (Google requires the set to
       be self-referencing and reciprocal); x-default is added automatically
@@ -21,6 +23,7 @@ const {
   title = "Yi-Ting Chiu — builds fun stuff",
   description = 'Personal website of Yi-Ting Chiu. Creator of Open-LLM-VTuber, PathKeep, and Standard ASR. Builds fun stuff with AI, speech, and code.',
   active = 'home',
+  lang = 'en',
   alternates,
 } = Astro.props
 
@@ -35,7 +38,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
 <!-- no bg-background utility here: global.css paints <html> in the shader
      sky's exact top color + gradient (the utility would override it with the
      darker token, which iOS letterboxes as a black bar) -->
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <!-- viewport-fit=cover: let the fixed StarSky canvas (top:0, h-lvh) bleed
@@ -46,6 +49,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" href="/favicon.png" />
+    <link rel="alternate" type="application/rss+xml" title="Yi-Ting Chiu — Blog" href="/rss.xml" />
     <!-- Keep Apple Safari free of a static theme-color. Older Safari chrome
          and newer liquid-glass bars both sit over two different page colors
          (sky at the top, valley-ground at the footer), so the structural fix

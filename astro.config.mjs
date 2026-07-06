@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://yi-ting.live',
+  site: 'https://yi-ting.com',
   output: 'static',
   integrations: [
     react(),

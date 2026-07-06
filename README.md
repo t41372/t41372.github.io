@@ -1,23 +1,13 @@
-# yi-ting.live
+# yi-ting.com
 
-Yi-Ting Chiu's personal website — a static [Astro](https://astro.build) site under one continuous
-night sky: a WebGL aurora up top, a hand-drawn low-poly valley at the bottom, and an ASCII cabin
-whose chimney smoke you can poke with your cursor.
+Yi-Ting Chiu's personal website — a static [Astro](https://astro.build) site.
 
-**Live at [yi-ting.live](https://yi-ting.live)**
+**Live at [yi-ting.com](https://yi-ting.com) and t41372.github.io**
 
-## Highlights
-
-- **Astro 7, fully static** — React islands only where something actually moves
-  (`AuroraBackground`/`StarSky`, `HeroIntro`, `GithubStars`).
-- **One shared starfield** — every section parallaxes over the same sky; scroll effects are
-  CSS scroll-driven animations (no JS scroll pipeline), page transitions via swup.
-- **Bilingual blog** — posts live in `src/content/blog/`, either as a flat `slug.md` or as a
-  `slug/en.md` + `slug/zh.md` pair sharing one URL (`/blog/slug`, `/blog/slug/zh`).
-- **Site archaeology** — previous versions of this site are preserved fully working under
-  [`/archive`](https://yi-ting.live/archive). v1 (2021–2026) was a hand-written interactive fake
-  terminal; its source lives on the `archive/v1-terminal` branch and its snapshot in
-  `public/archive/v1/`.
+Previous versions of this site are preserved fully working under
+[`/archive`](https://yi-ting.com/archive). v1 (2021–2026) was a hand-written interactive fake
+terminal; its source lives on the `archive/v1-terminal` branch and its snapshot in
+`public/archive/v1/`.
 
 ## Develop
 
@@ -42,5 +32,7 @@ post, make a folder with `en.md` + `zh.md` and put images in `images/` next to t
 
 ## Deploy
 
-Pushes to `main` build and deploy to GitHub Pages via `.github/workflows/deploy.yml`
-(custom domain in `public/CNAME`).
+Pushes to `main` deploy twice, independently: GitHub Actions builds to GitHub Pages
+(t41372.github.io), and Cloudflare Pages builds the same repo for [yi-ting.com](https://yi-ting.com).
+The two copies are deliberately not coupled — no custom domain on the GitHub side — so the
+github.io mirror keeps working even if the domain ever lapses.
