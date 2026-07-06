@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Keep the SHA-pinned GitHub Actions fresh: Dependabot bumps the pinned commit
+  # (and the `# vX.Y.Z` comment) when a new release lands, so pinning for supply-
+  # chain safety does not mean silently running stale, unpatched actions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
