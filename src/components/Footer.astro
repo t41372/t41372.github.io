@@ -4,11 +4,15 @@ import ValleyScene from './valley/ValleyScene.astro'
 const year = new Date().getFullYear()
 ---
 
-<footer class="relative" aria-label="Footer">
+<!-- --valley: the view timeline driving the valley layers' settle parallax
+     (ValleyScene). The subject is this WHOLE footer — its bottom edge is the
+     document bottom, so the animation reaches its rest composition exactly at
+     max scroll, never freezing partway. -->
+<footer class="relative" aria-label="Footer" style="view-timeline: --valley block">
   <!-- shared valley scene: the footer's sky stays transparent to the page
        background; only the content strip below carries the ground color -->
   <ValleyScene />
-  <div class="relative w-full bg-[#05070B]">
+  <div class="footer-ground relative w-full bg-[#05070B]">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10 md:px-10">
     <div class="flex flex-col justify-between gap-8 md:flex-row md:items-end">
       <div class="flex flex-col gap-2">

@@ -15,7 +15,7 @@ export function initPostHog() {
   posthog.init(key, {
     api_host: import.meta.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
     defaults: '2025-05-24',
-    // pageviews are captured manually on astro:page-load (ClientRouter SPA
+    // pageviews are captured manually on astro:page-load (swup SPA
     // navigations don't trigger full loads), so disable the automatic one
     // to avoid double-counting the first view
     capture_pageview: false,

@@ -47,6 +47,12 @@ export default function AsciiSmoke({
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const isMobile = window.matchMedia('(max-width: 768px)').matches
+    // Touch devices: cap the sim at 30fps. Uncapped it ran at the display
+    // rate (60–120fps) whenever the tall plume was near the viewport — which
+    // is most of the lower page — and that main-thread load (particle sim +
+    // full-grid 2D text raster) starved every other per-frame job during
+    // scrolling. Smoke is slow-drifting; 30fps is visually identical.
+    const minFrame = window.matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 0
 
     const CELL = isMobile ? 8 : 7 // character cell size in px
     const FONT = `${CELL + 1}px 'Geist Mono Variable', monospace`
@@ -281,6 +287,9 @@ export default function AsciiSmoke({
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick)
+      // frame cap (touch): skip without touching `last`, so the next run's dt
+      // is the true elapsed time (still clamped to 0.05s below)
+      if (now - last < minFrame) return
       const dt = Math.min((now - last) / 1000, 0.05)
       last = now
       if (!width || !height) return

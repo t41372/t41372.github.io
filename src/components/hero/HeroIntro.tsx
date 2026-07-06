@@ -76,6 +76,8 @@ export default function HeroIntro() {
   const funRef = useRef<HTMLSpanElement>(null)
   const l2cRef = useRef<HTMLSpanElement>(null)
   const techRef = useRef<HTMLSpanElement>(null)
+  const dragRef = useRef<HTMLDivElement>(null)
+  const ghostRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
 
   useEffect(() => {
@@ -188,6 +190,7 @@ export default function HeroIntro() {
       const img = document.createElement('img')
       img.src = '/assets/wave.gif'
       img.alt = 'waving hand'
+      img.draggable = false // must not hijack the block's pointer-drag
       img.style.cssText =
         'display:inline-block;height:0.9em;width:auto;margin-left:0.18em;vertical-align:-0.08em'
       el.wave.appendChild(img)
@@ -252,38 +255,226 @@ export default function HeroIntro() {
     return () => ac.abort()
   }, [])
 
+  // ---- draggable intro ----
+  // The whole block can be picked up and dropped anywhere. The drag offset
+  // lives on THIS inner layer, never on the `.hero-lag` ancestor — the
+  // scroll-driven animation owns that element's transform, so a displaced
+  // block still parallaxes (the two transforms compose). The aurora's
+  // exclusion zone follows for free: StarSky re-measures the text's client
+  // rects every frame, transforms included.
+  //
+  // "Home" is magnetic: inside SNAP_R the applied offset is the pointer
+  // offset scaled by (d/SNAP_R)^2 — a dock-magnet suction, continuous at the
+  // radius edge — and releasing inside the radius springs the block back to
+  // exactly (0,0). Releasing farther out leaves it where it was dropped. A
+  // dashed "home slot" fades in while dragging and brightens when a release
+  // would snap. touch-action is pan-y, so phones still scroll normally over
+  // the hero; a deliberate sideways drag grabs the block instead.
+  useEffect(() => {
+    const box = dragRef.current
+    const ghost = ghostRef.current
+    if (!box || !ghost) return
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const SNAP_R = 90
+
+    const pos = { x: 0, y: 0 } // applied offset (suction included)
+    const raw = { x: 0, y: 0 } // where the pointer alone would put it
+    const vel = { x: 0, y: 0 }
+    const grab = { x: 0, y: 0 }
+    let pointerId: number | null = null
+    let raf = 0
+    let lastT = 0
+
+    const apply = () => {
+      box.style.transform =
+        pos.x || pos.y ? `translate3d(${pos.x}px, ${pos.y}px, 0)` : ''
+    }
+    const ghostShow = (state: 'hidden' | 'marker' | 'armed') => {
+      ghost.style.opacity = state === 'hidden' ? '0' : state === 'marker' ? '0.4' : '0.9'
+    }
+
+    const suction = () => {
+      const d = Math.hypot(raw.x, raw.y)
+      const f = d >= SNAP_R ? 1 : (d / SNAP_R) ** 2
+      pos.x = raw.x * f
+      pos.y = raw.y * f
+      return d
+    }
+
+    const springHome = () => {
+      vel.x = 0
+      vel.y = 0
+      lastT = performance.now()
+      const step = (now: number) => {
+        const dt = Math.min((now - lastT) / 1000, 0.032)
+        lastT = now
+        const K = 180 // stiffness; damping 24 ≈ 0.9 ratio — one soft bounce
+        vel.x += (-K * pos.x - 24 * vel.x) * dt
+        vel.y += (-K * pos.y - 24 * vel.y) * dt
+        pos.x += vel.x * dt
+        pos.y += vel.y * dt
+        if (Math.hypot(pos.x, pos.y) < 0.5 && Math.hypot(vel.x, vel.y) < 8) {
+          pos.x = 0
+          pos.y = 0
+          raf = 0
+          apply()
+          return
+        }
+        apply()
+        raf = requestAnimationFrame(step)
+      }
+      raf = requestAnimationFrame(step)
+    }
+
+    // Touch must NEVER start a drag from a vertical gesture — vertical swipes
+    // on the hero are page scrolling (touch-action: pan-y backs this up, but
+    // we don't rely on browser behavior alone: gesture intent is checked
+    // explicitly). A touch drag begins only after ~8px of PREDOMINANTLY
+    // HORIZONTAL movement; a vertical start abandons the pointer to the
+    // scroller. Mouse/pen drags begin immediately.
+    let touchPending = false
+    const down = { x: 0, y: 0 }
+
+    // beginDrag is the ONLY place that stops an in-flight spring-home and
+    // takes ownership of the position — a touch that turns out to be a
+    // vertical scroll never reaches it, so it can't strand the block mid-way
+    // home (grab uses the down coords, so the first 8px of intent-detection
+    // movement is included and the block doesn't hop on drag start)
+    const beginDrag = (e: PointerEvent) => {
+      touchPending = false
+      cancelAnimationFrame(raf)
+      raf = 0
+      raw.x = pos.x
+      raw.y = pos.y
+      grab.x = down.x - raw.x
+      grab.y = down.y - raw.y
+      box.setPointerCapture(e.pointerId)
+      box.style.cursor = 'grabbing'
+      document.documentElement.style.cursor = 'grabbing'
+    }
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0 || pointerId !== null) return
+      pointerId = e.pointerId
+      down.x = e.clientX
+      down.y = e.clientY
+      if (e.pointerType === 'touch') {
+        touchPending = true // wait for horizontal intent
+      } else {
+        beginDrag(e)
+        e.preventDefault() // no text selection under a mouse drag
+      }
+    }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return
+      if (touchPending) {
+        const dx = e.clientX - down.x
+        const dy = e.clientY - down.y
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        if (Math.abs(dx) <= Math.abs(dy)) {
+          // vertical intent: this gesture belongs to the page scroll
+          touchPending = false
+          pointerId = null
+          return
+        }
+        beginDrag(e)
+      }
+      raw.x = e.clientX - grab.x
+      raw.y = e.clientY - grab.y
+      const d = suction()
+      apply()
+      ghostShow(d < 6 ? 'hidden' : d < SNAP_R ? 'armed' : 'marker')
+    }
+    const onUp = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return
+      pointerId = null
+      if (touchPending) {
+        // a tap that never became a drag: nothing was grabbed, nothing moves
+        touchPending = false
+        return
+      }
+      box.style.cursor = ''
+      document.documentElement.style.cursor = ''
+      ghostShow('hidden')
+      if (Math.hypot(raw.x, raw.y) < SNAP_R) {
+        if (reduced) {
+          pos.x = 0
+          pos.y = 0
+          apply()
+        } else {
+          springHome()
+        }
+      }
+    }
+    const onNativeDrag = (e: Event) => e.preventDefault()
+
+    box.addEventListener('pointerdown', onDown)
+    box.addEventListener('pointermove', onMove)
+    box.addEventListener('pointerup', onUp)
+    box.addEventListener('pointercancel', onUp)
+    box.addEventListener('dragstart', onNativeDrag)
+    return () => {
+      cancelAnimationFrame(raf)
+      box.removeEventListener('pointerdown', onDown)
+      box.removeEventListener('pointermove', onMove)
+      box.removeEventListener('pointerup', onUp)
+      box.removeEventListener('pointercancel', onUp)
+      box.removeEventListener('dragstart', onNativeDrag)
+      box.style.cursor = ''
+      document.documentElement.style.cursor = ''
+    }
+  }, [])
+
   return (
-    <div className="flex flex-col gap-5 text-left">
-      {/* data-aurora-avoid: StarSky measures the INLINE CONTENTS of these two
+    // outer div stays put (it marks "home"); the inner layer carries the drag
+    // transform — see the draggable-intro effect above
+    <div className="relative">
+      <div
+        ref={ghostRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-2xl border border-dashed border-foreground/30 opacity-0 transition-opacity duration-300"
+      />
+      <div
+        ref={dragRef}
+        className="flex cursor-grab touch-pan-y flex-col gap-5 text-left select-none"
+      >
+        {/* data-aurora-avoid: StarSky measures the INLINE CONTENTS of these two
           blocks (Range API) and thins the aurora behind their union — the
           rect tracks the glyphs as the typewriter grows them */}
-      <h1
-        aria-label="Hello! This is Yi-Ting Chiu."
-        className="font-mono text-3xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl md:text-5xl"
-        data-aurora-avoid
-      >
-        <span ref={helloRef} />
-        <span ref={waveRef} />
-        <br />
-        <span ref={thisRef} />
-        <span ref={nameRef} data-text={NAME} />
-        <span ref={dotRef} className="text-aurora" />
-        <span ref={curRef} className="type-cursor" aria-hidden="true" />
-      </h1>
+        <h1
+          aria-label="Hello! This is Yi-Ting Chiu."
+          className="font-mono text-3xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl md:text-5xl"
+          data-aurora-avoid
+        >
+          <span ref={helloRef} />
+          <span ref={waveRef} />
+          <br />
+          <span ref={thisRef} />
+          {/* inline-block + nowrap: the name must never break mid-word. The
+              glitch effect's ::before/::after copies are absolutely
+              positioned; over a wrapped (multi-fragment) inline they anchor
+              to the first fragment and re-wrap independently — misaligned
+              ghost text. As an atomic box the name drops to its own line
+              whole, and the copies overlay it exactly. */}
+          <span ref={nameRef} data-text={NAME} className="inline-block whitespace-nowrap" />
+          <span ref={dotRef} className="text-aurora" />
+          <span ref={curRef} className="type-cursor" aria-hidden="true" />
+        </h1>
 
-      <p
-        ref={l2Ref}
-        aria-label="A nice guy building fun stuff."
-        className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
-        data-aurora-avoid
-      >
-        <span ref={l2aRef} />
-        <small ref={sadRef} className="text-muted-dark" />
-        <span ref={l2bRef} />
-        <span ref={funRef} className="fun-text" />
-        <span ref={l2cRef} />
-        <span ref={techRef} className="text-aurora" />
-      </p>
+        <p
+          ref={l2Ref}
+          aria-label="A nice guy building fun stuff."
+          className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
+          data-aurora-avoid
+        >
+          <span ref={l2aRef} />
+          <small ref={sadRef} className="text-muted-dark" />
+          <span ref={l2bRef} />
+          <span ref={funRef} className="fun-text" />
+          <span ref={l2cRef} />
+          <span ref={techRef} className="text-aurora" />
+        </p>
+      </div>
     </div>
   )
 }

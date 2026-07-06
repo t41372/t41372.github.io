@@ -3,17 +3,29 @@ import HeroIntro from './HeroIntro'
 ---
 
 <!-- a transparent "skylight": the fixed StarSky canvas shows through; the
-     intro text parallaxes slower than the page (rellax) so the projects
-     panel visibly slides over it -->
-<section class="relative h-svh w-full overflow-hidden" aria-label="Introduction">
-  <div class="absolute inset-0 flex items-end">
+     intro text parallaxes slower than the page (.hero-lag, a scroll-driven
+     CSS animation — see global.css) so the projects panel slides over it -->
+<!-- min-h-lvh, NOT h-svh/h-dvh: the fixed StarSky canvas is h-lvh, so when the
+     mobile URL bar collapses the visible viewport grows toward lvh. Sizing the
+     hero to lvh (the LARGEST viewport) guarantees it is always >= the visible
+     height in every toolbar state, so the footer's near-black valley ground can
+     never peek in at the bottom. We deliberately avoid dvh here: iOS Safari
+     updates dvh unreliably during the URL-bar collapse, which reintroduced the
+     peek. lvh is a fixed value and immune to that. -->
+<section class="relative min-h-lvh w-full overflow-hidden" aria-label="Introduction">
+  <!-- the text anchors to the bottom of the SMALL viewport (h-svh), not the
+       lvh section: at page open the iOS URL bar is expanded and only svh is
+       visible — anchoring to the section bottom pushed the typewriter's
+       second line under the toolbar. svh is constant, so nothing jumps when
+       the toolbar later collapses. -->
+  <div class="absolute inset-x-0 top-0 flex h-svh items-end">
     <div class="mx-auto w-full max-w-6xl px-6 pb-24 md:px-10 md:pb-28">
       <!-- text-shadow-night: navy glyph halo (legibility layer 2; layer 1 is
            the aurora exclusion — see data-aurora-avoid inside HeroIntro,
            placed on the text elements themselves, not this container: StarSky
            measures the actual inline text via Range, so the quiet zone hugs
            the glyphs instead of this full-width box) -->
-      <div class="rellax max-w-3xl text-shadow-night" data-rellax-speed="-2">
+      <div class="hero-lag max-w-3xl text-shadow-night">
         <HeroIntro client:load />
       </div>
     </div>

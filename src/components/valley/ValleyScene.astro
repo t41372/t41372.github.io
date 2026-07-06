@@ -145,9 +145,81 @@ import AsciiSmoke from './AsciiSmoke'
   </div>
 </section>
 
+<!-- Scroll parallax is PURE CSS below (scroll-driven animation on the --valley
+     view timeline declared on the <footer>). Safari 26.4+/Chrome run it on the
+     compositor thread — the GSAP ScrollTrigger scrub this replaces was
+     structurally unable to keep up on iOS (main-thread transforms always ran
+     ≥1 frame behind momentum scrolling; iOS misreports scrollY mid-fling per
+     GSAP's own docs). Non-supporting browsers (Firefox stable, Safari <26)
+     simply show the settled rest composition — the designed final state. -->
+<style is:global>
+  @supports (animation-timeline: view()) {
+    /* 2.5D settle: each layer starts sunken by its depth and rises to the
+       footer-aligned rest composition while the footer enters the viewport,
+       reaching rest (translate 0) exactly at max scroll — the timeline
+       subject is the whole <footer>, whose bottom edge IS the document
+       bottom, so the layers never freeze partway and sync up. */
+    #valley-scene g[data-depth],
+    #smoke-wrap {
+      /* LONGHANDS ONLY — Lightning CSS merges a following animation-timeline
+         into the `animation` shorthand, which is invalid and gets the whole
+         declaration dropped by browsers (production-build-only breakage) */
+      animation-name: valley-settle;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --valley;
+      animation-range: entry 0% entry 100%;
+      /* stable compositor layer up front: scrolling then slides a cached
+         bitmap instead of re-rastering SVG polygons every frame (the iOS
+         SVG "shatter") */
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+    #valley-scene g[data-depth='30'] {
+      --vdepth: 30px;
+    }
+    #valley-scene g[data-depth='100'] {
+      --vdepth: 100px;
+    }
+    #valley-scene g[data-depth='180'] {
+      --vdepth: 180px;
+    }
+    #valley-scene g[data-depth='255'] {
+      --vdepth: 255px;
+    }
+    /* #smoke-wrap rides the cabin's layer: its --vdepth is NEAR_DEPTH scaled
+       to the rendered svg size, set in px by the layout script below */
+    @keyframes valley-settle {
+      from {
+        transform: translate3d(0, var(--vdepth, 0px), 0);
+      }
+      to {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    /* reduced motion: rest composition, no scroll coupling. Lives HERE, after
+       the animation rule at equal specificity — global.css is bundled before
+       this file, so an override there would lose the cascade. */
+    @media (prefers-reduced-motion: reduce) {
+      #valley-scene g[data-depth],
+      #smoke-wrap {
+        animation: none;
+        /* no animation -> no reason to keep five promoted SVG layers holding
+           raster memory; release the compositor promotion the rule above set */
+        will-change: auto;
+        backface-visibility: visible;
+      }
+    }
+  }
+</style>
+
 <script>
-  // Re-runs after every ClientRouter navigation (the footer DOM is swapped
-  // out each time); previous listeners are removed via `cleanup`.
+  // Layout only — positions the smoke canvas over the chimney mouth; the
+  // scroll parallax itself is the CSS above. Although the footer lives OUTSIDE
+  // swup's <main> and is no longer swapped per navigation, this still re-runs
+  // on every astro:page-load to re-anchor the smoke against the new page's
+  // layout/scroll height; previous listeners are removed via `cleanup`.
   let cleanup: (() => void) | null = null
 
   const setup = () => {
@@ -157,9 +229,7 @@ import AsciiSmoke from './AsciiSmoke'
     const section = document.getElementById('valley-scene')
     if (!section) return
     const svg = section.querySelector('svg')!
-    const layers = Array.from(section.querySelectorAll<SVGGElement>('g[data-depth]'))
     const smokeWrap = document.getElementById('smoke-wrap')!
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const SCENE_W = 1440
     const SCENE_H = 600
@@ -170,77 +240,40 @@ import AsciiSmoke from './AsciiSmoke'
     const SMOKE = { w: 620, h: 1200 }
     const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
 
-    let scale = 1
-    let sMax = 0
-
-  // Anchor the smoke canvas over the chimney: its horizontal center and 93%
-  // height mark sit on the chimney mouth (the smoke component emits from
-  // there, leaving 7% below so blobs aren't clipped flat).
-  // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
-  const layout = () => {
-    const sect = section.getBoundingClientRect()
-    const r = svg.getBoundingClientRect()
-    scale = Math.max(r.width / SCENE_W, r.height / SCENE_H)
-    sMax = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
-    const mx = r.left - sect.left + r.width / 2 + (MOUTH.x - SCENE_W / 2) * scale
-    const my = r.top - sect.top + r.height - (SCENE_H - MOUTH.y) * scale
-    const w = SMOKE.w * scale
-    const h = SMOKE.h * scale
-    smokeWrap.style.width = `${w}px`
-    smokeWrap.style.height = `${h}px`
-    smokeWrap.style.left = `${mx - w / 2}px`
-    smokeWrap.style.top = `${my - h * 0.93}px`
-  }
-
-  // Continuous parallax: progress is driven by how close we are to the very
-  // bottom of the page, over an activation window of ~1.4 viewports. The
-  // layers keep separating the whole way down and reach their resting,
-  // footer-aligned composition (e = 0) exactly at max scroll — they never
-  // freeze partway and sync up, which is what killed the effect before.
-  const update = () => {
-    const vh = window.innerHeight
-    const s = Math.min(Math.max(window.scrollY, 0), sMax)
-    const win = Math.max(Math.min(sMax, vh * 1.4), 1)
-    const p = 1 - Math.min(1, Math.max(0, (sMax - s) / win))
-    const e = 1 - p // fully offset while approaching, 0 at the page bottom
-    for (const g of layers) {
-      g.style.transform = `translateY(${(e * Number(g.dataset.depth)).toFixed(2)}px)`
+    // Anchor the smoke canvas over the chimney: its horizontal center and 93%
+    // height mark sit on the chimney mouth (the smoke component emits from
+    // there, leaving 7% below so blobs aren't clipped flat).
+    // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
+    const layout = () => {
+      const sect = section.getBoundingClientRect()
+      const r = svg.getBoundingClientRect()
+      const scale = Math.max(r.width / SCENE_W, r.height / SCENE_H)
+      const mx = r.left - sect.left + r.width / 2 + (MOUTH.x - SCENE_W / 2) * scale
+      const my = r.top - sect.top + r.height - (SCENE_H - MOUTH.y) * scale
+      const w = SMOKE.w * scale
+      const h = SMOKE.h * scale
+      smokeWrap.style.width = `${w}px`
+      smokeWrap.style.height = `${h}px`
+      smokeWrap.style.left = `${mx - w / 2}px`
+      smokeWrap.style.top = `${my - h * 0.93}px`
+      // the smoke's settle animation shifts it with the cabin's layer; its
+      // depth must be in RENDERED px (scene units × current svg scale)
+      smokeWrap.style.setProperty('--vdepth', `${Math.round(NEAR_DEPTH * scale)}px`)
     }
-    // keep the smoke glued to the cabin's layer
-    smokeWrap.style.transform = `translateY(${(e * NEAR_DEPTH * scale).toFixed(2)}px)`
-  }
 
     layout()
-    if (reduced) {
-      window.addEventListener('resize', layout)
-      cleanup = () => window.removeEventListener('resize', layout)
-    } else {
-      update()
-      let ticking = false
-      const onScroll = () => {
-        if (ticking) return
-        ticking = true
-        requestAnimationFrame(() => {
-          ticking = false
-          update()
-        })
-      }
-      const onResize = () => {
-        layout()
-        update()
-      }
-      window.addEventListener('scroll', onScroll, { passive: true })
-      window.addEventListener('resize', onResize)
-      // page height (hence sMax) can grow after fonts/images load
-      window.addEventListener('load', onResize)
-      cleanup = () => {
-        window.removeEventListener('scroll', onScroll)
-        window.removeEventListener('resize', onResize)
-        window.removeEventListener('load', onResize)
-      }
+    window.addEventListener('resize', layout)
+    window.addEventListener('load', layout)
+    // fonts/images can grow the layout after page-load without firing resize;
+    // one settled re-measure keeps the chimney anchor honest
+    const settle = window.setTimeout(layout, 900)
+    cleanup = () => {
+      clearTimeout(settle)
+      window.removeEventListener('resize', layout)
+      window.removeEventListener('load', layout)
     }
   }
 
-  // fires on initial load AND after every client-side navigation
+  // fires on initial load AND after every swup navigation (bridged)
   document.addEventListener('astro:page-load', setup)
 </script>
