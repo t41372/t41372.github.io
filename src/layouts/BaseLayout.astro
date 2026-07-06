@@ -9,14 +9,26 @@ import Footer from '../components/Footer.astro'
 interface Props {
   title?: string
   description?: string
-  active?: 'home' | 'projects' | 'blog'
+  active?: 'home' | 'projects' | 'blog' | 'archive'
+  /** language variants of this page (site-relative paths) for hreflang links.
+      Pass ALL variants including the current page (Google requires the set to
+      be self-referencing and reciprocal); x-default is added automatically
+      from the 'en' entry. Omit on pages without translations. */
+  alternates?: Array<{ hreflang: 'en' | 'zh'; href: string }>
 }
 
 const {
   title = "Yi-Ting Chiu — builds fun stuff",
   description = 'Personal website of Yi-Ting Chiu. Creator of Open-LLM-VTuber, PathKeep, and Standard ASR. Builds fun stuff with AI, speech, and code.',
   active = 'home',
+  alternates,
 } = Astro.props
+
+const xDefault = alternates?.find((a) => a.hreflang === 'en') ?? alternates?.[0]
+
+// absolute URLs — social scrapers ignore relative og: values
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site)
+const ogImageUrl = new URL('/og.png', Astro.site)
 ---
 
 <!doctype html>
@@ -107,9 +119,25 @@ const {
         apply()
       })()
     </script>
+    <link rel="canonical" href={canonicalUrl} />
+    {
+      alternates?.map((a) => (
+        <link rel="alternate" hreflang={a.hreflang} href={new URL(a.href, Astro.site)} />
+      ))
+    }
+    {xDefault && <link rel="alternate" hreflang="x-default" href={new URL(xDefault.href, Astro.site)} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Yi-Ting Chiu" />
+    <!-- static screenshot of the real hero — regenerate with
+         `bun scripts/generate-og.mjs` when the hero visibly changes -->
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImageUrl} />
     <link rel="sitemap" href="/sitemap-index.xml" />
   </head>
   <!-- body carries NO background-color: the fixed StarSky canvas at -z-10 is

@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config'
 import react from '@astrojs/react'
+import sitemap from '@astrojs/sitemap'
 import swup from '@swup/astro'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -10,6 +11,10 @@ export default defineConfig({
   output: 'static',
   integrations: [
     react(),
+    // emits /sitemap-index.xml at build time (BaseLayout links it in <head>);
+    // the archived v1 snapshot under public/archive/ is static passthrough and
+    // intentionally not in the sitemap
+    sitemap(),
     // swup, NOT Astro's native ClientRouter (View Transitions). Native VT
     // snapshots the whole page — which bakes every backdrop-filter flat and
     // dims the dark starfield mid-transition. swup swaps ONLY <main> as REAL
