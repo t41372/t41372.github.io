@@ -1,0 +1,57 @@
+---
+import ValleyScene from './valley/ValleyScene.astro'
+
+const year = new Date().getFullYear()
+---
+
+<!-- --valley: the view timeline driving the valley layers' settle parallax
+     (ValleyScene). The subject is this WHOLE footer — its bottom edge is the
+     document bottom, so the animation reaches its rest composition exactly at
+     max scroll, never freezing partway. -->
+<footer class="relative" aria-label="Footer" style="view-timeline: --valley block">
+  <!-- shared valley scene: the footer's sky stays transparent to the page
+       background; only the content strip below carries the ground color -->
+  <ValleyScene />
+  <div class="footer-ground relative w-full bg-[#05070B]">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10 md:px-10">
+    <div class="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+      <div class="flex flex-col gap-2">
+        <h2 class="font-outfit text-xl font-medium tracking-wide text-foreground">Yi-Ting Chiu</h2>
+        <p class="font-inter text-sm text-muted-dark">
+          © {year} · building fun stuff · somewhere on earth
+        </p>
+      </div>
+
+      <nav aria-label="Social links" class="flex items-center gap-6">
+        <a
+          href="https://github.com/t41372"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-inter text-sm font-medium tracking-wide text-muted transition-colors hover:text-aurora"
+        >
+          GitHub
+        </a>
+        <a
+          href="https://www.linkedin.com/in/yi-ting-chiu/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-inter text-sm font-medium tracking-wide text-muted transition-colors hover:text-aurora"
+        >
+          LinkedIn
+        </a>
+        <a
+          href="mailto:ychiu34@asu.edu"
+          class="font-inter text-sm font-medium tracking-wide text-muted transition-colors hover:text-aurora"
+        >
+          Email
+        </a>
+      </nav>
+    </div>
+
+    <p class="font-inter text-xs tracking-wide text-muted-dark">
+      Built with Astro · And other cool tech! ·{' '}
+      <a href="/archive" class="transition-colors hover:text-aurora">past versions</a>
+    </p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,543 @@
+@import 'tailwindcss';
+
+@theme {
+  /* ---------- Night sky / aurora palette ---------- */
+  --color-background: oklch(0.13 0.03 265); /* deep night blue-black */
+  --color-background-deep: oklch(0.1 0.025 265); /* footer / occluded zone */
+  --color-surface: oklch(0.18 0.035 262); /* card surfaces */
+  --color-surface-raised: oklch(0.22 0.04 260);
+  --color-foreground: oklch(0.93 0.01 250);
+  --color-muted: oklch(0.62 0.025 255);
+  /* dimmest text tier (dates, captions, footer). L 0.52 ≈ 3.5:1 on the card
+     surfaces — a deliberate compromise: original 0.45 sat at ~2.5:1 (hard to
+     read for low-vision users); full AA (4.5:1) needs ~0.58, which flattens
+     the muted/muted-dark hierarchy. Don't lower it back below 0.52. */
+  --color-muted-dark: oklch(0.52 0.025 258);
+  --color-border-subtle: oklch(0.32 0.03 260);
+
+  /* accents pulled from the aurora shader */
+  --color-aurora: oklch(0.82 0.19 160); /* oxygen green */
+  --color-aurora-teal: oklch(0.8 0.12 195);
+  --color-aurora-purple: oklch(0.62 0.16 295);
+  --color-aurora-pink: oklch(0.72 0.16 356);
+
+  /* ---------- fonts ---------- */
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, 'SFMono-Regular', monospace;
+}
+
+:root {
+  /* glyph-hugging halo in the sky's own navy: behind the letters the night
+     just gets a touch deeper — reads as sky, never as a scrim. Layer 2 of the
+     hero-legibility pair (layer 1 is the aurora's exclusion zone in StarSky).
+     em-based so it scales with each line's font size. */
+  --footer-ground-bleed: env(safe-area-inset-bottom);
+  --night-halo:
+    0 0 0.08em oklch(0.16 0.04 265 / 0.9),
+    0 0 0.3em oklch(0.16 0.04 265 / 0.6),
+    0 0 0.8em oklch(0.16 0.04 265 / 0.35);
+}
+
+.text-shadow-night {
+  text-shadow: var(--night-halo);
+}
+
+/* defense layer 2 / loading first-frame: a pure-CSS approximation of the
+   shader's base sky (vertical navy ramp + corner vignette), painted the
+   instant HTML arrives — long before React hydrates and WebGL compiles. The
+   canvas fades in over it, so "page open" reads as a sky that ignites, not a
+   black screen that pops. Also the permanent fallback if WebGL is missing. */
+.sky-fallback {
+  /* mirrors the page's own vertical structure: sky-navy through the viewport,
+     valley-ground black across the bottom overdraw — whichever edge iOS
+     exposes (toolbar lag, rubber-band bounce), it sees the color that belongs
+     there: navy above, ground below. The ENTIRE bottom overdraw (288px, see
+     -bottom-72 in BaseLayout) is solid ground-black — a ramp that only
+     darkened at the very edge left the bounce region navy. */
+  background:
+    radial-gradient(120% 90% at 50% 50%, transparent 55%, rgb(2 4 10 / 0.4) 100%),
+    linear-gradient(to bottom, rgb(11 19 57), rgb(26 37 84) calc(100% - 460px), rgb(5 7 11) calc(100% - 288px));
+}
+
+/* .hero-lag (the hero text's scroll parallax): a scroll-driven CSS animation.
+   Since Safari 26.4 these run on the COMPOSITOR thread (WebKit blog 17862) —
+   the only scroll-linked mechanism mobile WebKit can keep in sync with
+   momentum scrolling. Every JS path was tried and structurally lags on iOS:
+   the compositor scrolls ahead of the main thread, so rAF/ScrollTrigger
+   transforms always run ≥1 frame behind (GSAP's own docs admit iOS misreports
+   scrollY mid-momentum). An earlier SDA attempt was reverted for "flicker on
+   mobile WebKit" — that was the Safari 26.0–26.3 main-thread implementation
+   with since-fixed progress bugs; don't let that old note scare this off
+   again. No-support fallback (Firefox stable, Safari <26): the text simply
+   rests untransformed — acceptable for a subtle effect. */
+@supports (animation-timeline: scroll()) {
+  .hero-lag {
+    /* the old rellax speed -2 feel: rests lifted -4.5lvh and falls 200px
+       behind the scroll over the first 1200px (same numbers the GSAP tween
+       used). lvh, not vh/innerHeight: stable while the iOS toolbar collapses.
+       LONGHANDS ONLY: Lightning CSS (in the Tailwind v4 pipeline) merges an
+       `animation` shorthand with a following animation-timeline into
+       `animation: ... scroll()` — invalid per spec (timeline is reset-only in
+       the shorthand), so browsers drop the whole declaration and the parallax
+       silently dies in PRODUCTION builds only. */
+    animation-name: hero-lag;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    /* scroll(root), NOT scroll(): the anonymous default binds to the NEAREST
+       scroll container ancestor, and the hero <section>'s overflow-hidden
+       makes it one — a scroller that never scrolls, so the timeline sat
+       permanently inactive and the lag silently never ran */
+    animation-timeline: scroll(root);
+    animation-range: 0px 1200px;
+  }
+  @keyframes hero-lag {
+    from {
+      transform: translateY(-4.5lvh);
+    }
+    to {
+      transform: translateY(calc(-4.5lvh + 200px));
+    }
+  }
+}
+
+html {
+  /* NOT the --color-background token: this exact color is what iOS Safari
+     uses to letterbox the status-bar region and overscroll areas, so it must
+     equal the shader sky's top color (nTop = rgb(11,19,57)) — the darker
+     token there reads as a black bar above the page.
+     iOS 26+ Liquid Glass additionally derives its toolbar TINT from this very
+     property (chain: edge fixed/sticky background-color -> body -> html; it
+     ignores theme-color and never samples rendered pixels). One color can't
+     serve both toolbars — sky-navy here is why the BOTTOM bar glowed blue
+     under the black footer — so an inline script in BaseLayout swaps this to
+     ground-black (#05070B) as the user nears the page bottom and back to navy
+     elsewhere. This declaration is the top-of-page default / no-JS value. */
+  background-color: rgb(11 19 57);
+  /* defense layer 3 (outermost): the root paints the page's vertical story —
+     sky navy up top (shader nTop/nLow) ending in valley-ground black, so a
+     strip exposed near the TOP reads as sky and anything lower reads as
+     ground. PX stops, not %: on very long documents %-stops would keep the
+     mid-page navy; anything ever exposed below ~one viewport must already
+     read as ground-black. (The solid background-color above stays sky-navy:
+     it's what iOS uses for the top status-bar letterbox.) */
+  background-image: linear-gradient(to bottom, rgb(11 19 57), rgb(26 37 84) 1200px, rgb(5 7 11) 5800px);
+  background-repeat: no-repeat;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  /* kill the rubber-band overscroll bounce: without it, bouncing past the
+     page bottom exposes the fixed star sky below the black mountains */
+  overscroll-behavior-y: none;
+  /* clip horizontal overflow at the scroll container (documentElement) so the
+     page can never scroll sideways into html-navy beyond the fixed w-full star
+     canvas. Only x is clipped; y stays scrollable. The main offender is the
+     valley's wide ASCII-smoke canvas on narrow phones. */
+  overflow-x: clip;
+}
+
+body {
+  /* NO background-color here. Spec paint-order says an opaque body background
+     paints BEHIND the -z-10 StarSky canvas — but on Chrome+Safari over Metal
+     the compositor lets that opaque body layer OCCLUDE the negative-z WebGL
+     canvas, blacking out the entire starfield (confirmed: the GL buffer reads
+     blue via readPixels, yet the canvas composites black). The original author's
+     comment was right; a code review "corrected" it and broke every real GPU.
+     The iOS bottom-bounce "blue leak" must be solved WITHOUT an opaque body bg. */
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* clip horizontal overflow only (y stays visible so the valley's ASCII smoke
+     can still climb up into the hero). The smoke canvas is intentionally wider
+     than narrow phones; without this it widened the document past the fixed
+     w-full star canvas, exposing a strip of html navy down the right edge. */
+  overflow-x: clip;
+}
+
+.footer-ground {
+  padding-bottom: var(--footer-ground-bleed);
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (pointer: coarse) {
+    :root {
+      /* Was max(144px, safe-area + 96px): a tall black slab meant to paint the
+         toolbar occlusion zone, added when the "blue under the footer" was
+         believed to be page pixels leaking through the glass. Root cause turned
+         out to be iOS 26+ Liquid Glass TINT DERIVATION (CSS chain, fixed by the
+         html background-color swap in BaseLayout) — pixels were never the
+         problem. What remains is clearance: keep the last footer links tappable
+         above the home indicator + collapsed pill. If any blue ever reappears
+         down here on device, suspect the tint swap first, not this padding. */
+      --footer-ground-bleed: calc(env(safe-area-inset-bottom) + 48px);
+    }
+  }
+}
+
+::selection {
+  background: var(--color-aurora);
+  color: var(--color-background);
+}
+
+/* ---------- fine noise overlay for that hand-crafted texture ---------- */
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- name glitch (ported from the old site's glitch.css, aurora-recolored) ---------- */
+@property --text-glitch-y1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 30%;
+}
+@property --text-glitch-y2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 35%;
+}
+@property --text-glitch-y3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+@property --text-glitch-y4 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 55%;
+}
+
+.text-glitch {
+  position: relative;
+  color: transparent;
+  /* the base glyphs are invisible but text-shadow still paints from their
+     outlines — drop the inherited night halo here or it stacks three deep
+     (base + both pseudos) and reads as a black outline */
+  text-shadow: none;
+  --text-glitch-y1: 30%;
+  --text-glitch-y2: 35%;
+  --text-glitch-y3: 50%;
+  --text-glitch-y4: 55%;
+  animation: glitch-slice 0.2s infinite;
+}
+@keyframes glitch-slice {
+  100% {
+    --text-glitch-y1: 10%;
+    --text-glitch-y2: 50%;
+    --text-glitch-y3: 70%;
+    --text-glitch-y4: 95%;
+  }
+}
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--color-foreground);
+  /* the pseudos carry the visible glyphs — and hence the night halo (their
+     clip-paths are complementary, so it still totals ONE halo, not two);
+     also the fallback when the glitch animations are off (reduced motion) */
+  text-shadow: var(--night-halo);
+}
+.text-glitch::before {
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% var(--text-glitch-y1),
+    0% var(--text-glitch-y1),
+    0% var(--text-glitch-y2),
+    100% var(--text-glitch-y2),
+    100% var(--text-glitch-y3),
+    0% var(--text-glitch-y3),
+    0% var(--text-glitch-y4),
+    100% var(--text-glitch-y4),
+    100% 100%,
+    0% 100%
+  );
+  animation: glitch-right var(--text-glitch-time, 1s) infinite;
+}
+/* the glitch pseudos carry the visible glyphs while .text-glitch itself is
+   transparent — keep the night halo on them through both keyframe states, or
+   the name would lose its legibility shadow the moment the glitch starts */
+@keyframes glitch-right {
+  0%,
+  10% {
+    transform: translateX(5px);
+    text-shadow: 5px 0 var(--color-aurora-teal), var(--night-halo);
+  }
+  11% {
+    transform: none;
+    text-shadow: var(--night-halo);
+  }
+}
+.text-glitch::after {
+  clip-path: polygon(
+    0% var(--text-glitch-y1),
+    100% var(--text-glitch-y1),
+    100% var(--text-glitch-y2),
+    0% var(--text-glitch-y2),
+    0% var(--text-glitch-y3),
+    100% var(--text-glitch-y3),
+    100% var(--text-glitch-y4),
+    0% var(--text-glitch-y4)
+  );
+  animation: glitch-left var(--text-glitch-time, 1s) infinite;
+}
+@keyframes glitch-left {
+  0%,
+  10% {
+    transform: translateX(-5px);
+    text-shadow: -5px 0 var(--color-aurora-pink), var(--night-halo);
+  }
+  11% {
+    transform: none;
+    text-shadow: var(--night-halo);
+  }
+}
+
+/* name "selected" flash before glitch kicks in */
+.name-selected {
+  background-color: var(--color-aurora-teal);
+  color: var(--color-background);
+}
+
+/* ---------- hero "fun stuff" font-iteration (restored from the old site) ---------- */
+@font-face { font-family: 'Cascadia-Code'; src: url('/fonts/CascadiaMono-Regular.otf'); font-display: swap; }
+@font-face { font-family: 'CascadiaMono-Bold'; src: url('/fonts/CascadiaMono-Bold.otf'); font-display: swap; }
+@font-face { font-family: 'CascadiaMonoPL-BoldItalic'; src: url('/fonts/CascadiaMonoPL-BoldItalic.otf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-BlackItalic'; src: url('/fonts/PlayfairDisplay-BlackItalic.ttf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-ExtraBold'; src: url('/fonts/PlayfairDisplay-ExtraBold.ttf'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-Italic'; src: url('/fonts/PlayfairDisplay-Italic.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-BlackItalic'; src: url('/fonts/Roboto-BlackItalic.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-Bold'; src: url('/fonts/Roboto-Bold.ttf'); font-display: swap; }
+@font-face { font-family: 'Roboto-ThinItalic'; src: url('/fonts/Roboto-ThinItalic.ttf'); font-display: swap; }
+
+/* name highlight kept UNDER the glitch (bg only, so text-glitch's transparent color wins) */
+.name-hl { background-color: var(--color-aurora-teal); }
+
+/* the "fun stuff" word: settles into an icy bold-italic, flashes + cycles fonts */
+.fun-settled { font-family: 'CascadiaMonoPL-BoldItalic'; color: rgb(177, 255, 255); }
+.fun-flash { background-color: var(--color-aurora-teal); }
+.fun-animate { animation: font-iteration 1s linear; }
+@keyframes font-iteration {
+  0%   { color: #fff; font-family: 'Cascadia-Code'; }
+  20%  { font-family: 'Roboto-ThinItalic'; }
+  30%  { font-family: 'CascadiaMonoPL-BoldItalic'; }
+  40%  { font-family: 'PlayfairDisplay-BlackItalic'; }
+  50%  { font-family: 'Roboto-Bold'; }
+  60%  { font-family: 'PlayfairDisplay-Italic'; }
+  70%  { font-family: 'Roboto-BlackItalic'; }
+  80%  { font-family: 'PlayfairDisplay-ExtraBold'; }
+  90%  { font-family: 'CascadiaMono-Bold'; }
+  100% { font-family: 'CascadiaMonoPL-BoldItalic'; color: rgb(177, 255, 255); }
+}
+
+/* ---------- typing cursor ---------- */
+.type-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 2px;
+  transform: translateY(0.15em);
+  background: var(--color-aurora);
+  animation: cursor-blink 1.06s steps(1) infinite;
+}
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---------- scroll cue ---------- */
+.scroll-line {
+  animation: scroll-cue 2.2s ease-in-out infinite;
+  transform-origin: top;
+}
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  35% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1) translateY(120%);
+    opacity: 0;
+  }
+}
+
+/* ---------- ASCII flicker for the valley house ---------- */
+.ascii-flicker {
+  animation: ascii-flicker 4s ease-in-out infinite;
+}
+@keyframes ascii-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.7;
+  }
+  94% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .text-glitch,
+  .text-glitch::before,
+  .text-glitch::after,
+  .scroll-line,
+  .ascii-flicker,
+  .fun-animate,
+  .type-cursor,
+  /* hero scroll parallax rests untransformed. (The valley layers' equivalent
+     override lives in ValleyScene.astro — it must cascade AFTER the rule it
+     cancels, and that rule is bundled after this file.) */
+  .hero-lag {
+    animation: none;
+  }
+}
+
+/* ---------- client-side page transitions (swup) ----------
+
+   Page navigation is handled by swup (@swup/astro), NOT Astro's native
+   ClientRouter/View Transitions. swup swaps ONLY <main> as REAL DOM; the sky,
+   header, and footer live OUTSIDE that container and are never snapshotted or
+   re-created — so the WebGL starfield keeps painting and the glass cards keep
+   LIVE backdrop-blur straight through the transition (native VT baked both
+   flat and dimmed the dark page). There are therefore NO ::view-transition
+   pseudo rules to style here: the fade+drift is a WAAPI animation on <main> in
+   BaseLayout's bridge script (transform/opacity, compositor-threaded). This
+   section is now just the one structural rule <main> still needs. */
+
+/* Page content always stacks ABOVE the footer valley (z-10): the ASCII smoke
+   column climbs far above the chimney, into blog/project cards' territory —
+   it's scenery, so it must drift BEHIND every foreground panel (a frosted
+   card's backdrop-blur then softens the smoke behind it, which is exactly
+   the depth cue we want). Hero text occluding the wisps is fine too. */
+main {
+  position: relative;
+  z-index: 20;
+}
+
+/* Glass inside the swapped container stays PERMANENTLY composited. The swup
+   choreography drifts targets via the separate `translate` property, so with
+   this constant base transform a glass card's transformed-status (and hence
+   its backdrop-root/containing-block state) NEVER flips at animation edges —
+   the suspected trigger of a 1-frame glass blank that only ever manifests in
+   interactive sessions (never under automated capture, not even against a
+   known-bad build — see project memory). Cheap: a handful of cards per page.
+   Tailwind v4's translate/rotate/scale utilities use the individual
+   properties, so they compose with (not clobber) this base. */
+main [class*='backdrop-blur'] {
+  transform: translateZ(0);
+}
+
+/* ---------- blog prose ---------- */
+.prose-night {
+  color: var(--color-foreground);
+  line-height: 1.75;
+  font-size: 1.0625rem;
+}
+.prose-night h1,
+.prose-night h2,
+.prose-night h3,
+.prose-night h4 {
+  color: var(--color-foreground);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+  text-wrap: balance;
+}
+.prose-night h1 {
+  font-size: 1.875rem;
+}
+.prose-night h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: 0.35em;
+}
+.prose-night h3 {
+  font-size: 1.25rem;
+}
+.prose-night p {
+  margin-bottom: 1.25em;
+  color: oklch(0.85 0.012 252);
+}
+.prose-night a {
+  color: var(--color-aurora);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, var(--color-aurora) 40%, transparent);
+}
+.prose-night a:hover {
+  text-decoration-color: var(--color-aurora);
+}
+.prose-night code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.375rem;
+  padding: 0.15em 0.4em;
+}
+.prose-night pre {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.5em;
+  font-size: 0.875rem;
+}
+.prose-night pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-night ul,
+.prose-night ol {
+  margin-bottom: 1.25em;
+  padding-left: 1.5em;
+  color: oklch(0.85 0.012 252);
+}
+.prose-night ul {
+  list-style: disc;
+}
+.prose-night ol {
+  list-style: decimal;
+}
+.prose-night li {
+  margin-bottom: 0.4em;
+}
+.prose-night blockquote {
+  border-left: 3px solid var(--color-aurora);
+  padding-left: 1.25em;
+  color: var(--color-muted);
+  font-style: italic;
+  margin-bottom: 1.25em;
+}
+.prose-night img {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-subtle);
+  margin: 1.5em 0;
+}
+.prose-night hr {
+  border-color: var(--color-border-subtle);
+  margin: 2.5em 0;
+}

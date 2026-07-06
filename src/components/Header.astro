@@ -1,0 +1,142 @@
+---
+// 'archive' and 'none' have no nav link: the pill hides and nothing is highlighted
+const { active = 'home' } = Astro.props as {
+  active?: 'home' | 'projects' | 'blog' | 'archive' | 'none'
+}
+
+const links = [
+  { href: '/', label: 'Home', key: 'home' },
+  { href: '/projects', label: 'Projects', key: 'projects' },
+  { href: '/blog', label: 'Blog', key: 'blog' },
+]
+---
+
+<!-- This header lives OUTSIDE swup's <main> container, so a client-side
+     navigation never swaps or re-creates it — the highlight pill below is ONE
+     structurally-persistent element that slides between links via a gsap tween
+     (driven by the bridged astro:before-preparation + astro:page-load events).
+     No view-transition snapshots are involved: those rendered above the page
+     and stretched between old/new sizes, which is what previously made the
+     pill cover the text and jump around. -->
+<!-- top offset includes env(safe-area-inset-top) so the pill clears the iOS
+     status bar once viewport-fit=cover lets content run under it; env() is 0 on
+     non-notched/desktop, so this stays exactly top-4 there. -->
+<header class="fixed inset-x-0 top-[calc(env(safe-area-inset-top)_+_1rem)] z-50 flex justify-center px-4">
+  <nav
+    aria-label="Main navigation"
+    data-nav
+    class="relative flex items-center gap-1 rounded-full border border-border-subtle/60 bg-background/50 px-1.5 py-1.5 shadow-lg shadow-black/20 backdrop-blur-md"
+  >
+    <span
+      aria-hidden="true"
+      data-nav-pill
+      class="absolute left-0 top-0 z-0 rounded-full bg-surface-raised opacity-0"></span>
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          data-nav-key={link.key}
+          aria-current={active === link.key ? 'page' : undefined}
+          class:list={[
+            'relative z-10 rounded-full px-4 py-1.5 font-mono text-sm transition-colors duration-200',
+            active === link.key
+              ? 'text-foreground'
+              : 'text-muted hover:bg-surface/80 hover:text-foreground',
+          ]}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+</header>
+
+<script>
+  import { gsap } from 'gsap'
+
+  const ROUTE_KEYS: Array<[RegExp, string]> = [
+    [/^\/blog(\/|$)/, 'blog'],
+    [/^\/projects(\/|$)/, 'projects'],
+    [/^\/archive(\/|$)/, 'archive'], // no nav link — resolves to "highlight nothing"
+    [/^\/$/, 'home'],
+  ]
+
+  // unknown paths (the 404 page) resolve to 'none': highlight nothing
+  const keyFor = (pathname: string) =>
+    ROUTE_KEYS.find(([re]) => re.test(pathname))?.[1] ?? 'none'
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+  let placed = false
+
+  function updateNav(animate: boolean, key = keyFor(location.pathname)) {
+    const nav = document.querySelector<HTMLElement>('[data-nav]')
+    const pill = nav?.querySelector<HTMLElement>('[data-nav-pill]')
+    if (!nav || !pill) return
+
+    let target: HTMLElement | null = null
+
+    for (const link of nav.querySelectorAll<HTMLElement>('a[data-nav-key]')) {
+      const isActive = link.dataset.navKey === key
+      link.classList.toggle('text-foreground', isActive)
+      link.classList.toggle('text-muted', !isActive)
+      link.classList.toggle('hover:bg-surface/80', !isActive)
+      link.classList.toggle('hover:text-foreground', !isActive)
+      if (isActive) {
+        link.setAttribute('aria-current', 'page')
+        target = link
+      } else {
+        link.removeAttribute('aria-current')
+      }
+    }
+    if (!target) {
+      // a page outside the nav (e.g. /archive): fade the pill out instead of
+      // leaving it parked under the previously-active link
+      gsap.to(pill, { opacity: 0, duration: 0.2, overwrite: 'auto' })
+      return
+    }
+
+    const state = {
+      x: target.offsetLeft,
+      y: target.offsetTop,
+      width: target.offsetWidth,
+      height: target.offsetHeight,
+      opacity: 1,
+    }
+    // gsap owns every pill move: tweens overwrite each other cleanly, so a
+    // rapid double-navigation can never stack two animations (the old CSS
+    // transition triggered from multiple router events slid twice on iOS)
+    if (animate && placed && !reduced.matches) {
+      gsap.to(pill, { ...state, duration: 0.35, ease: 'power3.out', overwrite: 'auto' })
+    } else if (gsap.isTweening(pill)) {
+      // a correction (page-load, resize, font-swap) arriving mid-slide must NOT
+      // be dropped — retarget the in-flight tween instead. overwrite:'auto'
+      // folds the running slide toward the freshly measured target: same target
+      // = visually a no-op; layout actually changed = a smooth correction, so
+      // the pill never lands on stale coordinates.
+      gsap.to(pill, { ...state, duration: 0.18, ease: 'power2.out', overwrite: 'auto' })
+    } else {
+      // idle: snap the corrective state straight into place
+      gsap.set(pill, state)
+    }
+    placed = true
+  }
+
+  // The pill starts sliding the INSTANT navigation begins (before-preparation
+  // hands us the destination URL) — waiting for astro:page-load felt like a
+  // ~500ms dead click. page-load then just corrects state without animating:
+  // same target = no visible change; also covers the initial load and
+  // back/forward navigations that skip preparation.
+  let settleTimer = 0
+  document.addEventListener('astro:before-preparation', (e) => {
+    const to = (e as { to?: URL }).to
+    if (to) updateNav(true, keyFor(to.pathname))
+    // the slide is optimistic — if the navigation fails (offline, aborted)
+    // no astro event ever fires, so re-derive from the REAL location after a
+    // grace period; on success this lands after page-load's corrective set
+    // and is a no-op tween to where the pill already sits
+    clearTimeout(settleTimer)
+    settleTimer = window.setTimeout(() => updateNav(true), 3000)
+  })
+  document.addEventListener('astro:page-load', () => updateNav(false))
+  window.addEventListener('resize', () => updateNav(false))
+</script>

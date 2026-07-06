@@ -1,0 +1,279 @@
+---
+// ValleyScene.astro
+// A minimalist, handcrafted poly-style SVG illustration of a valley and cabin.
+// The scene is split into depth layers that shift at different rates while the
+// section scrolls into view (2.5D parallax), and an ASCII smoke canvas is
+// anchored to the chimney mouth.
+import AsciiSmoke from './AsciiSmoke'
+---
+
+<section
+  id="valley-scene"
+  class="relative w-full z-10 flex flex-col justify-end"
+  aria-label="A quiet valley at night with a small cabin"
+>
+  <svg
+    viewBox="0 0 1440 600"
+    preserveAspectRatio="xMidYMax slice"
+    class="w-full h-[50vh] md:h-[65vh] lg:h-[80vh] block object-bottom pointer-events-none select-none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <defs>
+      <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.8" />
+        <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
+      </radialGradient>
+      <!-- tight, white-hot bloom hugging the window pane ("HDR" core) -->
+      <radialGradient id="glow-core" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff6e4" stop-opacity="0.95" />
+        <stop offset="45%" stop-color="#ffcf7d" stop-opacity="0.45" />
+        <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.25" />
+        <stop offset="100%" stop-color="#ffb74d" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="mnt1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#1c2135" />
+        <stop offset="100%" stop-color="#131728" />
+      </linearGradient>
+      <linearGradient id="mnt2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#131728" />
+        <stop offset="100%" stop-color="#0b0e17" />
+      </linearGradient>
+      <linearGradient id="mnt3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#0b0e17" />
+        <stop offset="100%" stop-color="#07090f" />
+      </linearGradient>
+      <linearGradient id="valley-dusk" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0.35" stop-color="#020409" stop-opacity="0" />
+        <stop offset="1" stop-color="#020409" stop-opacity="0.75" />
+      </linearGradient>
+      <linearGradient id="mnt-ground" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#07090f" />
+        <stop offset="100%" stop-color="#05070b" />
+      </linearGradient>
+    </defs>
+
+    <!-- Dusk: the darkening near the mountains belongs to the valley layer,
+         not the sky behind it -->
+    <rect x="0" y="0" width="1440" height="600" fill="url(#valley-dusk)" />
+
+    <!-- Whole scene sits 90 units lower so the composition hugs the page
+         bottom instead of leaving dead ground space under the cabin -->
+    <g transform="translate(0, 90)">
+    <!-- Far Mountains (Mnt 1) -->
+    <g data-depth="30">
+      <path d="M0,600 L0,280 L200,210 L350,320 L500,180 L650,290 L800,150 L950,280 L1100,190 L1300,300 L1440,240 L1440,600 Z" fill="url(#mnt1)" />
+      <path d="M200,210 L350,320 L300,600 L0,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M500,180 L650,290 L600,600 L350,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M800,150 L950,280 L900,600 L650,600 Z" fill="#171b2d" opacity="0.4" />
+      <path d="M1100,190 L1300,300 L1250,600 L950,600 Z" fill="#171b2d" opacity="0.4" />
+    </g>
+
+    <!-- Mid Mountains (Mnt 2) -->
+    <g data-depth="100">
+      <path d="M0,600 L0,380 L300,250 L450,380 L600,220 L800,400 L950,280 L1150,420 L1250,350 L1440,430 L1440,600 Z" fill="url(#mnt2)" />
+      <path d="M300,250 L450,380 L400,600 L100,600 Z" fill="#0f121e" opacity="0.5" />
+      <path d="M600,220 L800,400 L750,600 L450,600 Z" fill="#0f121e" opacity="0.5" />
+      <path d="M950,280 L1150,420 L1100,600 L800,600 Z" fill="#0f121e" opacity="0.5" />
+    </g>
+
+    <!-- Near Mountains / Hills (Mnt 3) + the cabin that sits on them -->
+    <g data-depth="180">
+      <path d="M0,600 L0,480 L450,420 L695,345 L770,345 L1050,450 L1440,400 L1440,600 Z" fill="url(#mnt3)" />
+      <path d="M450,420 L695,345 L730,600 L250,600 Z" fill="#080b12" opacity="0.6" />
+      <path d="M770,345 L1050,450 L1250,600 L800,600 Z" fill="#080b12" opacity="0.6" />
+
+      <!-- Cabin on the plateau at x=695..770, y=345 -->
+      <g transform="translate(700, 280)">
+        <!-- Cabin Front -->
+        <polygon points="0,65 0,25 25,0 50,25 50,65" fill="#06080c"/>
+        <!-- Cabin Side -->
+        <polygon points="50,25 110,45 110,85 50,65" fill="#080a0f"/>
+
+        <!-- Roof Front (gable end, rake parallel to the wall gable) -->
+        <polygon points="-11,29 25,-7 61,29" fill="#0d111a"/>
+        <!-- Roof Side -->
+        <polygon points="25,-7 85,13 121,49 61,29" fill="#161b2e"/>
+
+        <!-- Chimney (on the near slope, beside the ridge) -->
+        <polygon points="46,-18 54,-18 54,11 46,3" fill="#06080c"/>
+        <polygon points="54,-18 60,-16 60,13 54,11" fill="#080a0f"/>
+
+        <!-- Window Glow: wide ambient wash + tight white-hot bloom.
+             The pane itself is pushed to near-white (display-p3 on wide-gamut
+             screens) so it reads as the single brightest thing in the scene —
+             a faux-HDR highlight without shifting the warm hue. -->
+        <ellipse cx="74" cy="52" rx="46" ry="30" fill="url(#glow)" opacity="0.3"/>
+        <ellipse cx="74" cy="52" rx="22" ry="15" fill="url(#glow-core)" opacity="0.85"/>
+
+        <!-- Window -->
+        <polygon
+          points="62,40 86,48 86,64 62,56"
+          fill="#ffcb70"
+          style="fill: color(display-p3 1 0.8 0.42)"
+        />
+        <polygon points="62,40 86,48 86,64 62,56" fill="#ffffff" opacity="0.55"/>
+        <!-- hot center of the pane -->
+        <polygon points="66,44.5 82,50 82,60 66,55" fill="#fffdf5" opacity="0.85"/>
+
+        <!-- Window Frame (Cross) -->
+        <line x1="74" y1="44" x2="74" y2="60" stroke="#06080c" stroke-width="2" />
+        <line x1="62" y1="48" x2="86" y2="56" stroke="#06080c" stroke-width="2" />
+      </g>
+    </g>
+
+    <!-- Ground -->
+    <g data-depth="255">
+      <path d="M0,600 L0,495 L300,445 L600,495 L1000,435 L1440,485 L1440,600 Z" fill="url(#mnt-ground)" />
+      <path d="M300,445 L600,495 L550,600 L100,600 Z" fill="#05070a" opacity="0.4" />
+      <path d="M1000,435 L1440,485 L1440,600 L800,600 Z" fill="#05070a" opacity="0.4" />
+      <!-- Ground Flat Base to ensure it seamlessly connects with footer -->
+      <rect x="0" y="490" width="1440" height="110" fill="#05070B" />
+    </g>
+    </g>
+  </svg>
+
+  <!-- ASCII smoke, bottom-center of this box = chimney mouth (positioned by script).
+       client:load (not client:visible): hydrate immediately so the plume warms
+       up to full height right away. It then pauses off-screen (paused particles
+       don't age), so the standing plume is preserved and already drifting the
+       moment the chimney is first scrolled into view. -->
+  <div id="smoke-wrap" class="pointer-events-none absolute" aria-hidden="true">
+    <AsciiSmoke className="block h-full w-full" client:load />
+  </div>
+</section>
+
+<!-- Scroll parallax is PURE CSS below (scroll-driven animation on the --valley
+     view timeline declared on the <footer>). Safari 26.4+/Chrome run it on the
+     compositor thread — the GSAP ScrollTrigger scrub this replaces was
+     structurally unable to keep up on iOS (main-thread transforms always ran
+     ≥1 frame behind momentum scrolling; iOS misreports scrollY mid-fling per
+     GSAP's own docs). Non-supporting browsers (Firefox stable, Safari <26)
+     simply show the settled rest composition — the designed final state. -->
+<style is:global>
+  @supports (animation-timeline: view()) {
+    /* 2.5D settle: each layer starts sunken by its depth and rises to the
+       footer-aligned rest composition while the footer enters the viewport,
+       reaching rest (translate 0) exactly at max scroll — the timeline
+       subject is the whole <footer>, whose bottom edge IS the document
+       bottom, so the layers never freeze partway and sync up. */
+    #valley-scene g[data-depth],
+    #smoke-wrap {
+      /* LONGHANDS ONLY — Lightning CSS merges a following animation-timeline
+         into the `animation` shorthand, which is invalid and gets the whole
+         declaration dropped by browsers (production-build-only breakage) */
+      animation-name: valley-settle;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --valley;
+      animation-range: entry 0% entry 100%;
+      /* stable compositor layer up front: scrolling then slides a cached
+         bitmap instead of re-rastering SVG polygons every frame (the iOS
+         SVG "shatter") */
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+    #valley-scene g[data-depth='30'] {
+      --vdepth: 30px;
+    }
+    #valley-scene g[data-depth='100'] {
+      --vdepth: 100px;
+    }
+    #valley-scene g[data-depth='180'] {
+      --vdepth: 180px;
+    }
+    #valley-scene g[data-depth='255'] {
+      --vdepth: 255px;
+    }
+    /* #smoke-wrap rides the cabin's layer: its --vdepth is NEAR_DEPTH scaled
+       to the rendered svg size, set in px by the layout script below */
+    @keyframes valley-settle {
+      from {
+        transform: translate3d(0, var(--vdepth, 0px), 0);
+      }
+      to {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    /* reduced motion: rest composition, no scroll coupling. Lives HERE, after
+       the animation rule at equal specificity — global.css is bundled before
+       this file, so an override there would lose the cascade. */
+    @media (prefers-reduced-motion: reduce) {
+      #valley-scene g[data-depth],
+      #smoke-wrap {
+        animation: none;
+        /* no animation -> no reason to keep five promoted SVG layers holding
+           raster memory; release the compositor promotion the rule above set */
+        will-change: auto;
+        backface-visibility: visible;
+      }
+    }
+  }
+</style>
+
+<script>
+  // Layout only — positions the smoke canvas over the chimney mouth; the
+  // scroll parallax itself is the CSS above. Although the footer lives OUTSIDE
+  // swup's <main> and is no longer swapped per navigation, this still re-runs
+  // on every astro:page-load to re-anchor the smoke against the new page's
+  // layout/scroll height; previous listeners are removed via `cleanup`.
+  let cleanup: (() => void) | null = null
+
+  const setup = () => {
+    cleanup?.()
+    cleanup = null
+
+    const section = document.getElementById('valley-scene')
+    if (!section) return
+    const svg = section.querySelector('svg')!
+    const smokeWrap = document.getElementById('smoke-wrap')!
+
+    const SCENE_W = 1440
+    const SCENE_H = 600
+    const MOUTH = { x: 753, y: 351 } // chimney mouth, scene coords (261 + the 90 scene shift)
+    // smoke canvas box, scene units. VERY tall on purpose: the plume climbs
+    // all the way past the valley into the hero viewport — drifting wisps up
+    // there are the scroll clue that something lives below the fold
+    const SMOKE = { w: 620, h: 1200 }
+    const NEAR_DEPTH = 180 // parallax depth of the cabin's layer
+
+    // Anchor the smoke canvas over the chimney: its horizontal center and 93%
+    // height mark sit on the chimney mouth (the smoke component emits from
+    // there, leaving 7% below so blobs aren't clipped flat).
+    // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
+    const layout = () => {
+      const sect = section.getBoundingClientRect()
+      const r = svg.getBoundingClientRect()
+      const scale = Math.max(r.width / SCENE_W, r.height / SCENE_H)
+      const mx = r.left - sect.left + r.width / 2 + (MOUTH.x - SCENE_W / 2) * scale
+      const my = r.top - sect.top + r.height - (SCENE_H - MOUTH.y) * scale
+      const w = SMOKE.w * scale
+      const h = SMOKE.h * scale
+      smokeWrap.style.width = `${w}px`
+      smokeWrap.style.height = `${h}px`
+      smokeWrap.style.left = `${mx - w / 2}px`
+      smokeWrap.style.top = `${my - h * 0.93}px`
+      // the smoke's settle animation shifts it with the cabin's layer; its
+      // depth must be in RENDERED px (scene units × current svg scale)
+      smokeWrap.style.setProperty('--vdepth', `${Math.round(NEAR_DEPTH * scale)}px`)
+    }
+
+    layout()
+    window.addEventListener('resize', layout)
+    window.addEventListener('load', layout)
+    // fonts/images can grow the layout after page-load without firing resize;
+    // one settled re-measure keeps the chimney anchor honest
+    const settle = window.setTimeout(layout, 900)
+    cleanup = () => {
+      clearTimeout(settle)
+      window.removeEventListener('resize', layout)
+      window.removeEventListener('load', layout)
+    }
+  }
+
+  // fires on initial load AND after every swup navigation (bridged)
+  document.addEventListener('astro:page-load', setup)
+</script>

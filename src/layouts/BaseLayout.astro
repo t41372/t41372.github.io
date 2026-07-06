@@ -1,0 +1,500 @@
+---
+import '@fontsource-variable/geist'
+import '@fontsource-variable/geist-mono'
+import '../styles/global.css'
+import StarSky from '../components/StarSky'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+
+interface Props {
+  title?: string
+  description?: string
+  active?: 'home' | 'projects' | 'blog' | 'archive' | 'none'
+  /** document language — the site chrome is English; zh article pages pass 'zh' */
+  lang?: 'en' | 'zh'
+  /** language variants of this page (site-relative paths) for hreflang links.
+      Pass ALL variants including the current page (Google requires the set to
+      be self-referencing and reciprocal); x-default is added automatically
+      from the 'en' entry. Omit on pages without translations. */
+  alternates?: Array<{ hreflang: 'en' | 'zh'; href: string }>
+}
+
+const {
+  title = "Yi-Ting Chiu — builds fun stuff",
+  description = 'Personal website of Yi-Ting Chiu. Creator of Open-LLM-VTuber, PathKeep, and Standard ASR. Builds fun stuff with AI, speech, and code.',
+  active = 'home',
+  lang = 'en',
+  alternates,
+} = Astro.props
+
+const xDefault = alternates?.find((a) => a.hreflang === 'en') ?? alternates?.[0]
+
+// absolute URLs — social scrapers ignore relative og: values
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site)
+const ogImageUrl = new URL('/og.png', Astro.site)
+---
+
+<!doctype html>
+<!-- no bg-background utility here: global.css paints <html> in the shader
+     sky's exact top color + gradient (the utility would override it with the
+     darker token, which iOS letterboxes as a black bar) -->
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover: let the fixed StarSky canvas (top:0, h-lvh) bleed
+         under the iOS status bar and home indicator so those system areas show
+         sky instead of a black/theme-color band. Fixed UI (the header pill) is
+         offset by env(safe-area-inset-*) to stay clear of the notch. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.png" />
+    <link rel="alternate" type="application/rss+xml" title="Yi-Ting Chiu — Blog" href="/rss.xml" />
+    <!-- Keep Apple Safari free of a static theme-color. Older Safari chrome
+         and newer liquid-glass bars both sit over two different page colors
+         (sky at the top, valley-ground at the footer), so the structural fix
+         is to paint the correct pixels in the page. Non-Apple browsers still
+         get a stable sky tint. -->
+    <script is:inline>
+      // swup's head-plugin (updateHead: true) rebuilds <head> per navigation
+      // from the incoming page's STATIC head — this JS-added meta is in none of
+      // them, so it's dropped on the first client-side nav and never restored
+      // (this inline script runs once). Re-assert it on every astro:page-load.
+      // Idempotent + persistent via the window.__themeColor guard (same pattern
+      // as __edgeBg below).
+      ;(() => {
+        if (window.__themeColor) return
+        window.__themeColor = true
+        const ensure = () => {
+          if (
+            navigator.vendor !== 'Apple Computer, Inc.' &&
+            !document.querySelector('meta[name="theme-color"]')
+          ) {
+            const m = document.createElement('meta')
+            m.name = 'theme-color'
+            m.content = '#0b1339' /* shader sky top (nTop) */
+            document.head.appendChild(m)
+          }
+        }
+        ensure()
+        document.addEventListener('astro:page-load', ensure)
+      })()
+    </script>
+    <!-- iOS 26+ Liquid Glass derives its toolbar tint from CSS, NOT from
+         rendered pixels: nearest edge fixed/sticky background-color -> body ->
+         html (theme-color is parsed but ignored). body must stay transparent
+         (an opaque body bg occludes the -z WebGL sky — see global.css), so
+         html's background-color is the only knob left — and the design needs
+         sky-navy when the TOP bar expands but ground-black when the BOTTOM bar
+         expands ("blue glow under the black footer" was html-navy tinting the
+         bottom bar). Swap it while APPROACHING either end, well before the
+         toolbar expands, so whenever Safari re-derives it reads the right
+         color. Also colors the rubber-band canvas correctly should the bounce
+         (suppressed via overscroll-behavior) ever return. The swap itself is
+         invisible in-page: html's paint is occluded by .sky-fallback + canvas. -->
+    <script is:inline>
+      ;(() => {
+        if (window.__edgeBg) return
+        window.__edgeBg = true
+        const NAVY = 'rgb(11 19 57)' /* shader sky top (nTop) */
+        const GROUND = '#05070B' /* valley ground / footer */
+        let cur = ''
+        let raf = 0
+        const apply = () => {
+          raf = 0
+          const sMax = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
+          /* flip inside the last 0.6 viewport; on barely-scrollable pages
+             split the range so the top edge always keeps navy */
+          const cut = Math.min(window.innerHeight * 0.6, sMax / 2)
+          const next = sMax > 0 && sMax - window.scrollY <= cut ? GROUND : NAVY
+          // cache invalid if some future router/extension wipes the inline
+          // style — compare against the DOM, not just memory
+          if (next !== cur || document.documentElement.style.backgroundColor === '') {
+            cur = next
+            document.documentElement.style.backgroundColor = next
+          }
+        }
+        const queue = () => {
+          if (!raf) raf = requestAnimationFrame(apply)
+        }
+        addEventListener('scroll', queue, { passive: true })
+        addEventListener('resize', queue)
+        document.addEventListener('astro:page-load', queue)
+        apply()
+      })()
+    </script>
+    <link rel="canonical" href={canonicalUrl} />
+    {
+      alternates?.map((a) => (
+        <link rel="alternate" hreflang={a.hreflang} href={new URL(a.href, Astro.site)} />
+      ))
+    }
+    {xDefault && <link rel="alternate" hreflang="x-default" href={new URL(xDefault.href, Astro.site)} />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Yi-Ting Chiu" />
+    <!-- static screenshot of the real hero — regenerate with
+         `bun scripts/generate-og.mjs` when the hero visibly changes -->
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <!-- body carries NO background-color: the fixed StarSky canvas at -z-10 is
+       the page background; html keeps the fallback color while WebGL boots -->
+  <body class="min-h-svh text-foreground antialiased">
+    <!-- CSS-only sky stand-in behind the canvas (see .sky-fallback): the
+         first frame the user ever sees, and what shows through while iOS
+         repositions fixed layers mid-scroll or if WebGL never boots -->
+    <!-- overdraw past both viewport edges: 144px above covers the iOS
+         status-bar region at scroll 0 and toolbar-collapse lag strips; 288px
+         below (-bottom-72, solid ground-black in the gradient) covers the
+         bottom rubber-band bounce, which used to expose html-navy as a blue
+         band under the footer -->
+    <div class="sky-fallback pointer-events-none fixed inset-x-0 -top-36 -bottom-72 -z-20" aria-hidden="true"></div>
+    <!-- The sky, header, and footer sit OUTSIDE swup's <main> container, so a
+         client-side navigation never touches them: the WebGL canvas (and its
+         scroll painting) stays alive as a persistent element by structure, not
+         by any framework "persist" flag — it just re-measures its length for
+         the new page on astro:page-load. -->
+    <StarSky client:load />
+    <Header active={active} />
+    <!-- <main> is swup's ONLY swapped container (astro.config). It's swapped as
+         REAL DOM, so the glass cards inside keep live backdrop-blur across the
+         fade+drift choreographed in the bridge script below. Footer lives
+         outside <main> and persists like the header/sky. -->
+    <slot />
+    <Footer />
+    <script>
+      import { initPostHog, capturePageView } from '../lib/posthog'
+      initPostHog()
+      // swup navigations don't trigger full loads; capture SPA pageviews on the
+      // bridged astro:page-load (fired by @swup/astro on page:view, and once on
+      // initial load by the bridge below)
+      document.addEventListener('astro:page-load', capturePageView)
+    </script>
+    <script is:inline>
+      // Blog reading-language preference (en/zh). The site chrome is English-only;
+      // only article *content* is bilingual. We persist the reader's choice so the
+      // /blog index and the in-article EN/中文 toggle stay in sync across swup navs:
+      //   - a bilingual article page records the language being read
+      //   - the /blog index re-skins its bilingual cards (title, blurb, link
+      //     target) to the remembered language; its EN/中文 toggle writes it back
+      // Default + crawler view is always the English primary — progressive enhance.
+      ;(() => {
+        const KEY = 'blog-lang'
+        const get = () => {
+          try {
+            return localStorage.getItem(KEY) === 'zh' ? 'zh' : 'en'
+          } catch {
+            return 'en'
+          }
+        }
+        const set = (v) => {
+          try {
+            localStorage.setItem(KEY, v)
+          } catch {}
+        }
+
+        const applyIndex = () => {
+          const lang = get()
+          for (const a of document.querySelectorAll('a[data-bilingual]')) {
+            const href = a.getAttribute('data-href-' + lang)
+            if (href) a.setAttribute('href', href)
+            const title = a.querySelector('[data-card-title]')
+            const tv = a.getAttribute('data-title-' + lang)
+            if (title && tv) title.textContent = tv
+            const desc = a.querySelector('[data-card-desc]')
+            const dv = a.getAttribute('data-desc-' + lang)
+            if (desc && dv != null) desc.textContent = dv
+          }
+          const toggle = document.querySelector('[data-blog-lang-toggle]')
+          if (toggle) {
+            for (const btn of toggle.querySelectorAll('button[data-lang]')) {
+              const on = btn.getAttribute('data-lang') === lang
+              btn.classList.toggle('text-foreground', on)
+              btn.classList.toggle('text-muted', !on)
+              btn.setAttribute('aria-pressed', on ? 'true' : 'false')
+            }
+          }
+        }
+
+        // delegated: the toggle lives inside swup's <main>, recreated each nav
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest?.('[data-blog-lang-toggle] button[data-lang]')
+          if (!btn) return
+          set(btn.getAttribute('data-lang'))
+          applyIndex()
+        })
+
+        document.addEventListener('astro:page-load', () => {
+          const article = document.querySelector('[data-article-lang]')
+          if (article) set(article.getAttribute('data-article-lang'))
+          applyIndex()
+        })
+      })()
+    </script>
+    <script>
+      // ---------------------------------------------------------------------
+      // swup bridge + transition choreography
+      // ---------------------------------------------------------------------
+      // Two jobs, both hanging off the single window.swup instance
+      // (globalInstance: true in astro.config):
+      //
+      //  1. EVENT BRIDGE. Five existing listener sites were written against
+      //     Astro's ClientRouter events (Header nav pill, ValleyScene layout,
+      //     StarSky re-measure, posthog pageview, the html edge-color script).
+      //     Rather than rewrite all five, we re-emit the two navigation-
+      //     lifecycle events they need — the names are semantic, so this is a
+      //     zero-diff migration for the listeners. @swup/astro ALREADY dispatches
+      //     `astro:page-load` on its `page:view` hook, so we must NOT re-emit it
+      //     there (that would double-count posthog pageviews); we add only the
+      //     two events the integration omits: `astro:before-preparation` (with
+      //     the destination URL the pill reads) on `visit:start`, and one
+      //     `astro:page-load` for the INITIAL load (page:view fires on
+      //     subsequent navigations only, but ClientRouter used to fire it on
+      //     first load and the nav pill / smoke layout / sky depend on it).
+      //
+      //  2. TRANSITION CHOREOGRAPHY. A WAAPI fade+drift on <main> only —
+      //     transform/opacity, so it stays on the compositor and can hit ~120Hz
+      //     on iPhone. Old <main> lifts and fades out; the new <main> (a fresh
+      //     element — swup replaceWith()s the container) drifts up and fades in.
+      import type Swup from 'swup'
+
+      declare global {
+        interface Window {
+          swup?: Swup
+        }
+      }
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+      // Fire the initial astro:page-load exactly once. All hoisted module
+      // scripts (where the five listeners register) run before DOMContentLoaded,
+      // so if we're still parsing, defer to it; otherwise every listener is
+      // already wired and we can fire now.
+      let firedInitial = false
+      const fireInitialPageLoad = () => {
+        if (firedInitial) return
+        firedInitial = true
+        document.dispatchEvent(new Event('astro:page-load'))
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fireInitialPageLoad, { once: true })
+      } else {
+        fireInitialPageLoad()
+      }
+
+      // The HIGHEST elements it is safe to fade. Own-opacity on a backdrop-blur
+      // element is fine; opacity on an ANCESTOR of one silently kills the
+      // child's backdrop-filter (proven in this repo — see global.css history).
+      // So collect a child when it either IS a blur element or has no blur
+      // descendant; otherwise recurse past it to reach the blur elements without
+      // ever animating their ancestor.
+      const fadeTargets = (root: HTMLElement): HTMLElement[] => {
+        const out: HTMLElement[] = []
+        const walk = (el: Element) => {
+          for (const child of Array.from(el.children)) {
+            if (!(child instanceof HTMLElement)) continue
+            if (
+              child.matches('[class*="backdrop-blur"]') ||
+              !child.querySelector('[class*="backdrop-blur"]')
+            ) {
+              out.push(child)
+            } else {
+              walk(child)
+            }
+          }
+        }
+        walk(root)
+        return out
+      }
+
+      // EMPIRICAL LAW (established across four interactive test rounds — no
+      // automated capture, not even 120fps true-display recording of a known-
+      // bad build, ever reproduces this): an OWN-OPACITY WAAPI animation on a
+      // backdrop-blur element re-rasterizes its backdrop at the animation
+      // edges — the whole glass subtree blanks for one frame, interactively
+      // visible in every browser. Transform/translate was EXONERATED by a
+      // controlled experiment (constant translateZ(0) base + translate-only
+      // drift still flashed while opacity animated; "glass untouched" was
+      // clean). STATIC translucency is fine — opacity animation EDGES bite.
+      // So the choreography partitions <main> three ways:
+      //   plain    — non-glass blocks: fade + drift (full treatment)
+      //   shells   — the glass cards: drift ONLY, never opacity, never pinned
+      //              (visible as complete glass from the first post-swap
+      //              frame, motion sells the entrance; their permanent
+      //              translateZ(0) base in global.css keeps compositing state
+      //              constant while `translate` animates)
+      //   contents — the glass cards' children: fade ONLY (they ride the
+      //              shell's drift; adding their own would double it)
+      const partitionTargets = (root: HTMLElement) => {
+        const plain: HTMLElement[] = []
+        const shells: HTMLElement[] = []
+        const contents: HTMLElement[] = []
+        for (const el of fadeTargets(root)) {
+          if (el.matches('[class*="backdrop-blur"]')) {
+            shells.push(el)
+            contents.push(...fadeTargets(el))
+          } else {
+            plain.push(el)
+          }
+        }
+        return { plain, shells, contents }
+      }
+
+      let wired = false
+      const wire = () => {
+        const swup = window.swup
+        if (wired || !swup) return
+        wired = true
+
+        // --- event bridge ---
+        // Header's pill reads e.to.pathname to start sliding the INSTANT
+        // navigation begins (before-preparation), long before the swap lands.
+        swup.hooks.on('visit:start', (visit) => {
+          document.dispatchEvent(
+            Object.assign(new Event('astro:before-preparation'), {
+              to: new URL(visit.to.url, location.origin),
+            }),
+          )
+        })
+
+        // --- scroll reset ---
+        // html has `scroll-behavior: smooth`; swup's default scroll:top uses
+        // behavior:'auto', which then SMOOTH-scrolls to the top on every
+        // navigation (a visible glide). Force an instant jump instead.
+        swup.hooks.replace('scroll:top', () => {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+          return true
+        })
+
+        // --- OUT: old page lifts + fades ---
+        swup.hooks.replace('animation:out:await', async () => {
+          const main = document.querySelector<HTMLElement>('main')
+          if (reduced.matches || !main) return
+          // Lift + fade EACH backdrop-safe target — NOT <main>. A transform on a
+          // glass card's ANCESTOR (and main is one) makes that ancestor the
+          // backdrop root for the card, so adding OR removing it forces every
+          // descendant backdrop-filter to re-rasterize (a one-frame glass blank).
+          // This is the same hazard as opacity on an ancestor — see fadeTargets,
+          // which already returns only elements it's safe to give an OWN
+          // transform/opacity. fill:'forwards' holds the faded-out state through
+          // swup's swap; the old <main> is discarded right after, so there's
+          // nothing left to clean up.
+          // Partitioned per the EMPIRICAL LAW above: shells lift WITHOUT any
+          // opacity animation (they vanish with the swap itself — not an
+          // animation edge); their contents fade in place; plain blocks get
+          // both. `translate`, not `transform`: composes with the shells'
+          // permanent translateZ(0) base (global.css) and Tailwind utilities.
+          const { plain, shells, contents } = partitionTargets(main)
+          const fadeOut = (el: HTMLElement) =>
+            el.animate({ opacity: [1, 0] }, { duration: 120, easing: 'ease-in', fill: 'forwards' })
+          const liftOut = (el: HTMLElement) =>
+            el.animate(
+              { translate: ['0px 0px', '0px -8px'] },
+              { duration: 120, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
+            )
+          const anims = [
+            ...plain.flatMap((el) => [fadeOut(el), liftOut(el)]),
+            ...shells.map(liftOut),
+            ...contents.map(fadeOut),
+          ]
+          await Promise.all(anims.map((a) => a.finished)).catch(() => {})
+        })
+
+        // --- SWAP: re-arm island hydration + pin the new fade targets ---
+        // Runs right after swup's replaceWith (an "after" handler), in the same
+        // task — no paint in between.
+        swup.hooks.on('content:replace', (visit) => {
+          const main = document.querySelector<HTMLElement>('main')
+          if (!main) return
+
+          // Re-execute the directive scripts swup just CLONED into <main>. Astro
+          // emits a tiny inline <script> before each island that defines its
+          // client directive (e.g. `Astro.visible`) and fires astro:<directive>.
+          // Cloned-in <script>s never auto-run, and with reloadScripts:false
+          // swup won't re-run them — so a client:visible island whose directive
+          // the initial page never defined would wait forever and never hydrate
+          // (client:load survives on its own: Astro.load is defined at first
+          // load and the custom-element upgrade re-triggers hydration). Scoped
+          // to <main> so the persistent header/footer/bridge scripts, which
+          // live OUTSIDE the container, are never re-run (no leaked listeners).
+          for (const old of Array.from(main.querySelectorAll('script'))) {
+            const fresh = document.createElement('script')
+            for (const { name, value } of Array.from(old.attributes)) fresh.setAttribute(name, value)
+            fresh.textContent = old.textContent
+            old.replaceWith(fresh)
+          }
+
+          // Pin the new fade targets to opacity 0 so the in-animation has nothing
+          // to flash. popstate (back/forward) visits don't animate — without the
+          // guard the content would be pinned at 0 with no in-animation ever
+          // running to restore it (stranded blank page).
+          // Pin plain blocks + glass CONTENTS only — never the shells: they
+          // must stand fully styled from the first post-swap frame (the LAW).
+          if (!visit.animation.animate || reduced.matches) return
+          const { plain, contents } = partitionTargets(main)
+          for (const el of [...plain, ...contents]) el.style.opacity = '0'
+        })
+
+        // --- IN: new page drifts up + fades in ---
+        swup.hooks.replace('animation:in:await', async (visit) => {
+          const main = document.querySelector<HTMLElement>('main')
+          if (!visit.animation.animate || reduced.matches || !main) return
+          // Drift + fade per the partition — NEVER <main> (a transform on a
+          // glass ancestor churns the backdrop root: one-frame glass blank,
+          // round one of this hunt) and NEVER the shells' opacity (round two:
+          // the glass's OWN opacity animation flashes identically — see the
+          // EMPIRICAL LAW above). What ships: plain blocks fade+drift, the
+          // glass shells DRIFT at full opacity (motion sells the entrance;
+          // translate on their permanent translateZ(0) base has no compositing
+          // edge), and the shells' contents fade in place, riding the drift.
+          // Everything moves 10px→0 together, so the page rises as one unit.
+          const { plain, shells, contents } = partitionTargets(main)
+          const fadeIn = (el: HTMLElement) =>
+            el.animate({ opacity: [0, 1] }, { duration: 160, easing: 'ease-out' })
+          const riseIn = (el: HTMLElement) =>
+            el.animate(
+              { translate: ['0px 10px', '0px 0px'] },
+              { duration: 180, easing: 'cubic-bezier(0, 0, 0.2, 1)' },
+            )
+          const pinned = [...plain, ...contents]
+          const anims = [
+            ...plain.flatMap((el) => [fadeIn(el), riseIn(el)]),
+            ...shells.map(riseIn),
+            ...contents.map(fadeIn),
+          ]
+          // Release the opacity:0 pin (set in content:replace) now, WHILE the
+          // running animations still override it, so each target's UNDERLYING
+          // opacity resolves to 1. These animations use the default fill:'none':
+          // the instant each ends it simply stops applying and the element falls
+          // back to that underlying value (visible, no snap-back). So there is
+          // nothing to clear or .cancel() at the end — no forwards-fill to
+          // accumulate across navigations, and no cancel() teardown to thrash the
+          // glass layer. (fill:'forwards' + .cancel() was the old cleanup.)
+          for (const el of pinned) el.style.opacity = ''
+          await Promise.all(anims.map((a) => a.finished)).catch(() => {})
+        })
+      }
+      // window.swup may already exist (loadOnIdle: false inits synchronously) or
+      // arrive with swup's `swup:enable` DOM event — wire idempotently on both.
+      if (window.swup) wire()
+      document.addEventListener('swup:enable', wire)
+    </script>
+    <!-- NO JS scroll pipeline anymore. Every scroll-linked effect (hero text
+         lag, valley layer parallax) is a CSS scroll-driven animation — see
+         global.css .hero-lag and ValleyScene — which Safari 26.4+/Chrome run
+         on the compositor thread. The GSAP ScrollTrigger pipeline that lived
+         here was structurally unable to stay in sync on iOS: the compositor
+         scrolls ahead of the main thread and scrollY is misreported during
+         momentum, so scrub tweens always ran ≥1 frame behind. Institutional
+         memory worth keeping: ScrollTrigger.normalizeScroll(true) was tried
+         and completely broke touch scrolling on real iPhone Safari — never
+         reintroduce JS scroll-coupling here. -->
+  </body>
+</html>

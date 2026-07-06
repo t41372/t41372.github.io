@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import ProjectCard from '../components/projects/ProjectCard.astro'
+import { projects } from '../data/projects'
+---
+
+<BaseLayout
+  title="Projects — Yi-Ting Chiu"
+  description="Projects created and maintained by Yi-Ting Chiu: Open-LLM-VTuber, PathKeep, Standard ASR, and more."
+  active="projects"
+>
+  <main class="mx-auto w-full max-w-4xl px-6 pb-24 pt-32 md:px-8">
+    <div class="mb-14 flex flex-col gap-3">
+      <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
+        {'// projects'}
+      </span>
+      <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+        Things I work on
+      </h1>
+      <!-- <p class="max-w-xl text-pretty text-muted">
+        Creator &amp; maintainer. These are the ones I&apos;m most serious about right now.
+      </p> -->
+    </div>
+
+    <div class="flex flex-col gap-12">
+      {projects.map((p, i) => <ProjectCard {...p} index={i} />)}
+    </div>
+
+    <div class="mt-14">
+      <a
+        href="https://github.com/t41372"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-aurora"
+      >
+        more on github
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </main>
+</BaseLayout>

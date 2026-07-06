@@ -1,3 +1,20 @@
 
-.vscode/settings.json
+reference
+
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# environment
+.env
+.env.local
+.env.production
+.env.development.local
+
+# misc
 .DS_Store
+.vscode/settings.json
+.vercel/
