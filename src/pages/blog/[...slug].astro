@@ -1,40 +1,93 @@
 ---
-import { getCollection, render } from 'astro:content'
+import { render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
 import { formatDate } from '../../lib/format'
+import { getBlogPosts, entryLang, type BlogEntry, type BlogLang } from '../../lib/blog'
 
-export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => !data.draft)
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }))
+interface Props {
+  post: BlogEntry
+  /** the other language variant of this post, when one exists */
+  alt: { lang: BlogLang; href: string } | null
 }
 
-const { post } = Astro.props
+export async function getStaticPaths() {
+  const posts = await getBlogPosts()
+  return posts.flatMap((post) => {
+    const primaryPath = `/blog/${post.slug}`
+    const paths: Array<{ params: { slug: string }; props: Props }> = [
+      { params: { slug: post.slug }, props: { post: post.primary, alt: null } },
+    ]
+    if (post.secondary) {
+      const secondaryLang = entryLang(post.secondary)
+      paths[0]!.props.alt = { lang: secondaryLang, href: `${primaryPath}/${secondaryLang}` }
+      paths.push({
+        params: { slug: `${post.slug}/${secondaryLang}` },
+        props: {
+          post: post.secondary,
+          alt: { lang: entryLang(post.primary), href: primaryPath },
+        },
+      })
+    }
+    return paths
+  })
+}
+
+const { post, alt } = Astro.props
+const lang = entryLang(post)
 const { Content } = await render(post)
+const langLabel: Record<BlogLang, string> = { en: 'EN', zh: '中文' }
+// hreflang set (self + other variant); only when a translation exists.
+// Normalize to trailing-slash form: Astro.url.pathname has one at build time
+// (build.format 'directory') but our hand-built alt.href doesn't, and Google
+// treats /p and /p/ as different URLs — the set must be exactly reciprocal.
+const slashed = (p: string) => (p.endsWith('/') ? p : `${p}/`)
+const alternates = alt
+  ? [
+      { hreflang: lang, href: slashed(Astro.url.pathname) },
+      { hreflang: alt.lang, href: slashed(alt.href) },
+    ]
+  : undefined
 ---
 
 <BaseLayout
   title={`${post.data.title} — Yi-Ting Chiu`}
   description={post.data.description}
   active="blog"
+  alternates={alternates}
 >
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
     <!-- frosted glass over the sky: the aurora at the painting's top glows
          through around and behind the article. Enter/exit rides the shared
          page fade+drift (global.css) — no per-card morph. -->
     <article
+      lang={lang === 'zh' ? 'zh' : undefined}
       class="rounded-3xl border border-border-subtle/60 bg-surface/50 p-6 backdrop-blur-md md:p-10"
     >
       <header class="mb-10 flex flex-col gap-4">
-        <a
-          href="/blog"
-          class="font-mono text-sm text-muted transition-colors hover:text-aurora"
-        >
-          ← back to writings
-        </a>
+        <div class="flex items-baseline justify-between gap-4">
+          <a
+            href="/blog"
+            class="font-mono text-sm text-muted transition-colors hover:text-aurora"
+          >
+            ← back to writings
+          </a>
+          {
+            alt && (
+              <div class="flex items-center gap-2 font-mono text-sm">
+                <span class="text-foreground" aria-current="true">
+                  {langLabel[lang]}
+                </span>
+                <span class="text-muted-dark" aria-hidden="true">
+                  /
+                </span>
+                <a href={alt.href} class="text-muted transition-colors hover:text-aurora">
+                  {langLabel[alt.lang]}
+                </a>
+              </div>
+            )
+          }
+        </div>
         <h1
           class="text-balance font-mono text-3xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl"
         >
@@ -49,11 +102,43 @@ const { Content } = await render(post)
           </time>
           {post.data.tags.map((tag) => <TagPill tag={tag} />)}
         </div>
+        {
+          post.data.translated && alt && (
+            <p class="font-mono text-xs text-muted-dark">
+              Translated from the{' '}
+              <a href={alt.href} class="text-muted transition-colors hover:text-aurora">
+                {langLabel[alt.lang]} original
+              </a>
+              .
+            </p>
+          )
+        }
       </header>
 
       <div class="prose-night">
         <Content />
       </div>
+
+      {
+        post.data.alsoOn.length > 0 && (
+          <footer class="mt-10 border-t border-border-subtle/60 pt-5 font-mono text-xs text-muted-dark">
+            {lang === 'zh' ? '本文也发布于 ' : 'Also published on '}
+            {post.data.alsoOn.map((s, i) => (
+              <span>
+                {i > 0 && ' · '}
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted transition-colors hover:text-aurora"
+                >
+                  {s.label}
+                </a>
+              </span>
+            ))}
+          </footer>
+        )
+      }
     </article>
   </main>
 </BaseLayout>

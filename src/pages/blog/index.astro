@@ -1,12 +1,10 @@
 ---
-import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
 import { formatDate } from '../../lib/format'
+import { getBlogPosts, entryLang } from '../../lib/blog'
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-)
+const posts = await getBlogPosts()
 ---
 
 <BaseLayout title="Blog — Yi-Ting Chiu" description="Writings by Yi-Ting Chiu." active="blog">
@@ -26,33 +24,38 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
         <p class="font-mono text-muted">Nothing here yet. Soon.</p>
       ) : (
         <ul class="flex flex-col gap-4">
-          {posts.map((post) => (
+          {posts.map(({ slug, primary, secondary }) => (
             <li>
               <a
-                href={`/blog/${post.id}`}
+                href={`/blog/${slug}`}
                 class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70"
               >
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">
-                    {post.data.title}
+                    {primary.data.title}
                   </h2>
                   <time
-                    datetime={post.data.pubDate.toISOString()}
+                    datetime={primary.data.pubDate.toISOString()}
                     class="font-mono text-xs text-muted-dark"
                   >
-                    {formatDate(post.data.pubDate)}
+                    {formatDate(primary.data.pubDate)}
                   </time>
                 </div>
-                {post.data.description && (
+                {primary.data.description && (
                   <p class="text-pretty text-sm leading-relaxed text-muted">
-                    {post.data.description}
+                    {primary.data.description}
                   </p>
                 )}
-                {post.data.tags.length > 0 && (
-                  <div class="mt-1 flex flex-wrap gap-2">
-                    {post.data.tags.map((tag) => (
+                {(primary.data.tags.length > 0 || secondary) && (
+                  <div class="mt-1 flex flex-wrap items-center gap-2">
+                    {primary.data.tags.map((tag) => (
                       <TagPill tag={tag} />
                     ))}
+                    {secondary && (
+                      <span class="font-mono text-xs text-muted-dark">
+                        {entryLang(primary) === 'en' ? 'EN · 中文' : '中文 · EN'}
+                      </span>
+                    )}
                   </div>
                 )}
               </a>
