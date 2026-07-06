@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Yi-Ting Chiu's personal website (v2.0.0), rebuilt as a static Astro site. **The `README.md` is stale** — it describes the previous vanilla-JS "interactive terminal" site, not this codebase. Ignore it for architecture.
-
-The old terminal site's source lives in `reference/t41372.github.io-old-version/` and is kept around as a reference for hand-tuned animations that are being ported forward (see Design below).
+Yi-Ting Chiu's personal website (v2), a static Astro site at https://yi-ting.live. v2 shipped in 2026, replacing the hand-written "interactive terminal" site (v1, 2021–2026). v1 is preserved twice: its source on the `archive/v1-terminal` branch (tag `v1-terminal`), and a browsable snapshot served at `/archive/v1/` from `public/archive/v1/`.
 
 ## Commands
 
@@ -15,29 +13,36 @@ Package manager is **Bun** (`bun.lock`); CI uses `bun install --frozen-lockfile`
 - `bun run dev` — local dev server (`astro dev`)
 - `bun run build` — production build to `dist/`
 - `bun run preview` — serve the built `dist/` locally
+- `bun run test:e2e` — headless-Chrome smoke test (`scripts/e2e-smoke.mjs`); builds + serves the real `dist/` by default, `E2E_BASE=<url>` to reuse a running server. Run it after touching anything visual/scroll/transition-related — it asserts the regressions that have actually happened (WebGL sky, parallax, nav pill, glass-card flash, iOS scroll invariants).
+- `bun scripts/generate-og.mjs` — regenerate `public/og.png` (committed screenshot of the real hero). Run only when the hero visibly changes.
 
-There is no test suite, linter, or formatter configured. Type-check with `bunx astro check` if needed.
+There is no linter or formatter configured. Type-check with `bunx astro check` (CI gates on it being clean: 0 errors / 0 warnings / 0 hints).
 
 ## Architecture
 
-- **Astro 7, static output** (`output: 'static'` in `astro.config.mjs`), `site: 'https://yi-ting.live'`. Deploys to GitHub Pages via `.github/workflows/deploy.yml` on push to `main`; custom domain in `public/CNAME`.
-- **React 19 islands** — most of the page is static `.astro`; interactivity is opt-in via islands with explicit hydration directives. Current islands: `AuroraBackground` and `HeroIntro` (`client:load`), `GithubStars` (`client:visible`). Keep JS shipped to the client minimal — only make something an island when it needs runtime behavior.
-- **Page composition** — `src/pages/index.astro` stacks `Header` → `HeroSection` → `Footer` (which embeds `ValleyScene`). Projects live on their own page at `/projects` (`src/pages/projects.astro`), data in `src/data/projects.ts` (each entry has an optional `media` field for a screenshot/demo clip; without it the card shows a placeholder). Components are grouped by section under `src/components/{hero,projects,valley}/`. `BaseLayout.astro` wraps every page (fonts, global.css, `<head>` meta, PostHog init).
-- **Blog** — Astro content collection defined in `src/content.config.ts` (frontmatter schema: `title`, `description?`, `pubDate`, `tags[]`, `draft`). Markdown lives in `src/content/blog/`; routed by `src/pages/blog/index.astro` and `src/pages/blog/[...slug].astro`. Code blocks use Shiki `catppuccin-mocha`.
-- **Analytics** — `src/lib/posthog.ts`, initialized in `BaseLayout`. Silently no-ops unless `PUBLIC_POSTHOG_KEY` is set (env-gated, so local dev is clean). Never hardcode the key.
-- **External data at runtime** — `GithubStars.tsx` fetches live star counts from the GitHub API client-side, with sessionStorage caching (one request per repo per session) and graceful degradation on rate-limit/offline. There is no build-time data fetching.
+- **Astro 7, static output** (`output: 'static'` in `astro.config.mjs`), `site: 'https://yi-ting.live'`. Deploys to GitHub Pages via `.github/workflows/deploy.yml` on push to `main`; custom domain in `public/CNAME`. `@astrojs/sitemap` emits `/sitemap-index.xml`. All workflows must stay zizmor-clean (SHA-pinned actions, least-privilege permissions) — check with `uvx zizmor .github/workflows/*.yml`.
+- **React 19 islands** — most of the page is static `.astro`; interactivity is opt-in via islands with explicit hydration directives. Keep JS shipped to the client minimal — only make something an island when it needs runtime behavior.
+- **Page transitions are swup, NOT Astro's ClientRouter** — swup swaps only `<main>`; the WebGL sky, header, and footer persist outside it. The bridge script in `BaseLayout.astro` re-emits the `astro:*` navigation events and choreographs the WAAPI fade/drift. Read the comments in `BaseLayout.astro` and `astro.config.mjs` before touching navigation, and never animate opacity on a backdrop-blur element or transform/opacity on its ancestors (documented "empirical law" in BaseLayout — it blanks the glass for a frame).
+- **Pages** — `/` (hero), `/projects` (`src/data/projects.ts`; each entry has an optional `media` field), `/blog`, `/archive` (the version museum), plus the raw v1 snapshot under `public/archive/v1/`. Components grouped under `src/components/{hero,projects,valley}/`. `BaseLayout.astro` wraps every page (fonts, global.css, `<head>` meta + OG tags, PostHog init).
+- **Blog (bilingual)** — content collection defined in `src/content.config.ts`; frontmatter: `title`, `description?`, `pubDate`, `tags[]`, `draft`, `lang` (`en`/`zh`, default `en`), `translated`. A post is either a flat `slug.md` or a folder `slug/en.md` + `slug/zh.md` (images colocated in `slug/images/`). Grouping/URL logic lives in `src/lib/blog.ts`: the primary variant (en when present) serves at `/blog/slug`, the other at `/blog/slug/<lang>`; `src/pages/blog/[...slug].astro` renders both and shows the EN/中文 toggle. Ten posts were migrated from the old hexo blog (2022–2025, still live at https://blog.yi-ting.com — don't break it, external links point there); their zh files are the originals, en files are reviewed translations (`translated: true`).
+- **Analytics** — `src/lib/posthog.ts`, initialized in `BaseLayout`. Silently no-ops unless `PUBLIC_POSTHOG_KEY` is set. Never hardcode the key.
+- **External data at runtime** — `GithubStars.tsx` fetches star counts client-side with sessionStorage caching and graceful degradation. No build-time data fetching.
 
 ## Styling & design system
 
-- **Tailwind v4 via `@tailwindcss/vite`** — there is **no `tailwind.config`**. The design system is defined in the `@theme` block of `src/styles/global.css` as `oklch` custom properties (`--color-background`, `--color-aurora`, etc.). Add/adjust design tokens there, then use them as Tailwind utilities (`bg-background`, `text-aurora`, …).
+- **Tailwind v4 via `@tailwindcss/vite`** — there is **no `tailwind.config`**. The design system is the `@theme` block in `src/styles/global.css` (`oklch` custom properties: `--color-background`, `--color-aurora`, …). Add tokens there, use them as utilities (`bg-background`, `text-aurora`).
 - **Fonts** — Geist / Geist Mono via `@fontsource-variable/*`, imported in `BaseLayout`.
-- Custom effects (name RGB-glitch, noise overlay) live in `global.css`, ported and recolored from the old site's CSS.
+- Custom effects (name RGB-glitch, noise overlay, `.prose-night` article typography) live in `global.css`.
 
-## Redesign in progress — read the design brief first
+## Design constraints (hard-won — do not regress)
 
-Active work is a redesign on branch `redesign/2026-b`. **`reference/核心改動點.md` is the source-of-truth design brief (written in 繁體中文) and overrides default design instincts.** Read it before changing any visual/layout code. Key hard constraints from it and from project memory:
-
-- The whole page shares **one continuous starfield background** (hero's night-sky/aurora). Foreground sections parallax over it; only the hero shows the aurora. The valley/cabin (`ValleyScene`) is hand-authored **poly/low-poly SVG illustration** (art-style ref: `reference/valley.png`), and its ground becomes the footer background. Because of this, **section/body backgrounds must stay transparent** — don't add opaque backgrounds that break the shared starfield.
+- The whole page shares **one continuous starfield background**; only the hero shows the aurora. Section/body backgrounds must stay transparent — never add an opaque background that breaks the shared sky. The valley/cabin (`ValleyScene`) is hand-authored low-poly SVG; its ground is the footer background.
 - **Do not overuse green** in the UI, even though the aurora palette contains it.
-- The hero intro's two-line typewriter animation was hand-tuned in the old site (sub-hundred-ms timings are intentional). When touching `HeroIntro`, preserve/restore that feel and content rather than reinventing it — cross-reference the old implementation in `reference/t41372.github.io-old-version/`. If reintroducing TypeIt, it must stay pinned at **8.0.7**.
-- Avoid generic "AI-slop" patterns the brief explicitly rejects (e.g. black gaussian-blur header bars). Target aesthetic: a top-tier AI-lab / quant-fund site.
+- The hero's two-line typewriter is a **hand-rolled TypeIt replica** (no `typeit` dependency); its sub-hundred-ms timings are intentional. Preserve the feel — don't reinvent it.
+- **No JS scroll-coupling.** Every scroll-linked effect is a CSS scroll-driven animation. GSAP ScrollTrigger scrubbing structurally lags on iOS, and `normalizeScroll(true)` broke touch scrolling on real iPhones — never reintroduce either.
+- iOS Safari survival kit is documented inline: sky fallback layers, `min-h-lvh` (not `dvh`), the `html` edge-background swapper in BaseLayout, `viewport-fit=cover`. Trust the comments.
+- Avoid generic "AI-slop" patterns (e.g. black gaussian-blur header bars). Target aesthetic: a top-tier AI-lab / quant-fund site.
+
+## Archiving a future version
+
+When the next redesign ships: snapshot the final `dist/` (or source, if it's plain static files) into `public/archive/v<N>/`, strip analytics scripts and absolute-path asset refs, add an exhibit entry in `src/pages/archive.astro`, and branch+tag the pre-redesign `main` as `archive/v<N>-<name>`.

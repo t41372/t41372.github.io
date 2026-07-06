@@ -1,86 +1,46 @@
-# Yi-Ting Chiu's Website
+# yi-ting.live
 
-<img src= 'https://user-images.githubusercontent.com/36402030/152890145-dc7e70a2-faaa-4732-9aa4-9fcce68f590c.jpg' height="350rem" width="auto">
-<img src= 'https://user-images.githubusercontent.com/36402030/152891225-bc80365f-1ae5-469c-8a21-4ff7b6609eeb.jpg' height="350rem" width="auto">
+Yi-Ting Chiu's personal website — a static [Astro](https://astro.build) site under one continuous
+night sky: a WebGL aurora up top, a hand-drawn low-poly valley at the bottom, and an ASCII cabin
+whose chimney smoke you can poke with your cursor.
 
+**Live at [yi-ting.live](https://yi-ting.live)**
 
-https://yi-ting.com (hosted on cloudflare page)
-or
-https://t41372.github.io/ (hosted on github page)
+## Highlights
 
-> Note: old domain yi-ting.live will be expired on Jan 29, 2024, while yi-ting.me was expired on Feb 1, 2023
+- **Astro 7, fully static** — React islands only where something actually moves
+  (`AuroraBackground`/`StarSky`, `HeroIntro`, `GithubStars`).
+- **One shared starfield** — every section parallaxes over the same sky; scroll effects are
+  CSS scroll-driven animations (no JS scroll pipeline), page transitions via swup.
+- **Bilingual blog** — posts live in `src/content/blog/`, either as a flat `slug.md` or as a
+  `slug/en.md` + `slug/zh.md` pair sharing one URL (`/blog/slug`, `/blog/slug/zh`).
+- **Site archaeology** — previous versions of this site are preserved fully working under
+  [`/archive`](https://yi-ting.live/archive). v1 (2021–2026) was a hand-written interactive fake
+  terminal; its source lives on the `archive/v1-terminal` branch and its snapshot in
+  `public/archive/v1/`.
 
-### What is this
-This is Yi-Ting Chiu's personal website.
-The terminal in the background is interactable.
+## Develop
 
-Built with HTML, CSS, and JavaScript
+Package manager is [Bun](https://bun.sh).
 
+```sh
+bun install
+bun run dev        # local dev server
+bun run build      # production build to dist/
+bun run preview    # serve the built dist/
+bun run test:e2e   # headless-Chrome smoke test against the real build
+```
 
+Type-check with `bunx astro check`. The OG social image (`public/og.png`) is a committed
+screenshot of the real hero — regenerate with `bun scripts/generate-og.mjs` when the hero changes.
 
-### The background?
-The background is a interactable terminal.
+## Writing a post
 
-#### Supported Commands in the terminal
+Drop Markdown into `src/content/blog/`. Frontmatter: `title`, `pubDate`, and optionally
+`description`, `tags`, `draft`, `lang` (`en`/`zh`, defaults `en`), `translated`. For a bilingual
+post, make a folder with `en.md` + `zh.md` and put images in `images/` next to them.
 
-- `get-command-list`
-  - print all the command available
-- `print` or `echo`
-  - print everything follow. HTML contents are allowed lol.
-- `about`
-  - print some of my information along with some ascii arts
-- `clear`
-  - clear everything on the output
-- `open-light`
-  - turn the background color to white
-- `close-light`
-  - turn the background color to black
-- `background 1`
-  - get you a beautiful star background
-- `background 0`
-  - go back to the default background and clean the stars if applicable
+## Deploy
 
-#### Other functionality of the terminal
-
-- autocompletion
-  - provide command autocompletion after pressing `tab`
-  - if there are multiple commands match the typed prefix, user can switch among them with more `tabs`
-
-- mistype command recommandation
-  - recommand a similar command if user mistype a command
-
-- get ip
-  - fetch the ip of the user and put it behind `root_XX@`
-  - for example, `root_US@127.0.0.1: ~$`
-
-- command history
-  - press `up` `down` can quickly switch among history commands
-
-- tab theme on phone optimization
-  - theme color: grey on phone's browser (Chrome, Firefox, Opera). Immersive status bar on IOS
-
-
-### Todos
-- [x] What's new in the terminal to display new features in the terminal
-- [x] terminal's size adaptation onto different screen size
-- [x] change terminal background
-- [x] add a super cool RGB glitching effect on my name
-- [ ] try put a neon effect on something
-- [ ] add and complete the "about" page
-- [ ] add a yellow duck to report bug on the main page, and it will send things to my email, or not.
-- [ ] add "neofetch" command
-
-
-
-### Used Libraries
-
-- jQuery
-- [string-similarity](https://www.npmjs.com/package/string-similarity)
-- [TypeIt](https://typeitjs.com/)
-
-### Used API
-- Geo IP LookUP API
-
-### Why do I need your IP?
-- Look at the terminal, and you'll find your IP somewhere in the page
-
+Pushes to `main` build and deploy to GitHub Pages via `.github/workflows/deploy.yml`
+(custom domain in `public/CNAME`).
