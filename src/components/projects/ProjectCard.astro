@@ -4,150 +4,89 @@ import type { Project } from '../../data/projects'
 
 type Props = Project & { index: number }
 
-const { title, tag, description, repo, accent = 'green', media, index } = Astro.props
-
-const accentVar = {
-  green: 'var(--color-aurora)',
-  teal: 'var(--color-aurora-teal)',
-  purple: 'var(--color-aurora-purple)',
-}[accent]
+const { title, description, repo, media, index } = Astro.props
 
 const flip = index % 2 === 1
-const num = String(index + 1).padStart(2, '0')
 ---
 
-<!-- frosted folder card: tab + body share the same translucent glass so the
-     starfield glows through; media slot is chamfer-clipped and sized for the
-     screenshots/demo clips coming later -->
+<!-- same frosted glass card as the blog list: one translucent surface so the
+     starfield glows through, subtle border, gentle hover-lift. media slot is a
+     plain rounded rectangle sized for the screenshots/demo clips coming later -->
 <article
-  class="folder-card group relative transition-transform duration-300 hover:-translate-y-1"
-  style={`--accent: ${accentVar}`}
+  class="group grid items-center gap-6 rounded-2xl border border-border-subtle/70 bg-surface/50 p-5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70 md:grid-cols-2 md:gap-9 md:p-6"
 >
-  <div class="relative z-10 flex items-end justify-between">
-    <div
-      class="folder-tab relative flex items-center gap-2 rounded-t-xl border border-b-0 border-border-subtle/70 bg-surface/50 px-4 py-2 backdrop-blur-md"
-    >
-      <span class="size-1.5 rounded-full" style="background: var(--accent)" aria-hidden="true"
-      ></span>
-      <span class="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
-        {tag}
-      </span>
-      <!-- smooth concave corner where the tab meets the card body -->
-      <span class="folder-tab-corner" aria-hidden="true"></span>
-    </div>
-    <span class="pb-1 pr-1 font-mono text-xs tracking-[0.25em] text-muted-dark" aria-hidden="true">
-      {num}
-    </span>
-  </div>
-
-  <div
-    class="folder-body relative rounded-b-2xl rounded-tr-2xl border border-border-subtle/70 bg-surface/40 p-5 backdrop-blur-md transition-[border-color,box-shadow] duration-300 md:p-6"
+  <figure
+    class:list={[
+      'relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-border-subtle/60',
+      flip && 'md:order-2',
+    ]}
   >
-    <div class="grid items-center gap-6 md:grid-cols-2 md:gap-9">
-      <figure
-        class:list={[
-          'chamfer relative aspect-[16/10] w-full overflow-hidden',
-          flip && 'md:order-2',
-        ]}
-      >
-        {
-          media ? (
-            media.type === 'video' ? (
-              <video
-                class="absolute inset-0 h-full w-full object-cover"
-                src={media.src}
-                autoplay
-                muted
-                loop
-                playsinline
-              />
-            ) : (
-              <img
-                class="absolute inset-0 h-full w-full object-cover"
-                src={media.src}
-                alt={media.alt ?? title}
-                loading="lazy"
-              />
-            )
-          ) : (
-            <>
-              <div class="absolute inset-0 bg-gradient-to-br from-surface-raised/70 via-background/40 to-background/70" />
-              <div
-                class="absolute inset-0"
-                style="background: radial-gradient(90% 90% at 75% 15%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 70%)"
-              />
-              <span
-                class="absolute inset-0 flex items-center justify-center font-mono text-[7rem] font-semibold text-foreground/[0.06] select-none"
-                aria-hidden="true"
-              >
-                {title[0]}
-              </span>
-              <figcaption
-                class="absolute bottom-3 left-4 font-mono text-[11px] tracking-[0.2em] text-muted-dark"
-              >
-                {'// media soon'}
-              </figcaption>
-            </>
-          )
-        }
-      </figure>
-
-      <div class="flex flex-col gap-3">
-        <div class="flex items-start justify-between gap-4">
-          <h2 class="font-mono text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-            {title}
-          </h2>
-          <GithubStars repo={repo} client:visible />
-        </div>
-
-        <p class="text-pretty text-sm leading-relaxed text-muted md:text-[15px]">{description}</p>
-
-        <a
-          href={`https://github.com/${repo}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="mt-1 inline-flex w-fit items-center gap-1.5 font-mono text-sm text-foreground/80 transition-colors hover:text-(--accent)"
-        >
-          <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-            <path
-              d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
-            ></path>
-          </svg>
-          {repo}
+    {
+      media ? (
+        media.type === 'video' ? (
+          <video
+            class="absolute inset-0 h-full w-full object-cover"
+            src={media.src}
+            autoplay
+            muted
+            loop
+            playsinline
+          />
+        ) : (
+          <img
+            class="absolute inset-0 h-full w-full object-cover"
+            src={media.src}
+            alt={media.alt ?? title}
+            loading="lazy"
+          />
+        )
+      ) : (
+        <>
+          <div class="absolute inset-0 bg-gradient-to-br from-surface-raised/50 to-background/40" />
           <span
-            class="translate-x-0 transition-transform duration-200 group-hover:translate-x-0.5"
-            aria-hidden="true">→</span
+            class="absolute inset-0 flex items-center justify-center font-mono text-[6rem] font-semibold text-foreground/[0.05] select-none"
+            aria-hidden="true"
           >
-        </a>
-      </div>
+            {title[0]}
+          </span>
+          <figcaption
+            class="absolute bottom-3 left-4 font-mono text-[11px] tracking-[0.2em] text-muted-dark"
+          >
+            {'// preview soon'}
+          </figcaption>
+        </>
+      )
+    }
+  </figure>
+
+  <div class="flex flex-col gap-3">
+    <div class="flex items-start justify-between gap-4">
+      <h2
+        class="font-mono text-xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-aurora md:text-2xl"
+      >
+        {title}
+      </h2>
+      <GithubStars repo={repo} client:visible />
     </div>
+
+    <p class="text-pretty text-sm leading-relaxed text-muted md:text-[15px]">{description}</p>
+
+    <a
+      href={`https://github.com/${repo}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-1 inline-flex w-fit items-center gap-1.5 font-mono text-sm text-foreground/80 transition-colors hover:text-aurora"
+    >
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+        <path
+          d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
+        ></path>
+      </svg>
+      {repo}
+      <span
+        class="translate-x-0 transition-transform duration-200 group-hover:translate-x-0.5"
+        aria-hidden="true">→</span
+      >
+    </a>
   </div>
 </article>
-
-<style>
-  /* smooth inverted (concave) corner to the right of the tab — the classic
-     "folder" cutout — filled with the same translucent glass as the body */
-  .folder-tab-corner {
-    position: absolute;
-    right: -12px;
-    bottom: 0;
-    width: 12px;
-    height: 12px;
-    background: radial-gradient(
-      circle at 100% 0%,
-      transparent 11px,
-      color-mix(in oklch, var(--color-surface) 50%, transparent) 12px
-    );
-    filter: drop-shadow(0 1px 0 color-mix(in oklch, var(--color-border-subtle) 70%, transparent));
-  }
-
-  .folder-card:hover .folder-tab,
-  .folder-card:hover .folder-body {
-    border-color: color-mix(in oklch, var(--accent) 45%, var(--color-border-subtle));
-  }
-  .folder-card:hover .folder-body {
-    box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--accent) 18%, transparent),
-      0 12px 40px -12px color-mix(in oklch, var(--accent) 30%, transparent);
-  }
-</style>

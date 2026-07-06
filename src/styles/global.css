@@ -173,21 +173,6 @@ body {
   color: var(--color-background);
 }
 
-/* ---------- chamfered corners (top-right + bottom-left cut) ----------
-   used on media slots inside the folder cards; the clip also crops any
-   img/video children, so media dropped in later inherits the shape */
-.chamfer {
-  --chamfer: 22px;
-  clip-path: polygon(
-    0 0,
-    calc(100% - var(--chamfer)) 0,
-    100% var(--chamfer),
-    100% 100%,
-    var(--chamfer) 100%,
-    0 calc(100% - var(--chamfer))
-  );
-}
-
 /* ---------- fine noise overlay for that hand-crafted texture ---------- */
 .noise-overlay::after {
   content: '';
