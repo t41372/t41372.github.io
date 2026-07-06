@@ -1,0 +1,251 @@
+@font-face {
+    font-family: 'Cascadia-Code';
+    src: url('./assets/CascadiaMono-Regular.otf');
+}
+
+@font-face {
+    font-family: 'CascadiaMono-Bold';
+    src: url('./assets/CascadiaMono-Bold.otf');
+}
+
+@font-face{
+    font-family: 'CascadiaMonoPL-BoldItalic';
+    src: url('./assets/CascadiaMonoPL-BoldItalic.otf');
+}
+
+/* Font interation effect */
+
+@font-face{
+    font-family: 'PlayfairDisplay-BlackItalic';
+    src: url('./assets/Font Iterate/PlayfairDisplay-BlackItalic.ttf');
+}
+@font-face{
+    font-family: 'PlayfairDisplay-ExtraBold';
+    src: url('./assets/Font Iterate/PlayfairDisplay-ExtraBold.ttf');
+}
+@font-face{
+    font-family: 'PlayfairDisplay-Italic';
+    src: url('./assets/Font Iterate/PlayfairDisplay-Italic.ttf');
+}
+@font-face{
+    font-family: 'Roboto-BlackItalic';
+    src: url('./assets/Font Iterate/Roboto-BlackItalic.ttf');
+}
+@font-face{
+    font-family: 'Roboto-Bold';
+    src: url('./assets/Font Iterate/Roboto-Bold.ttf');
+}
+@font-face{
+    font-family: 'Roboto-ThinItalic';
+    src: url('./assets/Font Iterate/Roboto-ThinItalic.ttf');
+}
+
+#upper-white-canvas{
+    background-color: rgba(255, 255, 255, 0.433);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 13%;
+    transition: all 0.3s ease 0s;
+}
+
+#upper-container{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: all 0.3s ease 0s;
+}
+
+.upper-heading{
+    font-family: "Cascadia-code";
+    
+    opacity: 100%;
+    color: white;
+    /*align*/
+    
+    text-align: center;
+    font-size: 2rem;    
+}
+
+#upper-center-container{
+    position: relative;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+#build-with-prompt{
+    position: relative;
+    top: 0.5em;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+#build-with-technology{
+    color: white;
+}
+
+#fun{
+    color: white;
+    /* filter:blur(1px); */
+}
+
+#fun-1{
+    font-family: "CascadiaMonoPL-BoldItalic";
+    color:rgb(177, 255, 255);
+}
+
+#font-loader{
+    visibility: hidden;
+    animation: font-iteration 1s linear;
+}
+
+
+#contacts-container{
+    position: relative;
+    /* background-color: red; */
+    
+    /* center, horizonally put its child nodes */
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    
+    left: 50%;
+    top:50%;
+    width: 300px;
+    height: 80px;
+    transform: translate(-50%,0%);
+    
+}
+
+
+.icon{
+    height: 3.4rem;
+    width: 3.4rem;
+    transition: all 0.3s ease 0s;
+}
+
+.icon:hover{
+    filter: drop-shadow(2px 7px 10px rgba(0, 0, 0, 1));
+    transform: translate(0%,-5%);
+}
+
+#linkedin-icon{
+    top: 35%;
+    left: 27%;
+}
+
+#github-icon{
+    top:35%;
+    left: 50%;
+}
+
+#email-icon{
+    top:35%;
+    left: 73.5%;
+}
+
+#about-me-button{
+    font-family: "Cascadia-code";
+    color: white;
+    
+    top:35%;
+    left: 80%;
+
+    height: 3.4rem;
+    width: 3.4rem;
+
+    border: none;
+    border-radius: 100%;
+    background-color:rgba(255, 255, 255, 0.40);
+    
+    text-align: center;
+
+    transition: all 0.3s ease 0s;
+}
+
+
+#terminal-switcher{
+    font-family: "Cascadia-code";
+    position: absolute;
+    bottom:8%;
+    right:8%;
+
+    height: 5rem;
+    width: 5rem;
+
+    border: none;
+    border-radius: 100%;
+    background-color:white;
+    opacity: 70%;
+
+    box-shadow: 2px 7px 20px rgba(0, 0, 0, 0.774);
+
+    transition: all 0.3s ease 0s;
+
+}
+
+
+
+
+/* font iteration animation */
+
+@keyframes font-iteration{
+    0%{
+        color: white;
+        font-family: "Cascadia-code";
+    }
+
+    10%{
+        font-family: "Cascadia-Code";
+    }
+    20%{
+        
+        font-family: "Roboto-ThinItalic";
+    }
+    30%{
+        font-family: "CascadiaMonoPL-BoldItalic";
+    }
+    40%{
+        font-family: "PlayfairDisplay-BlackItalic";
+    }
+    50%{
+        font-family: "Roboto-Bold";
+    }
+    60%{
+        font-family: "PlayfairDisplay-Italic";
+    }
+    70%{
+        font-family: "Roboto-BlackItalic";
+    }
+    80%{
+        font-family: "PlayfairDisplay-ExtraBold";
+    }
+    90%{
+        font-family: "CascadiaMono-Bold";
+    }
+    100%{
+        font-family: "CascadiaMonoPL-BoldItalic";
+        color:rgb(177, 255, 255);
+    }
+
+}
+
+/*
+    list of fonts (9)
+
+    Cascadia-Code
+    CascadiaMono-Bold
+    CascadiaMonoPL-BoldItalic
+
+    PlayfairDisplay-BlackItalic
+    PlayfairDisplay-ExtraBold
+    PlayfairDisplay-Italic
+    Roboto-BlackItalic
+    Roboto-Bold
+    Roboto-ThinItalic
+*/

@@ -1,5 +1,8 @@
 ---
-const { active = 'home' } = Astro.props as { active?: 'home' | 'projects' | 'blog' }
+// 'archive' has no nav link: the pill hides and nothing is highlighted
+const { active = 'home' } = Astro.props as {
+  active?: 'home' | 'projects' | 'blog' | 'archive'
+}
 
 const links = [
   { href: '/', label: 'Home', key: 'home' },
@@ -54,6 +57,7 @@ const links = [
   const ROUTE_KEYS: Array<[RegExp, string]> = [
     [/^\/blog(\/|$)/, 'blog'],
     [/^\/projects(\/|$)/, 'projects'],
+    [/^\/archive(\/|$)/, 'archive'], // no nav link — resolves to "highlight nothing"
     [/^\/$/, 'home'],
   ]
 
@@ -83,7 +87,12 @@ const links = [
         link.removeAttribute('aria-current')
       }
     }
-    if (!target) return
+    if (!target) {
+      // a page outside the nav (e.g. /archive): fade the pill out instead of
+      // leaving it parked under the previously-active link
+      gsap.to(pill, { opacity: 0, duration: 0.2, overwrite: 'auto' })
+      return
+    }
 
     const state = {
       x: target.offsetLeft,

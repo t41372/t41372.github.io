@@ -1,0 +1,95 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+// Every generation of this site is fully static, so retired versions don't
+// have to die — they get embalmed under /archive/<version>/ (see
+// public/archive/) and stay browsable forever. When the next redesign ships,
+// snapshot the previous build into public/archive/ and add an entry here.
+const exhibits = [
+  {
+    era: '2026 — now',
+    name: 'v2 · the night sky',
+    tech: 'Astro · React islands · WebGL aurora',
+    blurb:
+      'The version you are looking at. One continuous starfield from the aurora down to the valley, an ASCII cabin whose chimney smoke you can poke, and the blog folded back into the main site.',
+    href: '/',
+    cta: 'you are here',
+    current: true,
+  },
+  {
+    era: '2021 — 2026',
+    name: 'v1 · the terminal',
+    tech: 'vanilla JS · jQuery · TypeIt 8.0.7',
+    blurb:
+      'A hand-written fake terminal under a starry night: an RGB-glitch name, a blinking cursor, and a tiny fake filesystem. Type `help` and poke around — everything still works.',
+    href: '/archive/v1/',
+    cta: 'enter →',
+  },
+  {
+    era: '2022 — 2025',
+    name: 'the hexo blog',
+    tech: 'Hexo · Obsidian · Cloudflare Pages',
+    blurb:
+      'The standalone blog that used to live on its own subdomain. Its posts now live here (with English translations), but the original stays online, links intact.',
+    href: 'https://blog.yi-ting.com',
+    cta: 'visit →',
+    external: true,
+  },
+]
+---
+
+<BaseLayout
+  title="Archive — Yi-Ting Chiu"
+  description="Past versions of this website, preserved fully working. Static sites don't die."
+  active="archive"
+>
+  <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
+    <div class="mb-12 flex flex-col gap-3">
+      <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
+        {'// archive'}
+      </span>
+      <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+        Archaeology
+      </h1>
+      <p class="text-muted">
+        Every past version of this site, preserved fully working. It's all static — old
+        websites don't have to die.
+      </p>
+    </div>
+
+    <ol class="flex flex-col gap-4">
+      {
+        exhibits.map((x) => (
+          <li>
+            <a
+              href={x.href}
+              data-no-swup={x.current ? undefined : true}
+              target={x.external ? '_blank' : undefined}
+              rel={x.external ? 'noopener noreferrer' : undefined}
+              class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70"
+            >
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">
+                  {x.name}
+                </h2>
+                <span class="font-mono text-xs text-muted-dark">{x.era}</span>
+              </div>
+              <p class="text-pretty text-sm leading-relaxed text-muted">{x.blurb}</p>
+              <div class="mt-1 flex flex-wrap items-center justify-between gap-2">
+                <span class="font-mono text-xs text-muted-dark">{x.tech}</span>
+                <span
+                  class:list={[
+                    'font-mono text-xs',
+                    x.current ? 'text-aurora' : 'text-muted transition-colors group-hover:text-aurora',
+                  ]}
+                >
+                  {x.cta}
+                </span>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </main>
+</BaseLayout>
