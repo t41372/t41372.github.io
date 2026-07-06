@@ -102,12 +102,12 @@
     <script src="./assets/particlesjs/app.js"></script>
     
 
-    <!--jQuery for http request-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
     <!--string-similarity for recommendation of mistype commands. source: https://www.npmjs.com/package/string-similarity-->
-    <script src="//unpkg.com/string-similarity/umd/string-similarity.min.js"></script>
+    <!--archived snapshot: vendored locally (was //unpkg.com/string-similarity/umd/string-similarity.min.js) so the fossil outlives the CDN-->
+    <script src="assets/vendor/string-similarity.min.js"></script>
     <!--TypeIt. Source: https://typeitjs.com/-->
-    <script src="https://unpkg.com/typeit@8.0.7/dist/index.umd.js"></script>
+    <!--archived snapshot: vendored locally (was https://unpkg.com/typeit@8.0.7/dist/index.umd.js)-->
+    <script src="assets/vendor/typeit-8.0.7.umd.js"></script>
 
 
     <script src="cmd.js"></script>
@@ -124,16 +124,13 @@
         }
     </script>
 
-    <!--get user ip, region-->
+    <!--archived snapshot: the original fetched the visitor's IP/region from
+        json.geoiplookup.io here (via jQuery; both removed) to decorate the
+        prompt as root@<ip>. Offline placeholders keep the `about` and
+        `neofetch` commands working without the phone-home; the prompt stays
+        the default guest@DESKTOP.-->
     <script>
-        $.getJSON('https://json.geoiplookup.io/?callback=?', function (data) {
-            // console.log("ip == " + data.ip);
-            // user_sig = "root_" + data.country_code + "@" + data.ip;
-            user_sig = "root@" + data.ip;
-            user_data = data;
-            document.getElementById("user-sig").innerHTML = user_sig;
-            // console.log(JSON.stringify(data));
-        });
+        user_data = { ip: "127.0.0.1", hostname: "archive.local", timezone_name: "UTC" };
     </script>
 
 </body>

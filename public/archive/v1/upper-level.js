@@ -61,13 +61,13 @@ const helloHeading =
         .type('<label id="hello-hand" style="color: grey">./wave.gif</label>', {speed: 20, delay: 50})
         .exec(() => {
             document.getElementById('hello-hand').innerHTML 
-            = '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">';
+            = '<img src="assets/vendor/wave.gif" width="30px" height="30px">';
         }, {delay: 500})
         .type("<br/>This is" + screenTooNarrowBr + "<span id='myName' data-text='Yi-Ting Chiu'>Yi-Ting Chiu</span>", {delay: 1000})
         .type("<span style='color:burlywood'>.</span>", {delay: 900})
         .exec(() => formatNode('hello-title', 
         'Hello!' + 
-        '<img src="https://raw.githubusercontent.com/MartinHeinz/MartinHeinz/master/wave.gif" width="30px" height="30px">'+
+        '<img src="assets/vendor/wave.gif" width="30px" height="30px">'+
         '<br/>This is' + screenTooNarrowBr + '<span id="myName" data-text="Yi-Ting Chiu">Yi-Ting Chiu</span><span style="color:burlywood">.</span>'))
         
         //add the glitching effect
