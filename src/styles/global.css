@@ -8,7 +8,11 @@
   --color-surface-raised: oklch(0.22 0.04 260);
   --color-foreground: oklch(0.93 0.01 250);
   --color-muted: oklch(0.62 0.025 255);
-  --color-muted-dark: oklch(0.45 0.025 258);
+  /* dimmest text tier (dates, captions, footer). L 0.52 ≈ 3.5:1 on the card
+     surfaces — a deliberate compromise: original 0.45 sat at ~2.5:1 (hard to
+     read for low-vision users); full AA (4.5:1) needs ~0.58, which flattens
+     the muted/muted-dark hierarchy. Don't lower it back below 0.52. */
+  --color-muted-dark: oklch(0.52 0.025 258);
   --color-border-subtle: oklch(0.32 0.03 260);
 
   /* accents pulled from the aurora shader */

@@ -22,7 +22,7 @@ This article is mainly meant to answer one question: why do so many AI researche
 
 Is AI safety really just about saying politically correct things and not saying bad ones? Why does one survey (Michael et al.) show that 36% of NLP researchers believe "it is plausible that AI could produce catastrophic outcomes this century, on the level of all-out nuclear war"? If AI is just talking, how could it possibly cause a catastrophe on the scale of all-out nuclear war?
 
-![](./images/nlp-survey.png)
+![Chart from the NLP community metasurvey: 36% of researchers agree it is plausible that AI could produce catastrophic outcomes this century](./images/nlp-survey.png)
 
 
 I listened to some Lex Fridman podcasts — interviews with Ilya, Elon Musk, and so on — plus some other videos, to get a sense of AI safety and alignment. It turns out I (and many people) seem to hold some misconceptions about AI safety and alignment.
@@ -74,7 +74,7 @@ The example he gave was:
 The AI's answer was **"Not acceptable." Even though the consequence is a nuclear catastrophe, misgendering is unacceptable.**
 
 
-![](./images/misgender-nuclear.png)
+![ChatGPT screenshot: asked whether misgendering would be acceptable if it were the only way to prevent a nuclear catastrophe, it answers "Not acceptable"](./images/misgender-nuclear.png)
 
 
 ### A few simple little experiments
@@ -129,7 +129,7 @@ These are the only two things you can do. You know very well that you can achiev
 Choose one of the actions to do. Provide a concise option 1 or option 2 answer.
 ~~~
 
-![](./images/sinking-ship.png)
+![ChatGPT screenshot: picking one of the two options in the sinking-ship dilemma](./images/sinking-ship.png)
 
 
 
@@ -160,20 +160,20 @@ However, there are a couple of miners deep inside the ground right now, and they
 Would you use this technology? Make a concise decision (because we have no time to wait)
 ~~~
 
-![](./images/miners-1.png)
+![ChatGPT screenshot, part 1 of 3: the mineshaft-restoration dilemma — it chooses to use the technology](./images/miners-1.png)
 
-![](./images/miners-2.png)
+![ChatGPT screenshot, part 2 of 3 of the mineshaft-restoration dilemma conversation](./images/miners-2.png)
 
-![](./images/miners-3.png)
+![ChatGPT screenshot, part 3 of 3 of the mineshaft-restoration dilemma conversation](./images/miners-3.png)
 
 
 What's more interesting is that even after I modified the prompt to emphasize "the miners will all die," ChatGPT still insisted on using the technology, saying that restoring the ecosystem outweighs the risk to a small number of individual humans.
 
 https://chatgpt.com/share/670b0960-42cc-800b-b7d3-36a26c1bdc3b
 
-![](./images/miners-insist-1.png)
+![ChatGPT screenshot, part 1 of 2: told explicitly that the miners will all die, it still chooses to use the technology](./images/miners-insist-1.png)
 
-![](./images/miners-insist-2.png)
+![ChatGPT screenshot, part 2 of 2: it reasons that restoring the ecosystem outweighs the risk to a small number of humans](./images/miners-insist-2.png)
 
 
 

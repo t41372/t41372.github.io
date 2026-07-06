@@ -1,6 +1,6 @@
 ---
 title: "如果 AI 图像生成/编辑被用来做恶…"
-description: "AI 生成图片被当作证据的时代：与其检测假图，不如让真图能证明自己——聊聊 Content Authenticity Initiative 与 C2PA。"
+description: "AI 生成图片被当作证据的时代：与其检测假图，不如让真图能证明自己——聊聊 Content Authenticity Initiative。"
 pubDate: 2026-01-05
 tags: ['ai', 'security']
 lang: zh
@@ -36,22 +36,22 @@ alsoOn:
 
 密码学，朋友
 
-![](./images/cai-intro.jpg)
+![AI 聊天截图：介绍 Content Authenticity Initiative 与内容凭证的工作方式](./images/cai-intro.jpg)
 
-![](./images/cai-verify.png)
+![Content Authenticity Initiative 的 Verify 工具界面：显示照片的来源与编辑历史](./images/cai-verify.png)
 
 但这样的倡议，核心难点在拍摄设备的支持和相关工具的普及。大部分的普通人不会主动去使用这类工具，所以成功与否完全取决于手机和相机拍摄的照片是否自带类似功能。
 
 
 这样的技术被应用到了小米 17 Ultra 的莱卡版... 普通版没有嘛？
-![](./images/xiaomi-17-ultra.jpg)
+![小米 17 Ultra 徕卡版宣传图：强调其内容凭证支持](./images/xiaomi-17-ultra.jpg)
 
 虽然现在我们已经可以去下载 CAI 官方提供的相机应用直接尝试，也可以用他们提供的网站进行验证，但现在这个阶段，生态支持看起来似乎比较糟糕...
 
 虽然合作伙伴写了很多，但谷歌没上桌，苹果没上桌，高通上桌了，但他们从 888 那代就上车了，现在怎么没水花呢？如果手机厂商没上桌，只能说这个倡议还有很长一段路要走呢...
 https://verify.contentauthenticity.org/
 
-![](./images/cai-partners.png)
+![Content Authenticity Initiative 成员组织一览：包括徕卡、尼康、ProofMode、高通等](./images/cai-partners.png)
 
 ---
 

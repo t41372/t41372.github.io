@@ -90,7 +90,11 @@ const hasBilingual = posts.some((p) => p.secondary)
                         {formatDate(primary.data.pubDate)}
                       </time>
                     </div>
-                    {primary.data.description && (
+                    {/* render the slot when EITHER variant has a description —
+                        the language toggle swaps its text via data-desc-*, so
+                        gating on primary alone would make a secondary-only
+                        description permanently unreachable */}
+                    {(primary.data.description || secondary?.data.description) && (
                       <p data-card-desc class="text-pretty text-sm leading-relaxed text-muted">
                         {primary.data.description}
                       </p>

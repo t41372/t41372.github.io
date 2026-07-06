@@ -1,6 +1,6 @@
 ---
 title: "What If AI Image Generation Is Used for Harm…"
-description: "AI-generated images are already being used as evidence. Instead of detecting fakes, let real photos prove themselves — on the Content Authenticity Initiative and C2PA."
+description: "AI-generated images are already being used as evidence. Instead of detecting fakes, let real photos prove themselves — on the Content Authenticity Initiative."
 pubDate: 2026-01-05
 tags: ['ai', 'security']
 lang: en
@@ -37,22 +37,22 @@ There's this thing called the [Content Authenticity Initiative](https://contenta
 
 Cryptography, my friend.
 
-![](./images/cai-intro.jpg)
+![AI chat screenshot introducing the Content Authenticity Initiative and how content credentials work](./images/cai-intro.jpg)
 
-![](./images/cai-verify.png)
+![The Content Authenticity Initiative Verify tool showing a photo's provenance and edit history](./images/cai-verify.png)
 
 But the core difficulty for an initiative like this is support from capture devices and the adoption of the relevant tools. Most ordinary people won't proactively go use tools like these, so whether it succeeds depends entirely on whether the photos taken by phones and cameras come with a similar feature built in.
 
 
 This tech has been applied to the Leica edition of the Xiaomi 17 Ultra... so the regular version doesn't have it?
-![](./images/xiaomi-17-ultra.jpg)
+![Xiaomi 17 Ultra Leica edition promo highlighting its content-credentials support](./images/xiaomi-17-ultra.jpg)
 
 Even though we can already download CAI's official camera app and try it directly, and use the website they provide to verify, at this stage the ecosystem support looks pretty bad...
 
 They list a lot of partners, but Google isn't at the table, Apple isn't at the table, Qualcomm is at the table — but they've been on board since the 888 generation, so why is there no splash now? If the phone manufacturers aren't at the table, all we can say is this initiative still has a long road ahead...
 https://verify.contentauthenticity.org/
 
-![](./images/cai-partners.png)
+![Grid of Content Authenticity Initiative member organizations, including Leica, Nikon, ProofMode, and Qualcomm](./images/cai-partners.png)
 
 ---
 
