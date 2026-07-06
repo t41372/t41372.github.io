@@ -2,17 +2,50 @@
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
 import { formatDate } from '../../lib/format'
-import { getBlogPosts, entryLang } from '../../lib/blog'
+import { getBlogPosts, entryLang, type BlogEntry } from '../../lib/blog'
 
 const posts = await getBlogPosts()
+const hasBilingual = posts.some((p) => p.secondary)
 ---
 
 <BaseLayout title="Blog — Yi-Ting Chiu" description="Writings by Yi-Ting Chiu." active="blog">
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
     <div class="mb-12 flex flex-col gap-3">
-      <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
-        {'// blog'}
-      </span>
+      <div class="flex items-center justify-between gap-4">
+        <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
+          {'// blog'}
+        </span>
+        {
+          hasBilingual && (
+            <div
+              data-blog-lang-toggle
+              role="group"
+              aria-label="Reading language"
+              class="flex items-center gap-2 font-mono text-xs"
+            >
+              <button
+                type="button"
+                data-lang="en"
+                aria-pressed="true"
+                class="text-foreground transition-colors hover:text-aurora"
+              >
+                EN
+              </button>
+              <span class="text-muted-dark" aria-hidden="true">
+                /
+              </span>
+              <button
+                type="button"
+                data-lang="zh"
+                aria-pressed="false"
+                class="text-muted transition-colors hover:text-aurora"
+              >
+                中文
+              </button>
+            </div>
+          )
+        }
+      </div>
       <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
         Writings
       </h1>
@@ -24,43 +57,61 @@ const posts = await getBlogPosts()
         <p class="font-mono text-muted">Nothing here yet. Soon.</p>
       ) : (
         <ul class="flex flex-col gap-4">
-          {posts.map(({ slug, primary, secondary }) => (
-            <li>
-              <a
-                href={`/blog/${slug}`}
-                class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70"
-              >
-                <div class="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">
-                    {primary.data.title}
-                  </h2>
-                  <time
-                    datetime={primary.data.pubDate.toISOString()}
-                    class="font-mono text-xs text-muted-dark"
+          {
+            posts.map(({ slug, primary, secondary }) => {
+              const en = [primary, secondary].find((e) => e && entryLang(e) === 'en')
+              const zh = [primary, secondary].find((e) => e && entryLang(e) === 'zh')
+              const hrefOf = (e: BlogEntry) =>
+                e === primary ? `/blog/${slug}` : `/blog/${slug}/${entryLang(e)}`
+              return (
+                <li>
+                  <a
+                    href={`/blog/${slug}`}
+                    class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70"
+                    data-bilingual={secondary ? '' : undefined}
+                    data-href-en={en ? hrefOf(en) : undefined}
+                    data-href-zh={zh ? hrefOf(zh) : undefined}
+                    data-title-en={en?.data.title}
+                    data-title-zh={zh?.data.title}
+                    data-desc-en={en?.data.description}
+                    data-desc-zh={zh?.data.description}
                   >
-                    {formatDate(primary.data.pubDate)}
-                  </time>
-                </div>
-                {primary.data.description && (
-                  <p class="text-pretty text-sm leading-relaxed text-muted">
-                    {primary.data.description}
-                  </p>
-                )}
-                {(primary.data.tags.length > 0 || secondary) && (
-                  <div class="mt-1 flex flex-wrap items-center gap-2">
-                    {primary.data.tags.map((tag) => (
-                      <TagPill tag={tag} />
-                    ))}
-                    {secondary && (
-                      <span class="font-mono text-xs text-muted-dark">
-                        {entryLang(primary) === 'en' ? 'EN · 中文' : '中文 · EN'}
-                      </span>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <h2
+                        data-card-title
+                        class="min-w-0 font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora"
+                      >
+                        {primary.data.title}
+                      </h2>
+                      <time
+                        datetime={primary.data.pubDate.toISOString()}
+                        class="shrink-0 whitespace-nowrap font-mono text-xs text-muted-dark"
+                      >
+                        {formatDate(primary.data.pubDate)}
+                      </time>
+                    </div>
+                    {primary.data.description && (
+                      <p data-card-desc class="text-pretty text-sm leading-relaxed text-muted">
+                        {primary.data.description}
+                      </p>
                     )}
-                  </div>
-                )}
-              </a>
-            </li>
-          ))}
+                    {(primary.data.tags.length > 0 || secondary) && (
+                      <div class="mt-1 flex flex-wrap items-center gap-2">
+                        {primary.data.tags.map((tag) => (
+                          <TagPill tag={tag} />
+                        ))}
+                        {secondary && (
+                          <span class="font-mono text-xs text-muted-dark">
+                            {entryLang(primary) === 'en' ? 'EN · 中文' : '中文 · EN'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </a>
+                </li>
+              )
+            })
+          }
         </ul>
       )
     }

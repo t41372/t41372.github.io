@@ -173,6 +173,67 @@ const ogImageUrl = new URL('/og.png', Astro.site)
       // initial load by the bridge below)
       document.addEventListener('astro:page-load', capturePageView)
     </script>
+    <script is:inline>
+      // Blog reading-language preference (en/zh). The site chrome is English-only;
+      // only article *content* is bilingual. We persist the reader's choice so the
+      // /blog index and the in-article EN/中文 toggle stay in sync across swup navs:
+      //   - a bilingual article page records the language being read
+      //   - the /blog index re-skins its bilingual cards (title, blurb, link
+      //     target) to the remembered language; its EN/中文 toggle writes it back
+      // Default + crawler view is always the English primary — progressive enhance.
+      ;(() => {
+        const KEY = 'blog-lang'
+        const get = () => {
+          try {
+            return localStorage.getItem(KEY) === 'zh' ? 'zh' : 'en'
+          } catch {
+            return 'en'
+          }
+        }
+        const set = (v) => {
+          try {
+            localStorage.setItem(KEY, v)
+          } catch {}
+        }
+
+        const applyIndex = () => {
+          const lang = get()
+          for (const a of document.querySelectorAll('a[data-bilingual]')) {
+            const href = a.getAttribute('data-href-' + lang)
+            if (href) a.setAttribute('href', href)
+            const title = a.querySelector('[data-card-title]')
+            const tv = a.getAttribute('data-title-' + lang)
+            if (title && tv) title.textContent = tv
+            const desc = a.querySelector('[data-card-desc]')
+            const dv = a.getAttribute('data-desc-' + lang)
+            if (desc && dv != null) desc.textContent = dv
+          }
+          const toggle = document.querySelector('[data-blog-lang-toggle]')
+          if (toggle) {
+            for (const btn of toggle.querySelectorAll('button[data-lang]')) {
+              const on = btn.getAttribute('data-lang') === lang
+              btn.classList.toggle('text-foreground', on)
+              btn.classList.toggle('text-muted', !on)
+              btn.setAttribute('aria-pressed', on ? 'true' : 'false')
+            }
+          }
+        }
+
+        // delegated: the toggle lives inside swup's <main>, recreated each nav
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest?.('[data-blog-lang-toggle] button[data-lang]')
+          if (!btn) return
+          set(btn.getAttribute('data-lang'))
+          applyIndex()
+        })
+
+        document.addEventListener('astro:page-load', () => {
+          const article = document.querySelector('[data-article-lang]')
+          if (article) set(article.getAttribute('data-article-lang'))
+          applyIndex()
+        })
+      })()
+    </script>
     <script>
       // ---------------------------------------------------------------------
       // swup bridge + transition choreography
