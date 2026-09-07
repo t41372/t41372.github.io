@@ -190,7 +190,7 @@ export async function testMotion(browser, BASE, check) {
     await at(300)
     const tabState = await page.evaluate(() => {
       const opacity = name => Number(getComputedStyle(document.documentElement, `::view-transition-group(${name})`).opacity)
-      return { active: document.querySelector('[data-nav] [aria-current="page"]')?.textContent, old: opacity('page-out-0'), next: opacity('page-in-0') }
+      return { active: document.querySelector('[data-nav] [aria-current="page"]')?.innerText, old: opacity('page-out-0'), next: opacity('page-in-0') }
     })
     check(`${label}: tab state commits before capture and titles do not double-expose`, tabState.active === 'Blog' && tabState.old < 0.01 && tabState.next > 0.2, JSON.stringify(tabState))
     await page.screenshot({ path: `${output}/${label}-tabs-300.png` })
@@ -233,7 +233,7 @@ export async function testMotion(browser, BASE, check) {
       else await page.mouse.click(nav.x + nav.width / 2, nav.y + nav.height / 2)
       await ready()
       await page.evaluate(() => window.__motionTransition.finished)
-      const state = await page.evaluate(() => ({ path: location.pathname, active: document.querySelector('[data-nav] [aria-current="page"]')?.textContent, articles: document.querySelectorAll('[data-blog-article]').length, stale: document.querySelectorAll('[data-transition-part]').length }))
+      const state = await page.evaluate(() => ({ path: location.pathname, active: document.querySelector('[data-nav] [aria-current="page"]')?.innerText, articles: document.querySelectorAll('[data-blog-article]').length, stale: document.querySelectorAll('[data-transition-part]').length }))
       check(`${label}: tab click interrupts article at ${time}ms`, state.path === '/projects' && state.active === 'Projects' && state.articles === 0 && state.stale === 0, JSON.stringify(state))
     }
     await ctx.close()

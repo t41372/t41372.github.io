@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
+import Localized from '../components/Localized.astro'
 import ProjectCard from '../components/projects/ProjectCard'
 import { projects } from '../data/projects'
 ---
@@ -15,7 +16,7 @@ import { projects } from '../data/projects'
         {'// projects'}
       </span>
       <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-        Things I work on
+        <Localized en="Things I work on" zh="我在做的项目" />
       </h1>
       <!-- <p class="max-w-xl text-pretty text-muted">
         Creator &amp; maintainer. These are the ones I&apos;m most serious about right now.
@@ -33,7 +34,7 @@ import { projects } from '../data/projects'
         rel="noopener noreferrer"
         class="inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-aurora"
       >
-        more on github
+        <Localized en="more on github" zh="更多项目在 GitHub" />
         <span aria-hidden="true">→</span>
       </a>
     </div>

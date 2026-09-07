@@ -41,6 +41,8 @@ import net from 'node:net'
 import { testNavigation } from './e2e-navigation.mjs'
 import { testGlass } from './e2e-glass.mjs'
 import { testMotion, testSurfaceBorder } from './e2e-motion.mjs'
+import { testLanguage } from './e2e-language.mjs'
+import { testStars } from './e2e-stars.mjs'
 
 const OVER_T = 144 // keep in sync with StarSky.tsx
 let failures = 0
@@ -341,6 +343,8 @@ const browser = await chromium.launch({
 }
 
 await testNavigation(browser, BASE, check)
+await testLanguage(browser, BASE, check)
+await testStars(browser, BASE, check)
 await testGlass(browser, BASE, check)
 await testMotion(browser, BASE, check)
 await testSurfaceBorder(browser, BASE, check)

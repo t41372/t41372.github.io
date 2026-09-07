@@ -8,6 +8,9 @@ Yi-Ting Chiu's personal website (v2), a static Astro site at https://yi-ting.com
 
 ## Commands
 
+Before merging to `main`, clean up the branch's commits or squash related
+work into a clear Conventional Commit. Keep `main` history concise.
+
 Package manager is **Bun** (`bun.lock`); CI uses `bun install --frozen-lockfile`.
 
 - `bun run dev` — local dev server (`astro dev`)
@@ -27,6 +30,8 @@ There is no linter or formatter configured. Type-check with `bunx astro check` (
 - **Blog (bilingual)** — content collection defined in `src/content.config.ts`; frontmatter: `title`, `description?`, `pubDate`, `tags[]`, `draft`, `lang` (`en`/`zh`, default `en`), `translated`. A post is either a flat `slug.md` or a folder `slug/en.md` + `slug/zh.md` (images colocated in `slug/images/`). Grouping/URL logic lives in `src/lib/blog.ts`: the primary variant (en when present) serves at `/blog/slug`, the other at `/blog/slug/<lang>`; `src/pages/blog/[...slug].astro` renders both and shows the EN/中文 toggle. Keep `tags` identical across a post's language variants — the `/blog` index renders tags from the primary only and the language toggle doesn't swap them. The four live posts came from the old hexo blog (still live at https://blog.yi-ting.com — don't break it, external links point there) and from forum posts (linux.do); zh files are the originals, en files are reviewed translations (`translated: true`).
 - **Analytics** — `src/lib/posthog.ts`, initialized in `BaseLayout`. Silently no-ops unless `PUBLIC_POSTHOG_KEY` is set. Never hardcode the key.
 - **External data at runtime** — `GithubStars.tsx` fetches star counts client-side with sessionStorage caching and graceful degradation. No build-time data fetching.
+- **Real starfield** — `CataloguedStars.tsx` uses a bundled HYG subset and Astronomy Engine for the current Fairbanks sky. It is a separate transparent, fixed point layer over the original aurora painting. Keep its true projection, native pixel density, reduced-motion behaviour and data attribution. See `docs/real-sky.md`.
+- **UI language** — The early head bootstrap selects a saved `site-language` choice or the first supported browser language. Chinese UI is always Simplified (`zh-Hans`); the authored Hero stays English. SSR translation spans avoid hydration flicker, and article URLs keep explicit language variants. See `docs/language.md`.
 
 ## Styling & design system
 

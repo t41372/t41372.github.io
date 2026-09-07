@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* CSS selects server-rendered translations before islands hydrate. Hidden
+   copies also leave the accessibility tree and don't reserve layout space. */
+[data-ui-copy="zh"] { display: none; }
+html[data-ui-lang="zh"] [data-ui-copy="en"] { display: none; }
+html[data-ui-lang="zh"] [data-ui-copy="zh"] { display: inline; }
+html[data-language-redirect] body { visibility: hidden; }
+
 @theme {
   /* ---------- Night sky / aurora palette ---------- */
   --color-background: oklch(0.13 0.03 265); /* deep night blue-black */

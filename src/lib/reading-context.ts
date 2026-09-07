@@ -45,11 +45,11 @@ export function initReadingContext() {
   }
   // Browsers hit-test a captured nav as the transition root, even with
   // pointer-events:none on its snapshots. The persistent nav never changes
-  // position, so forward that real click to its semantic anchor. This keeps
+  // position, so forward that real click to its semantic link or language button. This keeps
   // Astro's normal navigation/cancellation and modifier-key behavior.
   document.addEventListener('click', event => {
     if (!transition || event.target !== document.documentElement || event.defaultPrevented || event.button !== 0) return
-    for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-nav] a')) {
+    for (const link of document.querySelectorAll<HTMLElement>('[data-nav] a, [data-nav] button')) {
       const r = link.getBoundingClientRect()
       if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) continue
       event.preventDefault()

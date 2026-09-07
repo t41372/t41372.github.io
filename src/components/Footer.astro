@@ -1,5 +1,6 @@
 ---
 import ValleyScene from './valley/ValleyScene.astro'
+import Localized from './Localized.astro'
 
 const year = new Date().getFullYear()
 ---
@@ -18,7 +19,7 @@ const year = new Date().getFullYear()
       <div class="flex flex-col gap-2">
         <h2 class="font-outfit text-xl font-medium tracking-wide text-foreground">Yi-Ting Chiu</h2>
         <p class="font-inter text-sm text-muted-dark">
-          © {year} · building fun stuff · somewhere on earth
+          © {year} · <Localized en="building fun stuff · somewhere on earth" zh="做些有趣的东西 · 在地球的某个角落" />
         </p>
       </div>
 
@@ -49,9 +50,15 @@ const year = new Date().getFullYear()
     </div>
 
     <p class="font-inter text-xs tracking-wide text-muted-dark">
-      Built with Astro · And other cool tech! ·{' '}
-      <a href="/archive" class="transition-colors hover:text-aurora">past versions</a>
+      <Localized en="Built with Astro · And other cool tech!" zh="使用 Astro 和其他很酷的技术构建" /> ·{' '}
+      <a href="/archive" class="transition-colors hover:text-aurora"><Localized en="past versions" zh="历代版本" /></a>
     </p>
+    <details class="max-w-xl text-xs leading-relaxed text-muted-dark">
+      <summary class="w-fit cursor-pointer transition-colors hover:text-muted"><Localized en="The sky in the background is real" zh="背景是真实的星空" /></summary>
+      <p class="mt-3"><Localized en="The stars follow the current date and time above Fairbanks, Alaska (64.84° N, 147.72° W). We are looking north, 50° above the horizon. The night colours and aurora are artistic; daylight and weather are not simulated." zh="星星的位置随实际日期和时间变化，观测点在 Fairbanks, Alaska（北纬 64.84°、西经 147.72°），朝北，仰角 50°。夜色与极光是艺术呈现，不模拟当地日照与天气。" /></p>
+      <p class="mt-2"><Localized en="Star data adapted from" zh="星表数据改编自" />{' '}<a href="https://github.com/astronexus/HYG-Database" class="underline underline-offset-2">HYG v4.1 · David Nash</a>{' '}(<a href="https://creativecommons.org/licenses/by-sa/4.0/" class="underline underline-offset-2">CC BY-SA 4.0</a>).</p>
+      <p class="mt-2"><a href="/third-party-notices.txt" data-astro-reload class="underline underline-offset-2"><Localized en="All credits and licenses" zh="完整鸣谢与许可" /></a></p>
+    </details>
     </div>
   </div>
 </footer>

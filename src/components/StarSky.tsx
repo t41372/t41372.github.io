@@ -31,9 +31,8 @@ uniform float uSkyH;  // painting's total height in viewport-heights: past its
 uniform vec4 uAvoid[4]; // hero text LINE rects in screen uv (x0,y0,x1,y1), y up;
                         // unused slots are parked far off-screen
 uniform float uAvoidK;  // how deeply the aurora thins behind them (0 = off)
-uniform float uBoot;    // 0->1 ignition ramp after the first paint: stars fade
-                        // up first, the aurora blooms in behind them — the
-                        // page opens as a sky waking up, not a scene popping in
+uniform float uBoot;    // 0->1 aurora ignition after the first paint; real
+                        // catalogued stars live in their own distant point layer
 
 // ---------- noise ----------
 float hash21(vec2 p) {
@@ -76,57 +75,6 @@ float fbm(vec2 p) {
   return v;
 }
 
-// ---------- stars ----------
-// One layer of round, gaussian star points with jittered positions,
-// per-star size / brightness / color temperature, compound twinkle.
-vec3 starLayer(vec2 p, float t, float minBright) {
-  vec2 cell = floor(p);
-  vec2 f = fract(p);
-  vec3 acc = vec3(0.0);
-
-  // check 3x3 neighborhood so gaussians are not clipped at cell borders
-  for (int oy = -1; oy <= 1; oy++) {
-    for (int ox = -1; ox <= 1; ox++) {
-      vec2 o = vec2(float(ox), float(oy));
-      vec2 c = cell + o;
-      float h = hash21(c);
-      if (h < minBright) continue;
-
-      // jittered position inside the cell
-      vec2 pos = o + vec2(hash21(c + 17.3), hash21(c + 31.7));
-      vec2 d = f - pos;
-      float dist = length(d);
-
-      // size & brightness: mostly tiny, rare big ones (cubic bias)
-      float sel = (h - minBright) / (1.0 - minBright);
-      float mag = pow(sel, 3.0);
-      float size = mix(0.045, 0.14, mag);
-      // crisp disc with a thin anti-aliased rim — no gaussian halo
-      float core = smoothstep(size, size * 0.55, dist);
-
-      // compound twinkle: two incommensurate frequencies -> organic flicker
-      float ph = h * 43.7;
-      float tw = 0.62 + 0.38 * sin(t * (0.4 + h * 1.6) + ph);
-      tw *= 0.80 + 0.20 * sin(t * (2.1 + h * 2.7) + ph * 1.7);
-
-      // slight color temperature variation: cool blue-white ... warm ivory
-      float temp = hash21(c + 57.1);
-      vec3 col = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.93, 0.80), temp * temp);
-
-      float bright = (0.25 + 0.75 * mag) * tw;
-      acc += col * core * bright;
-
-      // 4-point diffraction glint only on the largest stars
-      if (mag > 0.55) {
-        float spike = exp(-abs(d.x) * 22.0) * exp(-d.y * d.y * 260.0)
-                    + exp(-abs(d.y) * 22.0) * exp(-d.x * d.x * 260.0);
-        acc += col * spike * 0.30 * tw * (mag - 0.55) / 0.45;
-      }
-    }
-  }
-  return acc;
-}
-
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   // aspect against ONE VIEWPORT height (not the canvas): keeps stars round and
@@ -155,13 +103,6 @@ void main() {
   // faint milky haze for depth
   float haze = fbm(suv * 2.2 + vec2(3.1, 8.7));
   scene += vec3(0.05, 0.07, 0.13) * haze * haze * 0.5;
-
-  // ---------- stars: two depth layers (painted on the scroll) ----------
-  // distant dense faint layer + near sparse bright layer (with glints)
-  // starBoot: stars ignite during the first ~1s after the canvas appears
-  float starBoot = smoothstep(0.0, 0.55, uBoot);
-  scene += starLayer(suv * 55.0, uTime, 0.985) * 0.45 * starBoot;
-  scene += starLayer(suv * 22.0 + 47.0, uTime, 0.978) * 0.95 * starBoot;
 
   // ---------- aurora curtains (painted at the top of the scroll) ----------
   // Viewpoint: an observer STANDING in the valley, looking out across the
@@ -676,6 +617,14 @@ export default function StarSky() {
       }
     }
     document.addEventListener('astro:page-load', onPageLoad)
+    // A same-page language choice can resize the list without navigation.
+    // Re-measure now so a shrinking touch page cannot retain an oversized
+    // absolute canvas below its footer, including under reduced motion.
+    document.addEventListener('site:language', onPageLoad)
+    const onDetailsToggle = (event: Event) => {
+      if (event.target instanceof HTMLDetailsElement) onPageLoad()
+    }
+    document.addEventListener('toggle', onDetailsToggle, true)
     const onBeforeSwap = (event: Event) => {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
         journey = undefined
@@ -790,6 +739,8 @@ export default function StarSky() {
       window.removeEventListener('scroll', onScrollReduced)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('astro:page-load', onPageLoad)
+      document.removeEventListener('site:language', onPageLoad)
+      document.removeEventListener('toggle', onDetailsToggle, true)
       document.removeEventListener('astro:before-swap', onBeforeSwap)
       document.removeEventListener('astro:after-swap', onAfterSwap)
       document.removeEventListener('visibilitychange', onVisibility)

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
+import Localized from '../components/Localized.astro'
 
 // Every generation of this site is fully static, so retired versions don't
 // have to die — they get embalmed under /archive/<version>/ (see
@@ -9,30 +10,40 @@ const exhibits = [
   {
     era: '2026 — now',
     name: 'v2 · the night sky',
+    nameZh: 'v2 · 夜空',
+    eraZh: '2026 — 至今',
     tech: 'Astro · React islands · WebGL aurora',
     blurb:
       'The version you are looking at. One continuous starfield from the aurora down to the valley, an ASCII cabin whose chimney smoke you can poke, and the blog folded back into the main site.',
+    blurbZh: '你现在看到的版本。从极光延伸到山谷的连续星空、一间能拨弄烟囱炊烟的 ASCII 小屋，还有重新整合回主站的博客。',
     href: '/',
     cta: 'you are here',
+    ctaZh: '目前版本',
     current: true,
   },
   {
     era: '2021 — 2026',
     name: 'v1 · the terminal',
+    nameZh: 'v1 · 终端',
     tech: 'vanilla JS · jQuery · TypeIt 8.0.7',
     blurb:
       'A hand-written fake terminal under a starry night: an RGB-glitch name, a blinking cursor, and a tiny fake filesystem. Type `help` and poke around — everything still works.',
+    blurbZh: '星空下，手写的模拟终端：带着 RGB glitch 的名字、闪烁的光标，以及一个小小的模拟文件系统。输入 `help` 四处逛逛，所有功能都还能用。',
     href: '/archive/v1/',
     cta: 'enter →',
+    ctaZh: '进入 →',
   },
   {
     era: '2022 — 2025',
     name: 'the hexo blog',
+    nameZh: 'Hexo 博客',
     tech: 'Hexo · Obsidian · Cloudflare Pages',
     blurb:
       'The standalone blog that used to live on its own subdomain. Its posts now live here (with English translations), but the original stays online, links intact.',
+    blurbZh: '过去托管在独立子域名上的博客。文章现在也收录在这里，并附有英文译文；原站仍然在线，旧链接继续有效。',
     href: 'https://blog.yi-ting.com',
     cta: 'visit →',
+    ctaZh: '访问 →',
     external: true,
   },
 ]
@@ -49,11 +60,10 @@ const exhibits = [
         {'// archive'}
       </span>
       <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-        Archaeology
+        <Localized en="Archaeology" zh="网站考古" />
       </h1>
       <p class="text-muted">
-        Every past version of this site, preserved fully working. It's all static — old
-        websites don't have to die.
+        <Localized en="Every past version of this site, preserved fully working. It's all static — old websites don't have to die." zh="历代版本都保留了完整功能。静态网站的好处是，旧网站不必消失。" />
       </p>
     </div>
 
@@ -70,11 +80,11 @@ const exhibits = [
             >
               <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">
-                  {x.name}
+                  <Localized en={x.name} zh={x.nameZh} />
                 </h2>
-                <span class="font-mono text-xs text-muted-dark">{x.era}</span>
+                <span class="font-mono text-xs text-muted-dark"><Localized en={x.era} zh={x.eraZh ?? x.era} /></span>
               </div>
-              <p class="text-pretty text-sm leading-relaxed text-muted">{x.blurb}</p>
+              <p class="text-pretty text-sm leading-relaxed text-muted"><Localized en={x.blurb} zh={x.blurbZh} /></p>
               <div class="mt-1 flex flex-wrap items-center justify-between gap-2">
                 <span class="font-mono text-xs text-muted-dark">{x.tech}</span>
                 <span
@@ -83,7 +93,7 @@ const exhibits = [
                     x.current ? 'text-aurora' : 'text-muted transition-colors group-hover:text-aurora',
                   ]}
                 >
-                  {x.cta}
+                  <Localized en={x.cta} zh={x.ctaZh} />
                 </span>
               </div>
             </a>

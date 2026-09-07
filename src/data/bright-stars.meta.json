@@ -1,0 +1,55 @@
+{
+  "source": "HYG v4.1 by David Nash / Astronexus",
+  "sourceCommit": "c7f7f883fe678cc7680169a50ccd7dcc49b060ce",
+  "sourceSha256": "d9f69fd86bbf90a4e4d52b4c5c53eacfa6dfc0bfdef85bfd94f095e0bebe4ebd",
+  "license": "CC-BY-SA-4.0",
+  "count": 6054,
+  "format": "little-endian float32: HYG id, x, y, z, vx, vy, vz, V magnitude, B-V (NaN if unknown)",
+  "coordinates": "J2000 equatorial; unit direction, velocity divided by the same J2000 distance per Julian year",
+  "selection": "Sun excluded; V magnitude <= 6.5; declination >= -26 degrees (Fairbanks horizon with margin)",
+  "sha256": "3475e6612b3abebddcf590dedb81b5ba0c9878b68daf38c5a80a0e8975279eb3",
+  "landmarks": {
+    "Polaris": {
+      "id": 11734,
+      "hip": 11767,
+      "raHours": 2.52975,
+      "decDegrees": 89.264109
+    },
+    "Capella": {
+      "id": 24549,
+      "hip": 24608,
+      "raHours": 5.27815,
+      "decDegrees": 45.997991
+    },
+    "Betelgeuse": {
+      "id": 27919,
+      "hip": 27989,
+      "raHours": 5.919529,
+      "decDegrees": 7.407063
+    },
+    "Dubhe": {
+      "id": 53905,
+      "hip": 54061,
+      "raHours": 11.062155,
+      "decDegrees": 61.751033
+    },
+    "Arcturus": {
+      "id": 69451,
+      "hip": 69673,
+      "raHours": 14.26103,
+      "decDegrees": 19.18241
+    },
+    "Vega": {
+      "id": 90979,
+      "hip": 91262,
+      "raHours": 18.61564,
+      "decDegrees": 38.783692
+    },
+    "Deneb": {
+      "id": 101767,
+      "hip": 102098,
+      "raHours": 20.690532,
+      "decDegrees": 45.280338
+    }
+  }
+}

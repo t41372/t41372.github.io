@@ -2,6 +2,7 @@
 import { Card } from '../../components/vendor/card'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
+import Localized from '../../components/Localized.astro'
 import { formatDate } from '../../lib/format'
 import { getBlogPosts, entryLang, type BlogEntry } from '../../lib/blog'
 
@@ -48,14 +49,14 @@ const hasBilingual = posts.some((p) => p.secondary)
         }
       </div>
       <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-        Writings
+        <Localized en="Writings" zh="文章" />
       </h1>
-      <p class="text-muted">Notes on things I build, break, and occasionally fix.</p>
+      <p class="text-muted"><Localized en="Notes on things I build, break, and occasionally fix." zh="记录我做过的东西、踩过的坑，还有偶尔修好的问题。" /></p>
     </div>
 
     {
       posts.length === 0 ? (
-        <p class="font-mono text-muted">Nothing here yet. Soon.</p>
+        <p class="font-mono text-muted"><Localized en="Nothing here yet. Soon." zh="这里还没有文章，敬请期待。" /></p>
       ) : (
         <ul class="flex flex-col gap-4">
           {
@@ -74,32 +75,25 @@ const hasBilingual = posts.some((p) => p.secondary)
                     data-bilingual={secondary ? '' : undefined}
                     data-href-en={en ? hrefOf(en) : undefined}
                     data-href-zh={zh ? hrefOf(zh) : undefined}
-                    data-title-en={en?.data.title}
-                    data-title-zh={zh?.data.title}
-                    data-desc-en={en?.data.description}
-                    data-desc-zh={zh?.data.description}
                   >
                     <div class="flex items-baseline justify-between gap-3">
                       <h2
                         data-card-title
                         class="min-w-0 font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora"
                       >
-                        {primary.data.title}
+                        <Localized en={en?.data.title ?? primary.data.title} zh={zh?.data.title ?? primary.data.title} />
                       </h2>
                       <time
                         datetime={primary.data.pubDate.toISOString()}
                         class="shrink-0 whitespace-nowrap font-mono text-xs text-muted-dark"
                       >
-                        {formatDate(primary.data.pubDate)}
+                        <Localized en={formatDate(primary.data.pubDate)} zh={formatDate(primary.data.pubDate, 'short', 'zh')} />
                       </time>
                     </div>
-                    {/* render the slot when EITHER variant has a description —
-                        the language toggle swaps its text via data-desc-*, so
-                        gating on primary alone would make a secondary-only
-                        description permanently unreachable */}
+                    {/* Keep the description slot when either translation supplies it. */}
                     {(primary.data.description || secondary?.data.description) && (
                       <p data-card-desc class="text-pretty text-sm leading-relaxed text-muted">
-                        {primary.data.description}
+                        <Localized en={en?.data.description ?? primary.data.description ?? ''} zh={zh?.data.description ?? primary.data.description ?? ''} />
                       </p>
                     )}
                     {(primary.data.tags.length > 0 || secondary) && (

@@ -3,15 +3,17 @@ import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import '../styles/global.css'
 import StarSky from '../components/StarSky'
+import CataloguedStars from '../components/CataloguedStars'
 import Header from '../components/Header'
 import { ClientRouter } from 'astro:transitions'
 import Footer from '../components/Footer.astro'
+import languageBootstrap from '../lib/site-language.js?raw'
 
 interface Props {
   title?: string
   description?: string
   active?: 'home' | 'projects' | 'blog' | 'archive' | 'none'
-  /** document language — the site chrome is English; zh article pages pass 'zh' */
+  /** Article content language; ordinary pages follow the selected UI language. */
   lang?: 'en' | 'zh'
   /** language variants of this page (site-relative paths) for hreflang links.
       Pass ALL variants including the current page (Google requires the set to
@@ -39,7 +41,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
 <!-- no bg-background utility here: global.css paints <html> in the shader
      sky's exact top color + gradient (the utility would override it with the
      darker token, which iOS letterboxes as a black bar) -->
-<html lang={lang}>
+<html lang={lang} data-content-lang={Astro.props.lang}>
   <head>
     <ClientRouter fallback="swap" />
     <meta charset="utf-8" />
@@ -128,6 +130,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
       ))
     }
     {xDefault && <link rel="alternate" hreflang="x-default" href={new URL(xDefault.href, Astro.site)} />}
+    <script is:inline set:html={languageBootstrap} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -157,6 +160,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
     <!-- Persist the actual scene and navigation DOM. The unnamed scene shares
          the root snapshot; glass is captured only at its own surface. -->
     <StarSky client:load transition:persist="sky" />
+    <CataloguedStars client:load transition:persist="catalogued-stars" />
     <Header active={active} client:load transition:persist="navigation" />
     <slot />
     <div transition:persist="valley"><Footer /></div>
@@ -167,71 +171,9 @@ const ogImageUrl = new URL('/og.png', Astro.site)
       document.addEventListener('astro:page-load', capturePageView)
     </script>
     <script is:inline>
-      // Blog reading-language preference (en/zh). The site chrome is English-only;
-      // only article *content* is bilingual. We persist the reader's choice so the
-      // /blog index and the in-article EN/中文 toggle stay in sync across client navigations:
-      //   - a bilingual article page records the language being read
-      //   - the /blog index re-skins its bilingual cards (title, blurb, link
-      //     target) to the remembered language; its EN/中文 toggle writes it back
-      // Default + crawler view is always the English primary — progressive enhance.
-      ;(() => {
-        if (window.__blogLanguage) return
-        window.__blogLanguage = true
-        const KEY = 'blog-lang'
-        const get = () => {
-          try {
-            return localStorage.getItem(KEY) === 'zh' ? 'zh' : 'en'
-          } catch {
-            return 'en'
-          }
-        }
-        const set = (v) => {
-          try {
-            localStorage.setItem(KEY, v)
-          } catch {}
-        }
-
-        const applyIndex = () => {
-          const lang = get()
-          for (const a of document.querySelectorAll('a[data-bilingual]')) {
-            const href = a.getAttribute('data-href-' + lang)
-            if (href) a.setAttribute('href', href)
-            const title = a.querySelector('[data-card-title]')
-            const tv = a.getAttribute('data-title-' + lang)
-            if (title && tv) title.textContent = tv
-            const desc = a.querySelector('[data-card-desc]')
-            const dv = a.getAttribute('data-desc-' + lang)
-            if (desc && dv != null) desc.textContent = dv
-          }
-          const toggle = document.querySelector('[data-blog-lang-toggle]')
-          if (toggle) {
-            for (const btn of toggle.querySelectorAll('button[data-lang]')) {
-              const on = btn.getAttribute('data-lang') === lang
-              btn.classList.toggle('text-foreground', on)
-              btn.classList.toggle('text-muted', !on)
-              btn.setAttribute('aria-pressed', on ? 'true' : 'false')
-            }
-          }
-        }
-
-        // delegated: the toggle lives inside the page's <main>, recreated each nav
-        document.addEventListener('click', (e) => {
-          const btn = e.target.closest?.('[data-blog-lang-toggle] button[data-lang]')
-          if (!btn) return
-          set(btn.getAttribute('data-lang'))
-          applyIndex()
-        })
-
-        const syncLanguage = () => {
-          const article = document.querySelector('[data-article-lang]')
-          if (article) set(article.getAttribute('data-article-lang'))
-          applyIndex()
-        }
-        // Apply before the incoming snapshot, including the list's restored
-        // language/height. page-load is retained for the first server render.
-        document.addEventListener('astro:after-swap', syncLanguage)
-        document.addEventListener('astro:page-load', syncLanguage)
-      })()
+      // The body is now parsed. Resolve article hrefs before interaction; copy
+      // visibility was already selected by the head bootstrap before paint.
+      window.__siteLanguage?.apply(document)
     </script>
     <script>
       import { initReadingContext } from '../lib/reading-context'

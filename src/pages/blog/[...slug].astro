@@ -2,6 +2,7 @@
 import { render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
+import Localized from '../../components/Localized.astro'
 import { formatDate } from '../../lib/format'
 import { getBlogPosts, entryLang, entrySlug, type BlogEntry, type BlogLang } from '../../lib/blog'
 
@@ -60,7 +61,7 @@ const alternates = alt
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
     <article
       data-blog-article={entrySlug(post)}
-      lang={lang === 'zh' ? 'zh' : undefined}
+      lang={lang}
       data-article-lang={alt ? lang : undefined}
       class="rounded-3xl border border-border-subtle/60 bg-surface/60 glass-surface p-6 md:p-10"
     >
@@ -71,7 +72,7 @@ const alternates = alt
             href="/blog"
             class="font-mono text-sm text-muted transition-colors hover:text-aurora"
           >
-            ← back to writings
+            <Localized en="← back to writings" zh="← 返回文章列表" />
           </a>
           {
             alt && (
@@ -82,7 +83,7 @@ const alternates = alt
                 <span class="text-muted-dark" aria-hidden="true">
                   /
                 </span>
-                <a href={alt.href} class="text-muted transition-colors hover:text-aurora">
+                <a href={alt.href} data-language-link={alt.lang} lang={alt.lang} hreflang={alt.lang} class="text-muted transition-colors hover:text-aurora">
                   {langLabel[alt.lang]}
                 </a>
               </div>
@@ -99,18 +100,18 @@ const alternates = alt
             datetime={post.data.pubDate.toISOString()}
             class="font-mono text-sm text-muted-dark"
           >
-            {formatDate(post.data.pubDate, 'long')}
+            {formatDate(post.data.pubDate, 'long', lang)}
           </time>
           {post.data.tags.map((tag) => <TagPill tag={tag} />)}
         </div>
         {
           post.data.translated && alt && (
             <p class="font-mono text-xs text-muted-dark">
-              Translated from the{' '}
-              <a href={alt.href} class="text-muted transition-colors hover:text-aurora">
-                {langLabel[alt.lang]} original
+              <Localized en="Translated from the " zh="译自" />
+              <a href={alt.href} data-language-link={alt.lang} lang={alt.lang} hreflang={alt.lang} class="text-muted transition-colors hover:text-aurora">
+                <Localized en={`${langLabel[alt.lang]} original`} zh={`${langLabel[alt.lang]}原文`} />
               </a>
-              .
+              <Localized en="." zh="。" />
             </p>
           )
         }
