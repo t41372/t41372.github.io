@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import ProjectCard from '../components/projects/ProjectCard.astro'
+import ProjectCard from '../components/projects/ProjectCard'
 import { projects } from '../data/projects'
 ---
 
@@ -9,8 +9,8 @@ import { projects } from '../data/projects'
   description="Projects created and maintained by Yi-Ting Chiu: Open-LLM-VTuber, PathKeep, Standard ASR, and more."
   active="projects"
 >
-  <main class="mx-auto w-full max-w-4xl px-6 pb-24 pt-32 md:px-8">
-    <div class="mb-14 flex flex-col gap-3">
+  <main class="mx-auto w-full max-w-6xl px-6 pb-24 pt-32 md:px-8">
+    <div data-page-intro class="mb-14 flex flex-col gap-3">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
         {'// projects'}
       </span>
@@ -22,11 +22,11 @@ import { projects } from '../data/projects'
       </p> -->
     </div>
 
-    <div class="flex flex-col gap-12">
-      {projects.map((p, i) => <ProjectCard {...p} index={i} />)}
+    <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {projects.map((p, i) => <ProjectCard {...p} index={i} client:visible />)}
     </div>
 
-    <div class="mt-14">
+    <div data-page-tail class="mt-14">
       <a
         href="https://github.com/t41372"
         target="_blank"

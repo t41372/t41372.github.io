@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
+import type { TransitionBeforeSwapEvent } from 'astro:transitions/client'
 import { SKY_SCROLL_FACTOR } from '../lib/sky'
+import { SCENE_DURATION_MS } from '../lib/ease'
 
 const VERT = /* glsl */ `
 attribute vec2 aPos;
@@ -334,13 +336,11 @@ export default function StarSky() {
       antialias: false,
       alpha: false,
       powerPreference: 'high-performance',
-      // REQUIRED. (1) Under swup the canvas lives OUTSIDE the swapped <main>
-      // and is never snapshotted, so client-side navigations no longer depend
-      // on this flag — but it stays mandatory for reason (2). (Historically,
-      // ClientRouter's view-transition root snapshot captured this canvas
+      // REQUIRED. (1) Astro persists this canvas across client navigations,
+      // while ClientRouter's view-transition root snapshot captures it
       // out-of-band and the default post-composite buffer clear handed WebKit a
       // BLACK frame, so every navigation played out over a black sky — the
-      // "whole page dims during transitions" bug on iOS.) (2) The tall-mode
+      // "whole page dims during transitions" bug on iOS). (2) The tall-mode
       // twinkle redraws are scissored to the visible slice and rely on the rest
       // of the buffer keeping its last frame — that persistence is only
       // spec-defined with this flag. Cost: buffer copy instead of swap per
@@ -521,17 +521,33 @@ export default function StarSky() {
     // first-frame reveal: the canvas ships at opacity 0 over the CSS sky
     // fallback; once the first WebGL frame is actually drawn it fades in
     let revealed = false
+    // Navigation changes both the scroll offset AND the painting's length.
+    // Preserve the visible camera across the DOM swap, then move it on a
+    // time-based easeInOutSine. Normal scrolling still uses the original
+    // compositor-driven tall canvas / desktop shader, with no scroll tween.
+    type Camera = { offset: number; height: number }
+    let camera: Camera = { offset: 0, height: skyH }
+    let journey: { from: Camera; start: number | null } | undefined
 
     const draw = (timeSec: number, full = false) => {
       lastTimeSec = timeSec
       // clamp overscroll so the painting never rolls past its bottom edge
       const offset = Math.min(
-        (SKY_SCROLL_FACTOR * Math.max(window.scrollY, 0)) / vhRef,
+        ((tall ? 1 : SKY_SCROLL_FACTOR) * Math.max(window.scrollY, 0)) / vhRef,
         skyH - 1,
       )
+      const height = tall ? Math.min(skyH, paintPx / vhRef) - 0.07 : skyH
+      const progress = !journey ? 1 : journey.start === null ? 0
+        : Math.min(1, (performance.now() - journey.start) / SCENE_DURATION_MS)
+      const eased = -(Math.cos(Math.PI * progress) - 1) / 2
+      camera = journey ? {
+        offset: journey.from.offset + (offset - journey.from.offset) * eased,
+        height: journey.from.height + (height - journey.from.height) * eased,
+      } : { offset, height }
+      if (progress === 1) journey = undefined
       // wy of the canvas's top row: desktop rolls the painting per frame; the
       // tall canvas is the whole painting (plus OVER_T of extra sky above)
-      const wyTop = tall ? 1 + OVER_T / vhRef : 1 - offset
+      const wyTop = tall ? 1 + OVER_T / vhRef + offset - camera.offset : 1 - camera.offset
       // canvas top in window coords — known analytically (style top + current
       // transform), no getBoundingClientRect layout hit per frame
       const cTop = tall ? -OVER_T - window.scrollY : 0
@@ -607,7 +623,7 @@ export default function StarSky() {
       // tall mode: when the buffer cap truncates the painting, pull the
       // ground-black fade up so the canvas's last rows END in black — below
       // its bottom edge sits html's black gradient, so the handoff is seamless
-      gl.uniform1f(uSkyH, tall ? Math.min(skyH, paintPx / vhRef) - 0.07 : skyH)
+      gl.uniform1f(uSkyH, camera.height)
       gl.uniform4fv(uAvoid, avoidData)
       gl.uniform1f(uAvoidK, ak)
       // ignition ramp: stars first, aurora second (split inside the shader);
@@ -632,7 +648,7 @@ export default function StarSky() {
     }
     window.addEventListener('resize', onResize)
 
-    // A client-side navigation (swup, bridged as astro:page-load) swaps pages
+    // A client-side navigation (Astro astro:page-load) swaps pages
     // without reloading: the persisted sky — it lives outside the swapped
     // <main> — just re-measures its painting length for the new page's scroll
     // height.
@@ -660,6 +676,23 @@ export default function StarSky() {
       }
     }
     document.addEventListener('astro:page-load', onPageLoad)
+    const onBeforeSwap = (event: Event) => {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        journey = undefined
+        return
+      }
+      const current = { from: { ...camera }, start: null as number | null }
+      journey = current
+      const start = () => {
+        if (journey === current) current.start = performance.now()
+      }
+      void (event as TransitionBeforeSwapEvent).viewTransition.ready.then(start, start)
+    }
+    document.addEventListener('astro:before-swap', onBeforeSwap)
+    // After all scroll-restoration listeners, paint the incoming scene before
+    // View Transitions captures it. Otherwise the new snapshot has stale sky.
+    const onAfterSwap = () => queueMicrotask(onPageLoad)
+    document.addEventListener('astro:after-swap', onAfterSwap)
 
     // Pacing.
     // Desktop: while the page is scrolling the painting MUST re-render every
@@ -676,9 +709,9 @@ export default function StarSky() {
       const sy = window.scrollY
       const booting = bootStart >= 0 && now - bootStart < 1900
       if (tall) {
-        if (bootStart >= 0 && now - last < (booting ? 33 : 50)) return
+        if (!journey && bootStart >= 0 && now - last < (booting ? 33 : 50)) return
       } else {
-        if (sy === lastSy && !booting && now - last < frameInterval) return
+        if (!journey && sy === lastSy && !booting && now - last < frameInterval) return
       }
       last = now
       lastSy = sy
@@ -757,6 +790,8 @@ export default function StarSky() {
       window.removeEventListener('scroll', onScrollReduced)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('astro:page-load', onPageLoad)
+      document.removeEventListener('astro:before-swap', onBeforeSwap)
+      document.removeEventListener('astro:after-swap', onAfterSwap)
       document.removeEventListener('visibilitychange', onVisibility)
       gl.deleteProgram(prog)
       gl.deleteShader(vs)

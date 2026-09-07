@@ -1,7 +1,7 @@
 /**
  * OG social image generator — `bun scripts/generate-og.mjs`
  *
- * Screenshots the REAL hero (WebGL aurora, glitch name, finished typewriter)
+ * Screenshots the REAL hero (WebGL aurora and original typewriter introduction)
  * in headless Chrome and writes public/og.png (1200×630). Rendered at 2x and
  * downsampled with sharp so the text stays crisp.
  *
@@ -81,22 +81,12 @@ await page.waitForFunction(() => {
   const c = document.querySelector('canvas')
   return c && Number(getComputedStyle(c).opacity) > 0.5
 })
-// …and for the hero intro to reach its settled composition. The typewriter
-// never "finishes" (the tech-word cycle loops forever), so the moment to
-// capture is: both lines typed, "fun stuff" settled, and the first tech word
-// ("Java") fully typed and sitting in its 1200ms hold (~20s in).
-await page.waitForFunction(
-  () => {
-    const fun = document.querySelector('.fun-text')
-    return (
-      !!fun?.classList.contains('fun-settled') &&
-      /with Java$/.test((fun.closest('p')?.innerText ?? '').trim())
-    )
-  },
-  undefined,
-  { timeout: 45_000 },
-)
-await page.waitForTimeout(300)
+// Capture the original authored intro after its initial typewriter sequence.
+await page.waitForFunction(() => {
+  const fun = document.querySelector('.fun-text')
+  return fun?.classList.contains('fun-settled') && /with Java$/.test((fun.closest('p')?.innerText ?? '').trim())
+}, undefined, { timeout: 45_000 })
+await page.evaluate(() => document.fonts.ready)
 
 const shot = await page.screenshot({ type: 'png' })
 await browser.close()
@@ -104,3 +94,6 @@ await browser.close()
 await sharp(shot).resize(1200, 630).png({ compressionLevel: 9 }).toFile(OUT)
 const { size } = await stat(OUT)
 console.log(`wrote ${OUT} (${Math.round(size / 1024)} kB)`)
+
+// Stop the managed preview after writing the artifact so the command exits.
+if (preview && !preview.killed) preview.kill('SIGTERM')

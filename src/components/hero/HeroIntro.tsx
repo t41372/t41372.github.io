@@ -19,6 +19,8 @@ import { useEffect, useRef } from 'react'
  */
 
 const NAME = 'Yi-Ting Chiu'
+// Module state survives Swup remounts, including when the first intro was interrupted.
+let introSeen = false
 
 // the font-cycle order the old site stepped "fun stuff" through
 const FONT_LIST = [
@@ -100,12 +102,14 @@ export default function HeroIntro() {
       tech: techRef.current!,
     }
 
-    // reduced motion: paint a sensible final frame, no animation
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const skipIntro = introSeen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    introSeen = true
+    const settle = () => {
       el.hello.textContent = 'Hello!'
       el.wave.textContent = ' 👋'
       el.this.textContent = 'This is '
       el.name.textContent = NAME
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) el.name.classList.add('text-glitch')
       el.dot.textContent = '.'
       el.l2a.textContent = 'A nice guy'
       el.sad.textContent = ' (🥲)'
@@ -114,9 +118,17 @@ export default function HeroIntro() {
       el.fun.classList.add('fun-settled')
       el.l2c.textContent = ' with '
       el.tech.textContent = 'LLMs'
-      el.cur.remove()
+      el.cur.style.display = 'none'
+    }
+    if (skipIntro) {
+      settle()
       return
     }
+    // Static HTML is readable without JS; clear only for the first performance.
+    for (const node of [
+      el.hello, el.wave, el.this, el.name, el.dot,
+      el.l2a, el.sad, el.l2b, el.fun, el.l2c, el.tech,
+    ]) node.textContent = ''
 
     const ac = new AbortController()
     const { signal } = ac
@@ -124,11 +136,15 @@ export default function HeroIntro() {
     const sleep = (ms: number) =>
       new Promise<void>((resolve, reject) => {
         if (signal.aborted) return reject(new Error('aborted'))
-        const t = setTimeout(resolve, ms)
-        signal.addEventListener('abort', () => {
+        const abort = () => {
           clearTimeout(t)
           reject(new Error('aborted'))
-        })
+        }
+        const t = setTimeout(() => {
+          signal.removeEventListener('abort', abort)
+          resolve()
+        }, ms)
+        signal.addEventListener('abort', abort, { once: true })
       })
 
     // keep the single cursor right after whatever is being typed
@@ -252,7 +268,18 @@ export default function HeroIntro() {
     run().catch(() => {
       /* aborted on unmount */
     })
-    return () => ac.abort()
+    const skip = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      ac.abort()
+      el.name.classList.remove('name-selected', 'name-hl')
+      el.fun.classList.remove('fun-flash', 'fun-animate')
+      settle()
+    }
+    addEventListener('keydown', skip)
+    return () => {
+      ac.abort()
+      removeEventListener('keydown', skip)
+    }
   }, [])
 
   // ---- draggable intro ----
@@ -446,18 +473,18 @@ export default function HeroIntro() {
           className="font-mono text-3xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl md:text-5xl"
           data-aurora-avoid
         >
-          <span ref={helloRef} />
-          <span ref={waveRef} />
+          <span ref={helloRef}>Hello!</span>
+          <span ref={waveRef}> 👋</span>
           <br />
-          <span ref={thisRef} />
+          <span ref={thisRef}>This is </span>
           {/* inline-block + nowrap: the name must never break mid-word. The
               glitch effect's ::before/::after copies are absolutely
               positioned; over a wrapped (multi-fragment) inline they anchor
               to the first fragment and re-wrap independently — misaligned
               ghost text. As an atomic box the name drops to its own line
               whole, and the copies overlay it exactly. */}
-          <span ref={nameRef} data-text={NAME} className="inline-block whitespace-nowrap" />
-          <span ref={dotRef} className="text-aurora" />
+          <span ref={nameRef} data-text={NAME} className="inline-block whitespace-nowrap">{NAME}</span>
+          <span ref={dotRef} className="text-aurora">.</span>
           <span ref={curRef} className="type-cursor" aria-hidden="true" />
         </h1>
 
@@ -467,12 +494,12 @@ export default function HeroIntro() {
           className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
           data-aurora-avoid
         >
-          <span ref={l2aRef} />
-          <small ref={sadRef} className="text-muted-dark" />
-          <span ref={l2bRef} />
-          <span ref={funRef} className="fun-text" />
-          <span ref={l2cRef} />
-          <span ref={techRef} className="text-aurora" />
+          <span ref={l2aRef}>A nice guy</span>
+          <small ref={sadRef} className="text-muted-dark"> (🥲)</small>
+          <span ref={l2bRef}> building </span>
+          <span ref={funRef} className="fun-text">fun stuff</span>
+          <span ref={l2cRef}> with </span>
+          <span ref={techRef} className="text-aurora">LLMs</span>
         </p>
       </div>
     </div>

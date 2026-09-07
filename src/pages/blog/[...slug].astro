@@ -3,7 +3,7 @@ import { render } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import TagPill from '../../components/TagPill.astro'
 import { formatDate } from '../../lib/format'
-import { getBlogPosts, entryLang, type BlogEntry, type BlogLang } from '../../lib/blog'
+import { getBlogPosts, entryLang, entrySlug, type BlogEntry, type BlogLang } from '../../lib/blog'
 
 interface Props {
   post: BlogEntry
@@ -58,14 +58,13 @@ const alternates = alt
   alternates={alternates}
 >
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
-    <!-- frosted glass over the sky: the aurora at the painting's top glows
-         through around and behind the article. Enter/exit rides the shared
-         page fade+drift (global.css) — no per-card morph. -->
     <article
+      data-blog-article={entrySlug(post)}
       lang={lang === 'zh' ? 'zh' : undefined}
       data-article-lang={alt ? lang : undefined}
-      class="rounded-3xl border border-border-subtle/60 bg-surface/50 p-6 backdrop-blur-md md:p-10"
+      class="rounded-3xl border border-border-subtle/60 bg-surface/60 glass-surface p-6 md:p-10"
     >
+      <div data-blog-copy>
       <header class="mb-10 flex flex-col gap-4">
         <div class="flex items-baseline justify-between gap-4">
           <a
@@ -141,6 +140,7 @@ const alternates = alt
           </footer>
         )
       }
+      </div>
     </article>
   </main>
 </BaseLayout>

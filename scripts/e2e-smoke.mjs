@@ -10,7 +10,7 @@
  *   4. mobile: canvas bottom never extends past the content bottom, and max
  *      scroll == content height (the "scroll past the footer into raw sky"
  *      feedback-loop regression)
- *   5. nav pill slides ONCE, monotonically (it used to double-slide on iOS)
+ *   5. navigation uses semantic links and retains the persistent scene
  *   6. hero text lag + valley layers respond to scroll (parallax active) with
  *      NO after-stop drift (scrub smoothing made the mountains keep floating
  *      after a fling); layers are compositor-promoted to blunt the iOS SVG
@@ -38,6 +38,9 @@
 import { chromium } from 'playwright-core'
 import { spawn } from 'node:child_process'
 import net from 'node:net'
+import { testNavigation } from './e2e-navigation.mjs'
+import { testGlass } from './e2e-glass.mjs'
+import { testMotion, testSurfaceBorder } from './e2e-motion.mjs'
 
 const OVER_T = 144 // keep in sync with StarSky.tsx
 let failures = 0
@@ -128,7 +131,7 @@ const browser = await chromium.launch({
   // programmatic scrollTo() land non-deterministically (a mid-flight smooth
   // animation gets cancelled by the next call, so samples read stale offsets).
   // Force instant jumps for the test — real users are unaffected. (documentEl
-  // is never swapped by swup — only <main> is — so this survives the nav test too.)
+  // remains the document root across client navigation.)
   await page.evaluate(() => {
     document.documentElement.style.scrollBehavior = 'auto'
   })
@@ -270,51 +273,13 @@ const browser = await chromium.launch({
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.waitForTimeout(200)
 
-  // nav pill: must slide once, monotonically, starting promptly after click
-  const pillX = () =>
-    page.evaluate(() =>
-      Math.round(
-        new DOMMatrixReadOnly(
-          getComputedStyle(document.querySelector('[data-nav-pill]')).transform,
-        ).e,
-      ),
-    )
-  const x0 = await pillX()
-  // stash the live sky canvas so we can prove swup did NOT re-create it across
-  // the navigation (it lives outside the swapped <main> container)
-  await page.evaluate(() => {
-    window.__skyCanvas = document.querySelector('canvas')
-  })
+  await page.evaluate(() => { window.__skyCanvas = document.querySelector('canvas') })
   await page.click('a[data-nav-key="projects"]')
-  const samples = []
-  for (let i = 0; i < 14; i++) {
-    await page.waitForTimeout(90)
-    samples.push(await pillX())
-  }
-  let reversals = 0
-  for (let i = 1; i < samples.length - 1; i++) {
-    if ((samples[i] - samples[i - 1]) * (samples[i + 1] - samples[i]) < 0) reversals++
-  }
-  // "prompt response" guards the old bug where the pill didn't move until
-  // astro:page-load (~500ms dead button); now it fires on before-preparation.
-  // 120ms is the real-hardware target, but headless software-GL starves GSAP's
-  // rAF, so we assert it has begun moving within ~540ms (sample 6) — still well
-  // inside the old regression, generous enough not to flake on CPU jitter.
-  const movedBy = samples.findIndex((x) => x > x0)
-  check(
-    'nav pill: starts moving promptly (< ~540ms)',
-    movedBy >= 0 && movedBy <= 5,
-    `movedAtSample=${movedBy} seq=${samples.join(',')}`,
-  )
-  check('nav pill: single monotonic slide', reversals === 0, samples.join(','))
-
-  // the nav click above navigated / -> /projects via swup. The sky canvas
-  // (StarSky island, rendered OUTSIDE <main>) must be the SAME DOM node — swup
-  // only swaps <main>, so the WebGL context is never destroyed/re-created.
-  const canvasSurvived = await page.evaluate(
-    () => !!window.__skyCanvas && document.querySelector('canvas') === window.__skyCanvas,
-  )
-  check('desktop: sky canvas survives navigation (lives outside the swup container)', canvasSurvived)
+  await page.waitForURL('**/projects')
+  await page.locator('main h1').filter({ hasText: 'Things I work on' }).waitFor()
+  await page.waitForTimeout(500)
+  const canvasSurvived = await page.evaluate(() => document.querySelector('canvas') === window.__skyCanvas)
+  check('desktop: Astro preserves the sky canvas across navigation', canvasSurvived)
 
   // the sky must still be LIT after the client-side navigation, not cleared to
   // black. Sample the WebGL canvas: drawImage a 64x64 patch from the upper-
@@ -351,12 +316,12 @@ const browser = await chromium.launch({
     `avg rgb=(${sky.r.toFixed(1)}, ${sky.g.toFixed(1)}, ${sky.b.toFixed(1)})`,
   )
 
-  // island rehydration after a swup swap: the swapped-in /projects <main>
+  // island hydration after Astro navigation: the incoming /projects <main>
   // contains a GithubStars island (client:visible). Scroll it into view to trip
   // its IntersectionObserver, then confirm it hydrated — Astro strips the `ssr`
   // attribute from an <astro-island> once its client directive fires and React
   // mounts. astro-island present INSIDE <main> AND no `ssr` == the swapped DOM
-  // re-ran island hydration (custom-element upgrade), the crux of swup + Astro.
+  // ran its client directive and hydrated successfully.
   await page.evaluate(() => {
     document.querySelector('main astro-island')?.scrollIntoView({ block: 'center' })
   })
@@ -371,62 +336,14 @@ const browser = await chromium.launch({
     `exists=${hydrated.exists} ssr=${hydrated.ssr}`,
   )
 
-  // glass cards must not FLASH OUT after fading in on a nav into /blog. The bug:
-  // the in-animation drifted <main> (a common ANCESTOR of the frosted post cards)
-  // with translateY; a transform on a backdrop-filter element's ancestor makes
-  // that ancestor the card's backdrop root, so when the drift was torn down the
-  // cards' backdrop-filter re-rasterized and the whole glass subtree blanked for
-  // one frame — after it was already visible, cross-browser (a spec-level
-  // backdrop-root change, not a GPU quirk, so computed opacity alone never dips).
-  // Install a per-frame sampler BEFORE navigating, then assert on the recording:
-  //   (a) no ANCESTOR of a glass card (up to <main>) is EVER transformed during
-  //       the transition — the direct signature of the bug (fails pre-fix,
-  //       where <main> carried translateY for the whole in-animation);
-  //   (b) the card's computed opacity does reach ≥0.95 within ~1s and, once it
-  //       has, never drops back below 0.8 — guards the sibling failure modes
-  //       (a target stranded at 0, or re-pinned after the fade).
-  await page.evaluate(() => {
-    window.__flash = []
-    window.__flashStop = false
-    // the OUTGOING page's card matches this selector too (and its OUT animation
-    // fades it toward 0). Latch the pre-nav card node and only record once swup
-    // has swapped in a DIFFERENT node — so we measure the INCOMING /blog card,
-    // not the /projects card leaving.
-    const outgoing = document.querySelector('main [class*="backdrop-blur"]')
-    const loop = () => {
-      if (window.__flashStop) return
-      const card = document.querySelector('main [class*="backdrop-blur"]')
-      if (card && card !== outgoing) {
-        let ancestorTransformed = false
-        for (let el = card.parentElement; el; el = el.parentElement) {
-          const t = getComputedStyle(el).transform
-          if (t && t !== 'none') ancestorTransformed = true
-          if (el.tagName === 'MAIN') break
-        }
-        window.__flash.push({ opacity: +getComputedStyle(card).opacity, ancestorTransformed })
-      }
-      requestAnimationFrame(loop)
-    }
-    requestAnimationFrame(loop)
-  })
-  await page.click('a[data-nav-key="blog"]')
-  await page.waitForTimeout(1000)
-  const flash = await page.evaluate(() => {
-    window.__flashStop = true
-    return window.__flash
-  })
-  const anyAncestorTransform = flash.some((f) => f.ancestorTransformed)
-  const reachedAt = flash.findIndex((f) => f.opacity >= 0.95)
-  const droppedAfter = reachedAt >= 0 && flash.slice(reachedAt).some((f) => f.opacity < 0.8)
-  check(
-    'desktop: glass cards never flash out after fade-in',
-    !anyAncestorTransform && reachedAt >= 0 && !droppedAfter,
-    `ancestorTransformFrames=${flash.filter((f) => f.ancestorTransformed).length} reachedFullAt=${reachedAt} droppedBelow0.8After=${droppedAfter} frames=${flash.length}`,
-  )
-
   check('desktop: no page errors (incl. navigation)', errs.length === 0, errs.join('; '))
   await ctx.close()
 }
+
+await testNavigation(browser, BASE, check)
+await testGlass(browser, BASE, check)
+await testMotion(browser, BASE, check)
+await testSurfaceBorder(browser, BASE, check)
 
 await browser.close()
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) FAILED`)

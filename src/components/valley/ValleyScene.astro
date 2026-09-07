@@ -217,7 +217,7 @@ import AsciiSmoke from './AsciiSmoke'
 <script>
   // Layout only — positions the smoke canvas over the chimney mouth; the
   // scroll parallax itself is the CSS above. Although the footer lives OUTSIDE
-  // swup's <main> and is no longer swapped per navigation, this still re-runs
+  // Astro's replaced content and persists per navigation, this still re-runs
   // on every astro:page-load to re-anchor the smoke against the new page's
   // layout/scroll height; previous listeners are removed via `cleanup`.
   let cleanup: (() => void) | null = null
@@ -274,6 +274,6 @@ import AsciiSmoke from './AsciiSmoke'
     }
   }
 
-  // fires on initial load AND after every swup navigation (bridged)
+  // fires on initial load AND after every Astro client navigation
   document.addEventListener('astro:page-load', setup)
 </script>

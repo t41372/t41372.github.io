@@ -7,12 +7,14 @@
   --color-surface: oklch(0.18 0.035 262); /* card surfaces */
   --color-surface-raised: oklch(0.22 0.04 260);
   --color-foreground: oklch(0.93 0.01 250);
-  --color-muted: oklch(0.62 0.025 255);
-  /* dimmest text tier (dates, captions, footer). L 0.52 ≈ 3.5:1 on the card
-     surfaces — a deliberate compromise: original 0.45 sat at ~2.5:1 (hard to
-     read for low-vision users); full AA (4.5:1) needs ~0.58, which flattens
-     the muted/muted-dark hierarchy. Don't lower it back below 0.52. */
-  --color-muted-dark: oklch(0.52 0.025 258);
+  --color-muted: oklch(0.72 0.025 255);
+  --color-muted-foreground: var(--color-muted);
+  --color-card: oklch(0.18 0.035 262);
+  --color-card-foreground: var(--color-foreground);
+  --color-border: var(--color-border-subtle);
+  --color-ring: var(--color-muted);
+  /* Quiet metadata still needs to remain legible over the night sky. */
+  --color-muted-dark: oklch(0.65 0.025 258);
   --color-border-subtle: oklch(0.32 0.03 260);
 
   /* accents pulled from the aurora shader */
@@ -31,6 +33,11 @@
      just gets a touch deeper — reads as sky, never as a scrim. Layer 2 of the
      hero-legibility pair (layer 1 is the aurora's exclusion zone in StarSky).
      em-based so it scales with each line's font size. */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* matches EASE_IN_OUT in lib/ease.ts */
+  --ease-scene: cubic-bezier(0.37, 0, 0.63, 1); /* EASE_SCENE: easeInOutSine */
+  --scene-duration: 420ms; /* SCENE_DURATION_MS */
+  --blog-surface-duration: 420ms; /* BLOG_SURFACE_DURATION_MS */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --footer-ground-bleed: env(safe-area-inset-bottom);
   --night-halo:
     0 0 0.08em oklch(0.16 0.04 265 / 0.9),
@@ -401,10 +408,10 @@ body {
   .text-glitch,
   .text-glitch::before,
   .text-glitch::after,
-  .scroll-line,
-  .ascii-flicker,
   .fun-animate,
   .type-cursor,
+  .scroll-line,
+  .ascii-flicker,
   /* hero scroll parallax rests untransformed. (The valley layers' equivalent
      override lives in ValleyScene.astro — it must cascade AFTER the rule it
      cancels, and that rule is bundled after this file.) */
@@ -413,39 +420,113 @@ body {
   }
 }
 
-/* ---------- client-side page transitions (swup) ----------
-
-   Page navigation is handled by swup (@swup/astro), NOT Astro's native
-   ClientRouter/View Transitions. swup swaps ONLY <main> as REAL DOM; the sky,
-   header, and footer live OUTSIDE that container and are never snapshotted or
-   re-created — so the WebGL starfield keeps painting and the glass cards keep
-   LIVE backdrop-blur straight through the transition (native VT baked both
-   flat and dimmed the dark page). There are therefore NO ::view-transition
-   pseudo rules to style here: the fade+drift is a WAAPI animation on <main> in
-   BaseLayout's bridge script (transform/opacity, compositor-threaded). This
-   section is now just the one structural rule <main> still needs. */
-
-/* Page content always stacks ABOVE the footer valley (z-10): the ASCII smoke
-   column climbs far above the chimney, into blog/project cards' territory —
-   it's scenery, so it must drift BEHIND every foreground panel (a frosted
-   card's backdrop-blur then softens the smoke behind it, which is exactly
-   the depth cue we want). Hero text occluding the wisps is fine too. */
-main {
-  position: relative;
-  z-index: 20;
+/* Astro owns page fades; Motion owns local component transitions. */
+main { position: relative; z-index: 20; }
+main h1[tabindex="-1"]:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-muted); outline-offset: 5px; }
+/* Astro restores history with scrollTo(x, y), which otherwise inherits the
+   site's smooth scrolling. Restoration must settle before capture; only the
+   sky camera animates between routes. */
+html[data-astro-transition] { scroll-behavior: auto; }
+/* A named ancestor is a Backdrop Root even when no transition is running.
+   Keep glass ancestors unnamed. Only actual surfaces / text get snapshot names.
+   https://www.w3.org/TR/css-view-transitions-1/#rendering-consolidation */
+main, astro-island, [data-astro-transition-persist] {
+  view-transition-name: none !important;
 }
-
-/* Glass inside the swapped container stays PERMANENTLY composited. The swup
-   choreography drifts targets via the separate `translate` property, so with
-   this constant base transform a glass card's transformed-status (and hence
-   its backdrop-root/containing-block state) NEVER flips at animation edges —
-   the suspected trigger of a 1-frame glass blank that only ever manifests in
-   interactive sessions (never under automated capture, not even against a
-   known-bad build — see project memory). Cheap: a handful of cards per page.
-   Tailwind v4's translate/rotate/scale utilities use the individual
-   properties, so they compose with (not clobber) this base. */
-main [class*='backdrop-blur'] {
-  transform: translateZ(0);
+/* Keep the browser's additive crossfade for the scene. Capturing the whole
+   unnamed scene includes its old/new scroll position, so it does not hard-cut
+   behind a shared card. Never use a normal-alpha fade on these two snapshots. */
+::view-transition-group(*) {
+  animation-duration: var(--scene-duration);
+  animation-timing-function: var(--ease-scene);
+}
+/* Keep the live navigation reachable during a transition. Astro cancels a
+   superseded transition; the overlay must not swallow the next tab click. */
+::view-transition, ::view-transition-group(*), ::view-transition-image-pair(*),
+::view-transition-old(*), ::view-transition-new(*) { pointer-events: none; }
+::view-transition-old(*), ::view-transition-new(*) {
+  animation-duration: var(--scene-duration);
+  animation-timing-function: var(--ease-scene);
+}
+::view-transition-group(site-nav) { z-index: 100; }
+::view-transition-old(site-nav) { display: none; }
+::view-transition-new(site-nav) { animation: none; }
+::view-transition-group(.page-content) { z-index: 10; }
+/* Backdrop filters live on the group. Fading only its old/new image leaves
+   an invisible glass rectangle blurring the destination until group cleanup. */
+::view-transition-group(.page-out) {
+  animation: page-copy-out 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+::view-transition-group(.page-in) {
+  animation: page-copy-opacity-in 280ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+::view-transition-group(.page-return) { animation-delay: 220ms; }
+::view-transition-old(.page-content) { animation: none; }
+::view-transition-new(.page-content) {
+  animation: page-copy-lift 280ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+::view-transition-new(.page-return) { animation-delay: 220ms; }
+@keyframes page-copy-out { to { opacity: 0; } }
+@keyframes page-copy-opacity-in { from { opacity: 0; } }
+@keyframes page-copy-lift {
+  from { transform: translateY(8px); }
+  to { transform: none; }
+}
+::view-transition-group(blog-surface) {
+  z-index: 20;
+  animation-duration: var(--blog-surface-duration);
+  animation-timing-function: var(--ease-drawer);
+  border-radius: 1rem;
+  overflow: clip;
+  box-sizing: border-box;
+  border: 1px solid oklch(from var(--color-border-subtle) l c h / 0.6);
+}
+html:has([data-blog-article])::view-transition-group(blog-surface) {
+  border-radius: 1.5rem;
+}
+/* A rasterized 1px border/corner becomes a thick band when a short card is
+   stretched to article height. Capture a borderless rectangular material;
+   the native group clips its corners and draws an unscaled 1px border. */
+html[data-astro-transition] [data-transition-part="blog-surface"] {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  /* Do not capture a halfway-faded hover border. */
+  transition: none !important;
+}
+/* The group interpolates its height, but snapshot images default to auto.
+   Both material images must fill that group or the old card stays a short
+   dark bar sliding over the new full-height article. Copy has its own group. */
+::view-transition-old(blog-surface), ::view-transition-new(blog-surface) {
+  height: 100%;
+  animation-duration: var(--blog-surface-duration);
+  animation-timing-function: var(--ease-drawer);
+}
+/* Copy must be ABOVE its glass surface. A lower snapshot gets sampled and
+   blurred by the surface until the transition ends, then suddenly sharpens. */
+::view-transition-group(blog-list-copy), ::view-transition-group(blog-article-copy), ::view-transition-group(blog-outgoing-copy) {
+  z-index: 21;
+}
+/* No shared title geometry: line wrapping must not scale/throw a headline
+   across the screen. Copy stays at its final size while the material moves. */
+::view-transition-old(blog-list-copy), ::view-transition-old(blog-article-copy), ::view-transition-old(blog-outgoing-copy) {
+  animation-duration: 140ms;
+}
+::view-transition-new(blog-list-copy) {
+  animation-duration: 260ms;
+  animation-delay: 180ms;
+  animation-fill-mode: both;
+}
+::view-transition-new(blog-article-copy) { animation: none; }
+.glass-surface {
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  backdrop-filter: blur(16px) saturate(1.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }
 
 /* ---------- blog prose ---------- */

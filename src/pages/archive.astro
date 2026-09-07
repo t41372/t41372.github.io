@@ -44,7 +44,7 @@ const exhibits = [
   active="archive"
 >
   <main class="mx-auto w-full max-w-3xl px-6 pb-24 pt-32 md:px-8">
-    <div class="mb-12 flex flex-col gap-3">
+    <div data-page-intro class="mb-12 flex flex-col gap-3">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
         {'// archive'}
       </span>
@@ -63,10 +63,10 @@ const exhibits = [
           <li>
             <a
               href={x.href}
-              data-no-swup={x.current ? undefined : true}
+              data-astro-reload={x.current ? undefined : true}
               target={x.external ? '_blank' : undefined}
               rel={x.external ? 'noopener noreferrer' : undefined}
-              class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-aurora/40 hover:bg-surface/70"
+              class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 glass-surface transition-colors duration-150 hover:border-aurora/40 hover:bg-surface/70"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">

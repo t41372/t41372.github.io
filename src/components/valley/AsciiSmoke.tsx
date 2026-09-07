@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { scatterPuff, type Puff } from '../../lib/smoke'
 
 /**
  * AsciiSmoke — an "ASCII shader" smoke plume.
@@ -12,25 +13,12 @@ import { useEffect, useRef } from 'react'
  *
  * Mouse: only the cursor's *motion* drags nearby puffs (a hand stirring
  * smoke). A cursor resting inside the plume does nothing.
+ * Fast strokes can scatter the same smoke repeatedly; each hit has a short
+ * cooldown, and tiny wisps keep accepting impulses without spawning more blobs.
  */
 
 // density ramp, sparse -> dense
 const RAMP = ['·', ':', '~', '≈', 'o', '*', '#', '@']
-
-interface Puff {
-  x: number
-  y: number
-  driftX: number // mouse-imparted velocity, px/s
-  driftY: number
-  riseSpeed: number // px/s
-  wobblePhase: number
-  wobbleFreq: number // Hz
-  wobbleAmp: number // px/s
-  baseRadius: number // px
-  age: number // s
-  life: number // s
-  splits: number // how many more times a fast swipe can break this blob apart
-}
 
 export default function AsciiSmoke({
   className = '',
@@ -132,7 +120,7 @@ export default function AsciiSmoke({
       const n = 3 + Math.floor(Math.random() * 3)
       const rise = 22 + Math.random() * 8 // px/s, shared by the whole cloud
       const cx = (Math.random() - 0.5) * 10
-      for (let i = 0; i < n; i++) {
+      for (let i = 0; i < n && puffs.length < maxPuffs; i++) {
         const age = preAge + Math.random() * 0.5
         const riseSpeed = rise * (0.92 + Math.random() * 0.16)
         const life = 24 + Math.random() * 5
@@ -156,7 +144,7 @@ export default function AsciiSmoke({
           // long life + accelerating rise: the plume climbs all the way up
           // into the hero viewport before it dissolves
           life,
-          splits: 2,
+          scatterCooldown: 0,
         })
       }
     }
@@ -180,11 +168,15 @@ export default function AsciiSmoke({
       mouse.y = y
       mouse.lastT = t
     }
-    const onPointerLeave = () => {
+    const onPointerLeave = (event: PointerEvent) => {
+      // pointerout also bubbles when crossing ordinary elements within the
+      // page. Only leaving the window should forget the hand's position.
+      if (event.relatedTarget !== null) return
       mouse.x = -9999
       mouse.y = -9999
       mouse.vx = 0
       mouse.vy = 0
+      mouse.lastT = 0
     }
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerout', onPointerLeave, { passive: true })
@@ -319,6 +311,7 @@ export default function AsciiSmoke({
       for (let i = puffs.length - 1; i >= 0; i--) {
         const p = puffs[i]!
         p.age += dt
+        p.scatterCooldown = Math.max(0, p.scatterCooldown - dt)
         if (p.age >= p.life) {
           puffs.splice(i, 1)
           continue
@@ -331,35 +324,12 @@ export default function AsciiSmoke({
         const dist = Math.sqrt(dx * dx + dy * dy)
         const reach = R * 1.1 // only react when the cursor actually touches the blob
 
-        // a fast swipe through a blob breaks it into shards that scatter
-        // sideways and burn out early
-        if (
-          dist < reach &&
-          mouseSpeed > 160 &&
-          p.splits > 0 &&
-          p.baseRadius > 5 &&
-          puffs.length < maxPuffs
-        ) {
-          const dirX = mouse.vx / mouseSpeed
-          const dirY = mouse.vy / mouseSpeed
-          puffs.splice(i, 1)
-          for (let k = -1; k <= 1; k++) {
-            puffs.push({
-              x: p.x - dirY * R * 0.4 * k,
-              y: p.y + dirX * R * 0.4 * k,
-              driftX: p.driftX + dirX * 55 - dirY * 75 * k,
-              driftY: p.driftY + dirY * 55 + dirX * 75 * k,
-              riseSpeed: p.riseSpeed * (0.9 + Math.random() * 0.2),
-              wobblePhase: Math.random() * Math.PI * 2,
-              wobbleFreq: 0.3 + Math.random() * 0.4,
-              wobbleAmp: 5 + Math.random() * 5,
-              baseRadius: p.baseRadius * 0.55,
-              age: p.age,
-              life: p.age + (p.life - p.age) * (0.5 + Math.random() * 0.2),
-              splits: p.splits - 1,
-            })
+        if (dist < reach && mouseSpeed > 160) {
+          const shards = scatterPuff(p, mouse, maxPuffs - puffs.length)
+          if (shards) {
+            puffs.splice(i, 1, ...shards)
+            continue
           }
-          continue
         }
 
         // slow stroke inside a blob: local nudge along the hand's motion
