@@ -50,8 +50,13 @@ outgoing/incoming names with the `page-content` transition class. Copy exits
 before the new copy enters, avoiding overlapping Blog/Projects headlines and
 card grids. Opacity belongs to the whole leaf group: backdrop filters live there,
 so fading only an old/new image leaves a transparent blur rectangle behind.
-Glass ancestors remain unnamed. Transient names are cleared after
-the current transition finishes, including after interrupted navigation.
+Glass ancestors remain unnamed. Only parts intersecting the viewport are
+named: outgoing ones while the old page is live, incoming ones on `astro:after-swap`
+after scroll restoration. Every named element is captured at full size, so
+naming a long page's offscreen cards stalled frames mid-transition; offscreen
+content stays in the root snapshot, where it is invisible. Transient names are
+cleared after the current transition finishes, including after interrupted
+navigation.
 
 The root keeps the browser's additive scene crossfade. Reading position and the
 index language are restored on `astro:after-swap`, before the new snapshot.

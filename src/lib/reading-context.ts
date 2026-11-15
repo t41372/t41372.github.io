@@ -8,7 +8,7 @@ type ReadingContext = { y: number; card?: string }
 export function initReadingContext() {
   const contexts = new Map<string, ReadingContext>()
   const path = (url: URL) => url.pathname.replace(/\/$/, '') || '/'
-  let pending: { signal: AbortSignal; restore?: ReadingContext; shared?: boolean; swapped?: boolean } | undefined
+  let pending: { signal: AbortSignal; restore?: ReadingContext; shared?: boolean; swapped?: boolean; returnReveal?: boolean } | undefined
   let swappingSignal: AbortSignal | undefined
   let transition: ViewTransition | undefined
   let generation = 0
@@ -33,14 +33,23 @@ export function initReadingContext() {
     name(surface, 'blog-surface')
     name(surface.querySelector<HTMLElement>('[data-blog-copy]'), article ? 'blog-article-copy' : 'blog-list-copy')
   }
-  const namePageContent = (doc: Document, phase: 'out' | 'in') => {
+  const namePageContent = (phase: 'out' | 'in', returnReveal = false) => {
     // Name actual glass surfaces, never their ancestors. Each page has its
     // own copy/surface snapshots so tab labels cannot double-expose in root.
-    doc.querySelectorAll<HTMLElement>('main .glass-surface, [data-page-intro], [data-page-tail]')
-      .forEach((el, index) => {
+    // Only what is on screen gets a snapshot of its own: every named element
+    // is captured at full size, and a long page of offscreen cards stalled
+    // frames during capture. Offscreen content stays in the root snapshot,
+    // where it is invisible anyway. Runs on the live, laid-out document.
+    let index = 0
+    document.querySelectorAll<HTMLElement>('main .glass-surface, [data-page-intro], [data-page-tail]')
+      .forEach(el => {
         if (el.dataset.transitionPart) return
-        name(el, `page-${phase}-${index}`)
-        el.style.viewTransitionClass = `page-content page-${phase}`
+        const rect = el.getBoundingClientRect()
+        if (rect.bottom <= 0 || rect.top >= innerHeight) return
+        name(el, `page-${phase}-${index++}`)
+        // A shrinking article passes over neighboring list rows. Reveal them
+        // only near the end of the contraction, once that area is uncovered.
+        el.style.viewTransitionClass = returnReveal ? 'page-content page-in page-return' : `page-content page-${phase}`
       })
   }
   // Browsers hit-test a captured nav as the transition root, even with
@@ -94,15 +103,9 @@ export function initReadingContext() {
         match(document, key)
         match(e.newDocument, key)
       }
-      namePageContent(document, 'out')
-      namePageContent(e.newDocument, 'in')
-      if (current.shared && outgoing) {
-        // A shrinking article passes over neighboring list rows. Reveal them
-        // only near the end of the contraction, once that area is uncovered.
-        for (const el of e.newDocument.querySelectorAll<HTMLElement>('[data-transition-part^="page-in-"]')) {
-          el.style.viewTransitionClass = 'page-content page-in page-return'
-        }
-      }
+      namePageContent('out')
+      // Incoming content is named after the swap, once it has layout.
+      current.returnReveal = !!(current.shared && outgoing)
     }
   })
   document.addEventListener('astro:before-swap', event => {
@@ -132,6 +135,7 @@ export function initReadingContext() {
     if (pending?.restore && !pending.signal.aborted) {
       window.scrollTo({ top: pending.restore.y, behavior: 'instant' })
     }
+    namePageContent('in', pending.returnReveal)
     // Animate only the visible reading blocks, in document order. Content
     // farther down is immediately readable when scrolled into view; no long
     // timer chain and no scroll listener. The new VT copy is live, so these
