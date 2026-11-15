@@ -5,6 +5,8 @@
 [data-ui-copy="zh"] { display: none; }
 html[data-ui-lang="zh"] [data-ui-copy="en"] { display: none; }
 html[data-ui-lang="zh"] [data-ui-copy="zh"] { display: inline; }
+/* Localized screenshot pairs fill their frame; inline would add a baseline gap. */
+html[data-ui-lang="zh"] img[data-ui-copy="zh"] { display: block; }
 html[data-language-redirect] body { visibility: hidden; }
 
 @theme {

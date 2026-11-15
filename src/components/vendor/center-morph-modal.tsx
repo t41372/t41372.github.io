@@ -284,7 +284,7 @@ export function CenterMorphModalContent({
                   tests/fixed-overlay-edge-sampling.test.tsx. */}
               <div
                 inert={!isPresent}
-                className="pointer-events-none fixed inset-4 z-[100] flex items-center justify-center overflow-y-auto drop-shadow-2xl"
+                className="pointer-events-none fixed inset-4 z-[100] flex items-center-safe justify-center overflow-y-auto drop-shadow-2xl"
               >
                 {/* Drop-shadow reads the clipped child's alpha, so depth follows the
                     unfolding silhouette without introducing another panel layer. */}

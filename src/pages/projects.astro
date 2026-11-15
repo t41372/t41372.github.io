@@ -1,30 +1,93 @@
 ---
+import type { ImageMetadata } from 'astro'
+import { getImage } from 'astro:assets'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Localized from '../components/Localized.astro'
 import ProjectCard from '../components/projects/ProjectCard'
-import { projects } from '../data/projects'
+import { Rich, TechRow } from '../components/projects/RichText'
+import { needsHydration, type ClipView, type Picture, type ProjectView, type ShotView } from '../components/projects/types'
+import { projects, type Clip, type Shot } from '../data/projects'
+
+// Islands receive plain props, so screenshots are optimized here: WebP at a
+// few widths, never upscaled, with intrinsic size to reserve layout space.
+const picture = async (src: ImageMetadata): Promise<Picture> => {
+  const widths = [480, 800, 1200].filter((w) => w < src.width).concat(Math.min(src.width, 1600))
+  const image = await getImage({ src, widths, format: 'webp', quality: 82 })
+  return { src: image.src, srcset: image.srcSet.attribute, width: src.width, height: src.height }
+}
+const shotView = async (s: Shot): Promise<ShotView> => ({
+  kind: 'image',
+  img: await picture(s.src),
+  zh: s.zh && (await picture(s.zh)),
+  alt: s.alt,
+  frame: s.frame,
+})
+const clipView = async (c: Clip): Promise<ClipView> => ({
+  kind: 'video',
+  src: c.src,
+  poster: (await picture(c.poster)).src,
+  width: c.poster.width,
+  height: c.poster.height,
+  alt: c.alt,
+})
+const views: ProjectView[] = await Promise.all(
+  projects.map(async ({ shots, demo, ...rest }) => ({
+    ...rest,
+    shots: await Promise.all((shots ?? []).map(shotView)),
+    demo: demo && (await clipView(demo)),
+  })),
+)
 ---
 
 <BaseLayout
   title="Projects — Yi-Ting Chiu"
-  description="Projects created and maintained by Yi-Ting Chiu: Open-LLM-VTuber, PathKeep, Standard ASR, and more."
+  description="Open-source apps and developer tools by Yi-Ting Chiu: Open-LLM-VTuber, Standard ASR, Long Screen, modalfs, PathKeep, skit and more."
   active="projects"
 >
-  <main class="mx-auto w-full max-w-6xl px-6 pb-24 pt-32 md:px-8">
-    <div data-page-intro class="mb-14 flex flex-col gap-3">
+  <main class="mx-auto w-full max-w-6xl px-4 pb-24 pt-28 sm:px-6 md:px-8 md:pt-32">
+    <div data-page-intro class="mb-10 flex max-w-2xl flex-col gap-3">
       <span class="font-mono text-xs font-medium uppercase tracking-[0.3em] text-aurora">
         {'// projects'}
       </span>
-      <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-        <Localized en="Things I work on" zh="我在做的项目" />
-      </h1>
-      <!-- <p class="max-w-xl text-pretty text-muted">
-        Creator &amp; maintainer. These are the ones I&apos;m most serious about right now.
-      </p> -->
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 class="font-mono text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          <Localized en="Things I've built" zh="我做的项目" />
+        </h1>
+        <a
+          href="https://github.com/t41372"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-mono text-sm text-muted transition-colors hover:text-foreground md:text-base"
+        >(github.com/t41372)</a>
+      </div>
+      <p class="text-muted">
+        <Localized
+          en="I love open source and software that runs on-device. Many of my projects happen to be about voice, but I just really like building stuff."
+          zh="我喜欢开源，也喜欢在设备本地运行的软件。我的项目碰巧很多都和语音有关，但其实我就是喜欢做东西。"
+        />
+      </p>
     </div>
 
-    <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      {projects.map((p, i) => <ProjectCard {...p} index={i} client:visible />)}
+    <div class="grid gap-5 md:grid-cols-2">
+      {
+        views.map((p, i) => (
+          <div class:list={[!p.shots.length && 'md:col-span-2']}>
+            {needsHydration(p) ? (
+              <ProjectCard project={p} priority={i === 0} client:visible>
+                <Fragment slot="tagline"><Rich t={p.tagline} /></Fragment>
+                <Rich t={p.blurb} />
+                <Fragment slot="stack"><TechRow stack={p.stack} platforms={p.platforms} note={p.note} /></Fragment>
+              </ProjectCard>
+            ) : (
+              <ProjectCard project={p} priority={i === 0}>
+                <Fragment slot="tagline"><Rich t={p.tagline} /></Fragment>
+                <Rich t={p.blurb} />
+                <Fragment slot="stack"><TechRow stack={p.stack} platforms={p.platforms} note={p.note} /></Fragment>
+              </ProjectCard>
+            )}
+          </div>
+        ))
+      }
     </div>
 
     <div data-page-tail class="mt-14">
@@ -34,9 +97,60 @@ import { projects } from '../data/projects'
         rel="noopener noreferrer"
         class="inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-aurora"
       >
-        <Localized en="more on github" zh="更多项目在 GitHub" />
+        <Localized en="and many more on github" zh="GitHub 上还有更多" />
         <span aria-hidden="true">→</span>
       </a>
     </div>
   </main>
 </BaseLayout>
+
+<script>
+  // Paging for project galleries (Gallery in ProjectCard.tsx). Swiping is
+  // native scroll snap; these delegated listeners only drive the buttons and
+  // dots, so they survive island hydration and client-side navigation.
+  type Parts = { track: HTMLElement; dots: HTMLButtonElement[]; prev: HTMLButtonElement; next: HTMLButtonElement }
+  const parts = (gallery: HTMLElement): Parts => ({
+    track: gallery.querySelector<HTMLElement>('[data-gallery-track]')!,
+    dots: [...gallery.querySelectorAll<HTMLButtonElement>('[data-gallery-dot]')],
+    prev: gallery.querySelector<HTMLButtonElement>('[data-gallery-prev]')!,
+    next: gallery.querySelector<HTMLButtonElement>('[data-gallery-next]')!,
+  })
+  const current = (track: HTMLElement) => Math.round(track.scrollLeft / Math.max(1, track.clientWidth))
+  const sync = (gallery: HTMLElement) => {
+    const { track, dots, prev, next } = parts(gallery)
+    const index = current(track)
+    dots.forEach((dot, i) => {
+      dot.toggleAttribute('data-active', i === index)
+      dot.setAttribute('aria-current', String(i === index))
+    })
+    // aria-disabled, not disabled: disabling the focused button drops focus.
+    prev.setAttribute('aria-disabled', String(index <= 0))
+    next.setAttribute('aria-disabled', String(index >= dots.length - 1))
+  }
+  document.addEventListener('click', (event) => {
+    const control = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-gallery-prev], [data-gallery-next], [data-gallery-dot]')
+    const gallery = control?.closest<HTMLElement>('[data-gallery]')
+    if (!control || !gallery || control.getAttribute('aria-disabled') === 'true') return
+    const { track, dots } = parts(gallery)
+    const index = current(track)
+    const target = control.hasAttribute('data-gallery-prev') ? index - 1
+      : control.hasAttribute('data-gallery-next') ? index + 1
+        : dots.indexOf(control)
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    track.scrollTo({ left: Math.max(0, Math.min(dots.length - 1, target)) * track.clientWidth, behavior: reduce ? 'instant' : 'smooth' })
+  })
+  // One pending frame per track, so galleries scrolling together all settle.
+  const pending = new WeakMap<HTMLElement, number>()
+  document.addEventListener('scroll', (event) => {
+    const track = event.target
+    if (!(track instanceof HTMLElement) || !track.matches('[data-gallery-track]')) return
+    cancelAnimationFrame(pending.get(track) ?? 0)
+    pending.set(track, requestAnimationFrame(() => {
+      const gallery = track.closest<HTMLElement>('[data-gallery]')
+      if (gallery) sync(gallery)
+    }))
+  }, { capture: true, passive: true })
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLElement>('[data-gallery]').forEach(sync)
+  })
+</script>

@@ -91,7 +91,7 @@ Source: [beUI Center Morph Modal](https://beui.dev/components/motion/center-morp
 
 Retrieved source SHA-256: `b74589ea5aff31a332312dcc89b3e78a49772751bb251a8ad206a06513c1c95e`
 
-Local changes: Registry source, ease and PresenceGate included. Source placed under components/vendor. Site wrappers supply content and styling; upstream motion and focus lifecycle retained.
+Local changes: Registry source, ease and PresenceGate included. Source placed under components/vendor. Site wrappers supply content and styling; upstream motion and focus lifecycle retained. The scrolling layer centers with `align-items: safe center` so a dialog taller than the viewport scrolls from its top instead of clipping it.
 
 MIT License
 
@@ -145,3 +145,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Simple Icons
+
+Source: [Simple Icons](https://simpleicons.org) v16.37.0, brand glyph paths copied into `src/components/projects/brand-icons.ts`.
+
+License: CC0 1.0 Universal (public domain dedication). The logos and names remain trademarks of their respective owners and are used only to refer to their products. The `windows` four-pane glyph in the same file is drawn for this site (Simple Icons no longer ships Microsoft logos); the browser glyph is Lucide's `Globe` from the existing `lucide-react` dependency.

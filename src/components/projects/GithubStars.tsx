@@ -1,64 +1,132 @@
 import { useEffect, useState } from 'react'
 
+export type GithubMetric = 'stars' | 'downloads' | 'rank'
+
+type Release = { assets?: { download_count?: number }[] }
+
+// One in-flight request per URL: the stars and rank stats share the repo call.
+const requests = new Map<string, Promise<unknown>>()
+function getJson(url: string): Promise<unknown> {
+  let request = requests.get(url)
+  if (!request) {
+    // Give up after 10 s (GitHub can be slow or blocked on some networks);
+    // the card keeps its floor values.
+    request = fetch(url, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10_000) })
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data) => {
+        // Forget failures (timeouts, offline, rate limits) so a later visit retries.
+        if (data === null) requests.delete(url)
+        return data
+      })
+    requests.set(url, request)
+  }
+  return request
+}
+
+const repoStars = async (repo: string) => {
+  const count = ((await getJson(`https://api.github.com/repos/${repo}`)) as { stargazers_count?: unknown } | null)?.stargazers_count
+  return typeof count === 'number' ? count : null
+}
+
+const sources: Record<GithubMetric, (repo: string) => Promise<number | null>> = {
+  stars: repoStars,
+  // Every asset of every release, summed: the same count the resume's figure uses.
+  downloads: async (repo) => {
+    const data = await getJson(`https://api.github.com/repos/${repo}/releases?per_page=100`)
+    return Array.isArray(data)
+      ? (data as Release[]).reduce((sum, release) => sum + (release.assets ?? []).reduce((s, a) => s + (a.download_count ?? 0), 0), 0)
+      : null
+  },
+  // Rank by stars across GitHub: public repositories with more stars, plus one.
+  // (GitHub search; star-history.com counts a different set and shows another number.)
+  rank: async (repo) => {
+    const stars = await repoStars(repo)
+    if (stars === null) return null
+    const total = ((await getJson(`https://api.github.com/search/repositories?q=stars:%3E${stars}&per_page=1`)) as { total_count?: unknown } | null)?.total_count
+    return typeof total === 'number' ? total + 1 : null
+  },
+}
+
 /**
- * Fetches the star count for a GitHub repo at runtime.
- * - sessionStorage cache so one session = one request per repo
- * - graceful degradation: if the API fails / rate-limits, show nothing
+ * Resolves once no Astro page transition is running (Astro sets
+ * `data-astro-transition` on <html> until the view transition finishes).
+ * A layout change that lands mid-transition stalls its frames (measured up to
+ * ~630 ms on mobile when GitHub answered during the 420 ms crossfade), so live
+ * numbers are applied after the page settles. Requests still start early.
  */
-export default function GithubStars({ repo }: { repo: string }) {
-  const [stars, setStars] = useState<number | null>(null)
+function afterPageTransition(): Promise<void> {
+  const root = document.documentElement
+  if (!root.hasAttribute('data-astro-transition')) return Promise.resolve()
+  return new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (root.hasAttribute('data-astro-transition')) return
+      observer.disconnect()
+      resolve()
+    })
+    observer.observe(root, { attributes: true, attributeFilter: ['data-astro-transition'] })
+  })
+}
+
+/**
+ * Reads a live repo number from the GitHub API at runtime, so the site never
+ * needs hand-updated counts.
+ * - sessionStorage cache so one session = one request per repo and metric
+ * - graceful degradation: if the API fails / rate-limits, returns null and
+ *   callers keep their static floor
+ * - `metric` undefined is a no-op, so the hook can be called unconditionally
+ */
+export function useGithubMetric(repo: string, metric?: GithubMetric) {
+  const [value, setValue] = useState<number | null>(null)
 
   useEffect(() => {
-    const cacheKey = `gh-stars:${repo}`
-    const cached = sessionStorage.getItem(cacheKey)
-    if (cached !== null) {
-      const n = Number(cached)
-      if (!Number.isNaN(n)) setStars(n)
-      return
+    if (!metric) return
+    const cacheKey = `gh-${metric}:${repo}`
+    let cached: number | null = null
+    try {
+      const stored = sessionStorage.getItem(cacheKey)
+      if (stored !== null && !Number.isNaN(Number(stored))) cached = Number(stored)
+    } catch {
+      /* storage blocked — fetch instead */
     }
 
-    const ac = new AbortController()
-    fetch(`https://api.github.com/repos/${repo}`, {
-      signal: ac.signal,
-      headers: { Accept: 'application/vnd.github+json' },
+    const pending =
+      cached !== null
+        ? Promise.resolve(cached)
+        : sources[metric](repo).then((n) => {
+            if (n !== null) {
+              try {
+                sessionStorage.setItem(cacheKey, String(n))
+              } catch {
+                /* ignore */
+              }
+            }
+            return n
+          })
+
+    let active = true
+    void Promise.all([pending, afterPageTransition()]).then(([n]) => {
+      if (active && n !== null) setValue(n)
     })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && typeof data.stargazers_count === 'number') {
-          sessionStorage.setItem(cacheKey, String(data.stargazers_count))
-          setStars(data.stargazers_count)
-        }
-      })
-      .catch(() => {
-        /* rate limited or offline — just show the icon without a number */
-      })
+    return () => {
+      active = false
+    }
+  }, [repo, metric])
 
-    return () => ac.abort()
-  }, [repo])
+  return value
+}
 
-  const formatted =
-    stars === null
-      ? null
-      : stars >= 1000
-        ? `${(stars / 1000).toFixed(1).replace(/\.0$/, '')}k`
-        : String(stars)
+/** 14707 → "14.7k" */
+export function formatStars(stars: number) {
+  return stars >= 1000 ? `${(stars / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(stars)
+}
 
-  return (
-    <span className="inline-flex items-center gap-1.5 font-mono text-sm text-muted">
-      <svg
-        viewBox="0 0 16 16"
-        width="14"
-        height="14"
-        fill="currentColor"
-        aria-hidden="true"
-        className="text-aurora"
-      >
-        <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
-      </svg>
-      {formatted !== null && (
-        <span aria-label={`${stars} GitHub stars`}>{formatted}</span>
-      )}
-      <span className="sr-only">GitHub stars</span>
-    </span>
-  )
+/** 3564 → "#3,564" */
+export function formatRank(rank: number) {
+  return `#${rank.toLocaleString('en-US')}`
+}
+
+/** 43098 → "43k+": a floor, matching how the static figures are written */
+export function formatFloor(n: number) {
+  return n >= 1000 ? `${Math.floor(n / 1000)}k+` : String(n)
 }

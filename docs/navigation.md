@@ -75,7 +75,7 @@ scroll on page-load: that can visibly jump after capture.
   spring overshoot. Clicks that the browser retargets from the captured nav to
   the transition root are forwarded to the same persistent semantic anchor.
 - Cards: shadcn/ui Card with site tokens and actual `.glass-surface` blur.
-- Project previews: beUI Center Morph Modal, retaining upstream presence/focus
+- Project demo video: beUI Center Morph Modal, retaining upstream presence/focus
   handling; site wrappers supply data, styling and close on route navigation.
 - Background scroll effects: original CSS-driven parallax and iOS svh/lvh guards.
 

@@ -62,19 +62,35 @@ export async function testNavigation(browser, BASE, check) {
     check(`${label}: language change preserves keyboard return to the originating card`, await page.evaluate(() => document.activeElement.closest('[data-blog-card]')?.getAttribute('data-blog-card') === 'ai-image-provenance' && document.activeElement.getAttribute('href')?.endsWith('/zh')))
     await page.locator('[data-blog-lang-toggle] button[data-lang="en"]').click()
     await go(() => page.locator('a[data-nav-key="projects"]').click())
-    const preview = page.getByRole('button', { name: 'Preview Open-LLM-VTuber', exact: true })
-    await preview.scrollIntoViewIfNeeded()
-    await preview.click()
-    const dialog = page.getByRole('dialog', { name: 'Open-LLM-VTuber', exact: true })
+    // Screenshot galleries are paged by a delegated script that runs once per
+    // session; after a client navigation it must still drive the first card
+    // (a hydrated island): Next moves the current dot and enables Previous.
+    const gallery = page.locator('[data-gallery]').first()
+    await gallery.scrollIntoViewIfNeeded()
+    const galleryState = () => gallery.evaluate(g => ({
+      current: [...g.querySelectorAll('[data-gallery-dot]')].findIndex(dot => dot.getAttribute('aria-current') === 'true'),
+      prev: g.querySelector('[data-gallery-prev]').getAttribute('aria-disabled'),
+    }))
+    const galleryBefore = await galleryState()
+    await gallery.locator('[data-gallery-next]').click()
+    await page.waitForFunction(g => g.querySelector('[data-gallery-dot][aria-current="true"]') === g.querySelectorAll('[data-gallery-dot]')[1], await gallery.elementHandle(), { timeout: 3000 }).catch(() => {})
+    const galleryAfter = await galleryState()
+    check(`${label}: gallery pages after client navigation`, galleryBefore.current === 0 && galleryBefore.prev === 'true' && galleryAfter.current === 1 && galleryAfter.prev === 'false', JSON.stringify({ galleryBefore, galleryAfter }))
+    // The card hydrates when visible: its server-rendered video link becomes
+    // the dialog button. Scroll it in, then use the upgraded control.
+    await page.locator('a[href="/projects/long-screen-demo.mp4"]').scrollIntoViewIfNeeded()
+    const details = page.getByRole('button', { name: 'Watch demo', exact: true })
+    await details.click()
+    const dialog = page.getByRole('dialog', { name: 'Long Screen', exact: true })
     await dialog.waitFor()
     await page.waitForTimeout(500)
-    check(`${label}: prebuilt project dialog opens with repository link`, await dialog.locator('a[href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber"]').count() === 1)
+    check(`${label}: prebuilt project dialog opens with repository link`, await dialog.locator('a[href="https://github.com/t41372/long-screen"]').count() === 1)
     await page.keyboard.press('Escape')
     await dialog.waitFor({ state: 'detached' })
-    check(`${label}: Escape returns focus and unlocks scrolling`, await preview.evaluate(el => document.activeElement === el && document.body.style.overflow !== 'hidden'))
-    // The data model supports media, but current production cards have none.
-    // Insert a video as the modal mounts so native control tab order is tested
-    // without publishing a placeholder media item in the project list.
+    check(`${label}: Escape returns focus and unlocks scrolling`, await details.evaluate(el => document.activeElement === el && document.body.style.overflow !== 'hidden'))
+    // Long Screen's dialog plays its own demo video. Prepend another one as the
+    // modal mounts so the first focus and reverse Tab from the repository link
+    // are tested against native video controls deterministically.
     await page.evaluate(() => {
       const observer = new MutationObserver(() => {
         const panel = document.querySelector('[role="dialog"]')
@@ -89,12 +105,15 @@ export async function testNavigation(browser, BASE, check) {
       })
       observer.observe(document.body, { childList: true, subtree: true })
     })
-    await preview.click()
+    await details.click()
     await dialog.waitFor()
     await page.waitForTimeout(500)
     check(`${label}: video preview receives initial keyboard focus`, await page.evaluate(() => document.activeElement.matches('video[controls]')))
-    await dialog.locator('a[href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber"]').press('Shift+Tab')
+    await dialog.locator('a[href="https://github.com/t41372/long-screen"]').press('Shift+Tab')
     check(`${label}: reverse Tab reaches video controls`, await page.evaluate(() => document.activeElement.matches('video[controls]')))
+    // Chrome delivers no key events to the page while focus is inside a loaded
+    // video's native controls, so Escape is pressed from the link instead.
+    await dialog.locator('a[href="https://github.com/t41372/long-screen"]').focus()
     await page.keyboard.press('Escape')
     await dialog.waitFor({ state: 'detached' })
     await go(() => page.locator('a[data-nav-key="home"]').click())
@@ -128,7 +147,7 @@ export async function testNavigation(browser, BASE, check) {
     await page.locator('a[data-nav-key="projects"]').click()
     await page.waitForFunction(before => window.__loaded > before && location.pathname === '/projects', before)
     await page.waitForTimeout(900)
-    check(`${label}: latest navigation wins`, await page.locator('main h1').innerText() === 'Things I work on')
+    check(`${label}: latest navigation wins`, await page.locator('main h1').innerText() === "Things I've built")
     check(`${label}: obsolete proxy material layers are gone`, await page.locator('.motion-material, [data-motion-proxy]').count() === 0)
     check(`${label}: no page errors`, errors.length === 0, errors.join('; '))
     await ctx.close()

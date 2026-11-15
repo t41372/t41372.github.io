@@ -278,7 +278,7 @@ const browser = await chromium.launch({
   await page.evaluate(() => { window.__skyCanvas = document.querySelector('canvas') })
   await page.click('a[data-nav-key="projects"]')
   await page.waitForURL('**/projects')
-  await page.locator('main h1').filter({ hasText: 'Things I work on' }).waitFor()
+  await page.locator('main h1').filter({ hasText: "Things I've built" }).waitFor()
   await page.waitForTimeout(500)
   const canvasSurvived = await page.evaluate(() => document.querySelector('canvas') === window.__skyCanvas)
   check('desktop: Astro preserves the sky canvas across navigation', canvasSurvived)
@@ -319,7 +319,7 @@ const browser = await chromium.launch({
   )
 
   // island hydration after Astro navigation: the incoming /projects <main>
-  // contains a GithubStars island (client:visible). Scroll it into view to trip
+  // contains ProjectCard islands (client:visible). Scroll one into view to trip
   // its IntersectionObserver, then confirm it hydrated — Astro strips the `ssr`
   // attribute from an <astro-island> once its client directive fires and React
   // mounts. astro-island present INSIDE <main> AND no `ssr` == the swapped DOM
