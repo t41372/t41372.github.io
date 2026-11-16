@@ -1,3 +1,4 @@
+import { softNavigate } from './e2e-helpers.mjs'
 /** Browser preference, explicit reading choices and static fallback contracts. */
 export async function testLanguage(browser, BASE, check) {
   const ctx = await browser.newContext({ locale: 'zh-TW', viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
@@ -88,7 +89,7 @@ export async function testLanguage(browser, BASE, check) {
     await blockedPage.goto(BASE + '/projects', { waitUntil: 'networkidle' })
     check('language: first supported browser language works with storage blocked', await blockedPage.locator('main h1').innerText() === '我做的项目')
     await blockedPage.locator('[data-ui-language-toggle]').click()
-    await blockedPage.locator('[data-nav-key="blog"]').click()
+    await softNavigate(blockedPage, '/blog')
     await blockedPage.waitForURL('**/blog')
     await blockedPage.waitForTimeout(700)
     check('language: manual choice works in memory when storage is blocked', await blockedPage.locator('main h1').innerText() === 'Writings')

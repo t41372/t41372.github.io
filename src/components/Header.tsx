@@ -8,7 +8,9 @@ import Localized, { useUiLanguage } from './Localized'
 const links = [
   { href: '/', key: 'home', label: 'Home', zh: '首页' },
   { href: '/projects', key: 'projects', label: 'Projects', zh: '项目' },
-  { href: '/blog', key: 'blog', label: 'Blog', zh: '文章' },
+  // Blog is unlisted from the nav for now; /blog still builds and works by URL.
+  // To bring the tab back, restore:
+  // { href: '/blog', key: 'blog', label: 'Blog', zh: '文章' },
 ]
 const keyFor = (path: string) => links.find(l => l.href === '/' ? path === '/' : path === l.href || path.startsWith(l.href + '/'))?.key ?? 'none'
 

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { J2000_MS, JULIAN_YEAR_MS, projectStar } from '../src/lib/astronomy.ts'
+import { softNavigate } from './e2e-helpers.mjs'
 
 const bytes = readFileSync(new URL('../src/data/bright-stars.bin', import.meta.url))
 const catalog = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
@@ -92,7 +93,7 @@ export async function testStars(browser, BASE, check) {
         check(`${label}: clock changes move a real star to its new sky position`, await page.evaluate(() => window.__starSamples.at(-1)[0].peak > 100))
       }
       await page.evaluate(() => { window.__catalogCanvas = document.querySelector('[data-catalogued-stars]') })
-      await page.locator('[data-nav-key="blog"]').click()
+      await softNavigate(page, '/blog')
       await page.waitForURL('**/blog')
       await page.waitForTimeout(600)
       check(`${label}: real-star canvas persists through client navigation`, await page.evaluate(() => window.__catalogCanvas === document.querySelector('[data-catalogued-stars]')))

@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import sharp from 'sharp'
+import { softNavigate } from './e2e-helpers.mjs'
 
 /** Long articles magnify a captured card border much more than the short
  * photo post. Inspect actual pixels in the first frames, where it is worst. */
@@ -127,7 +128,7 @@ export async function testMotion(browser, BASE, check) {
     await page.goto(BASE + '/', { waitUntil: 'networkidle' })
     await page.keyboard.press('Escape')
     await page.waitForFunction(() => document.querySelector('main h1').textContent.includes('Yi-Ting Chiu'))
-    await page.locator('[data-nav-key="blog"]').click()
+    await softNavigate(page, '/blog')
     await ready()
     await finish()
     await page.evaluate(() => { window.__motionReady = false })
@@ -185,15 +186,19 @@ export async function testMotion(browser, BASE, check) {
     await skyChange(() => page.locator('[data-nav-key="projects"]').click(), 'scrolled tab')
 
     await page.evaluate(() => { window.__pauseMotion = true; window.__motionReady = false })
-    await page.locator('[data-nav-key="blog"]').click()
+    await page.locator('[data-nav-key="home"]').click()
     await ready()
     await at(300)
     const tabState = await page.evaluate(() => {
       const opacity = name => Number(getComputedStyle(document.documentElement, `::view-transition-group(${name})`).opacity)
       return { active: document.querySelector('[data-nav] [aria-current="page"]')?.innerText, old: opacity('page-out-0'), next: opacity('page-in-0') }
     })
-    check(`${label}: tab state commits before capture and titles do not double-expose`, tabState.active === 'Blog' && tabState.old < 0.01 && tabState.next > 0.2, JSON.stringify(tabState))
+    check(`${label}: tab state commits before capture and titles do not double-expose`, tabState.active === 'Home' && tabState.old < 0.01 && tabState.next > 0.2, JSON.stringify(tabState))
     await page.screenshot({ path: `${output}/${label}-tabs-300.png` })
+    await finish()
+    await page.evaluate(() => { window.__motionReady = false })
+    await softNavigate(page, '/blog')
+    await ready()
     await finish()
     // Original-video failures also occur with text-only articles and direct
     // article exits. Keep these intermediate frames separate from Sleep QA.

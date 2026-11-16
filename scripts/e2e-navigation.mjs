@@ -1,3 +1,4 @@
+import { softNavigate } from './e2e-helpers.mjs'
 /** User-visible navigation contracts, independent of the animation implementation. */
 export async function testNavigation(browser, BASE, check) {
   for (const mobile of [false, true]) {
@@ -132,11 +133,11 @@ export async function testNavigation(browser, BASE, check) {
     }
     check(`${label}: persistent scene and navigation retain DOM identity`, await page.evaluate(() => window.__canvas === document.querySelector('canvas') && window.__header === document.querySelector('header') && window.__footer === document.querySelector('[aria-label="Footer"]')))
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await go(() => page.locator('a[data-nav-key="blog"]').click())
+    await go(() => softNavigate(page, '/blog'))
     check(`${label}: reduced motion leaves visible destination`, await page.locator('main h1').innerText() === 'Writings')
     await go(() => page.locator('a[data-nav-key="home"]').click())
     check(`${label}: returning hero is readable without replay`, await page.locator('main h1').textContent().then(s => s.includes('Yi-Ting Chiu')))
-    await go(() => page.locator('a[data-nav-key="blog"]').click())
+    await go(() => softNavigate(page, '/blog'))
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     // Slow actual network response: no fade-out before the page is available.
     await page.route('**/archive', async route => { await new Promise(r => setTimeout(r, 700)); await route.continue() })
@@ -155,7 +156,7 @@ export async function testNavigation(browser, BASE, check) {
   const ctx = await browser.newContext({ javaScriptEnabled: false })
   const page = await ctx.newPage()
   await page.goto(BASE + '/')
-  check('SSR: hero and navigation work without JS', await page.locator('main h1').textContent().then(s => s.includes('Yi-Ting Chiu')) && await page.locator('a[data-nav-key="blog"]').getAttribute('href') === '/blog')
+  check('SSR: hero and navigation work without JS', await page.locator('main h1').textContent().then(s => s.includes('Yi-Ting Chiu')) && await page.locator('a[data-nav-key="projects"]').getAttribute('href') === '/projects')
   await page.goto(BASE + '/projects')
   check('SSR: every project repository remains a real link', await page.locator('main a[href^="https://github.com/"]').count() >= 3)
   await ctx.close()
