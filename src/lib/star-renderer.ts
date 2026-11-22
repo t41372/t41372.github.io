@@ -38,7 +38,9 @@ void main() {
   // functions, not literal stellar discs or randomized physical radii.
   vRadius = 0.55 + 1.10 * pow(vFlux, 0.20);
   vPixel = 1.0 / uDpr;
-  vSize = min(uPointMax / uDpr, 12.0 + 12.0 * pow(vFlux, 0.15));
+  float fullSize = 12.0 + 12.0 * pow(vFlux, 0.15);
+  float compactSize = 2.0 * (vRadius + vPixel + 1.8);
+  vSize = min(uPointMax / uDpr, vFlux > 0.06 ? fullSize : min(fullSize, compactSize));
   gl_PointSize = vSize * uDpr;
   // Faint stars lose colour at night; the bright ones retain their B−V tint.
   vColor = mix(vec3(1.0), aColor, smoothstep(0.0025, 0.12, vFlux));
@@ -73,11 +75,13 @@ void main() {
   // constellation landmarks and the faint field. Soft, short glints make
   // those landmarks read as stars without adding arbitrary bright points.
   float peak = 1.0 - exp(-3.4 * pow(vFlux, 0.52));
-  float glint = (exp(-abs(p.x) * 4.0 - abs(p.y) * 0.75)
-              + exp(-abs(p.y) * 4.0 - abs(p.x) * 0.75))
-              * 0.10 * smoothstep(0.06, 0.5, vFlux);
+  float glint = vFlux > 0.06
+    ? (exp(-abs(p.x) * 4.0 - abs(p.y) * 0.75)
+      + exp(-abs(p.y) * 4.0 - abs(p.x) * 0.75))
+      * 0.10 * smoothstep(0.06, 0.5, vFlux)
+    : 0.0;
   float twinkle = 1.0 + (1.0 - uReduced) * (0.14 + 0.08 * (1.0 - vAltitude))
-    * (0.65 * sin(uTime * 1.3 + vPhase) + 0.35 * sin(uTime * 2.6 + vPhase * 1.7));
+    * (0.65 * sin(uTime * 0.95 + vPhase) + 0.35 * sin(uTime * 1.9 + vPhase * 1.7));
   float alpha = min(1.0, (core * peak + glare + glint) * twinkle * smoothstep(0.0, 1.0, uBoot));
   if (alpha < 0.002) discard;
   gl_FragColor = vec4(vColor * alpha, alpha);
@@ -168,7 +172,7 @@ export function createStarRenderer(canvas: HTMLCanvasElement, catalog: Float32Ar
         gl.uniform1f(years, (date.getTime() - J2000_MS) / JULIAN_YEAR_MS)
       }
       gl.uniform1f(time, now / 1000)
-      gl.uniform1f(boot, reduce ? 1 : Math.min(1, (now - started) / 1200))
+      gl.uniform1f(boot, reduce ? 1 : Math.min(1, (now - started) / 1500))
       gl.uniform1f(reduced, reduce ? 1 : 0)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.POINTS, 0, count)

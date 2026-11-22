@@ -67,7 +67,7 @@ const hasBilingual = posts.some((p) => p.secondary)
                 e === primary ? `/blog/${slug}` : `/blog/${slug}/${entryLang(e)}`
               return (
                 <li>
-                  <Card data-blog-card={slug} className="gap-0 rounded-2xl border-white/10 bg-surface/50 py-0 shadow-none glass-surface transition-colors hover:border-white/20 hover:bg-surface/70">
+                  <Card data-blog-card={slug} className="gap-0 rounded-2xl border-white/10 bg-surface/50 py-0 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] glass-surface transition-[background-color,border-color,box-shadow] duration-500 ease-[var(--ease-out)] hover:border-white/22 hover:bg-surface/72 hover:shadow-[0_18px_44px_-18px_rgb(0_0_0/0.6),inset_0_1px_0_0_rgb(255_255_255/0.12)]">
                   <a
                     data-blog-copy
                     href={`/blog/${slug}`}
@@ -79,7 +79,7 @@ const hasBilingual = posts.some((p) => p.secondary)
                     <div class="flex items-baseline justify-between gap-3">
                       <h2
                         data-card-title
-                        class="min-w-0 font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora"
+                        class="min-w-0 font-mono text-lg font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-out)] group-hover:text-aurora"
                       >
                         <Localized en={en?.data.title ?? primary.data.title} zh={zh?.data.title ?? primary.data.title} />
                       </h2>

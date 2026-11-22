@@ -1,14 +1,15 @@
 // Adapted from Motion Primitives (MIT). See THIRD_PARTY_NOTICES.md.
 'use client';
 import { cn } from '@/lib/utils';
-import { AnimatePresence, type Transition, motion } from 'motion/react';
+import { type Transition, motion } from 'motion/react';
 import {
   Children,
   cloneElement,
   type ReactElement,
   useEffect,
-  useState,
   useId,
+  useRef,
+  useState,
 } from 'react';
 
 export type AnimatedBackgroundProps = {
@@ -34,23 +35,31 @@ export function AnimatedBackground({
 }: AnimatedBackgroundProps) {
   const [activeId, setActiveId] = useState<string | null>(defaultValue ?? null);
   const uniqueId = useId();
+  const controlled = value !== undefined;
+  const resolvedId = controlled ? value : activeId;
+  const hasMatch = Children.toArray(children).some(
+    (child: any) => child?.props?.['data-id'] === resolvedId,
+  );
+  const hadMatchRef = useRef(hasMatch);
+
+  useEffect(() => {
+    hadMatchRef.current = hasMatch;
+  }, [hasMatch]);
 
   const handleSetActiveId = (id: string | null) => {
-    setActiveId(id);
-
-    if (onValueChange) {
-      onValueChange(id);
-    }
+    if (!controlled) setActiveId(id);
+    onValueChange?.(id);
   };
 
   useEffect(() => {
-    if (defaultValue !== undefined) {
+    if (!controlled && defaultValue !== undefined) {
       setActiveId(defaultValue);
     }
-  }, [defaultValue]);
+  }, [controlled, defaultValue]);
 
   return Children.map(children, (child: any, index) => {
     const id = child.props['data-id'];
+    const isActive = resolvedId === id;
 
     const interactionProps = enableHover
       ? {
@@ -69,28 +78,22 @@ export function AnimatedBackground({
       {
         key: index,
         className: cn('relative inline-flex', child.props.className),
-        'data-checked': (value ?? activeId) === id ? 'true' : 'false',
+        'data-checked': isActive ? 'true' : 'false',
         ...interactionProps,
       },
       <>
-        <AnimatePresence initial={false}>
-          {(value ?? activeId) === id && (
-            <motion.div
-              data-nav-pill
-              aria-hidden='true'
-              layoutId={`background-${uniqueId}`}
-              className={cn('absolute inset-0', className)}
-              transition={transition}
-              initial={{ opacity: defaultValue ? 1 : 0 }}
-              animate={{
-                opacity: 1,
-              }}
-              exit={{
-                opacity: 0,
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {isActive && (
+          <motion.div
+            data-nav-pill
+            aria-hidden='true'
+            layoutId={`background-${uniqueId}`}
+            style={{ borderRadius: 9999 }}
+            className={cn('absolute inset-0', className)}
+            transition={transition}
+            initial={{ opacity: hadMatchRef.current ? 1 : 0 }}
+            animate={{ opacity: 1 }}
+          />
+        )}
         <span className='relative z-10'>{child.props.children}</span>
       </>
     );

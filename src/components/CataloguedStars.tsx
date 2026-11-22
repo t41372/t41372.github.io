@@ -9,7 +9,9 @@ export default function CataloguedStars() {
     const canvas = canvasRef.current!
     const abort = new AbortController()
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
-    const interval = matchMedia('(pointer: coarse)').matches ? 50 : 33
+    // Subtract half a vsync (~4ms) so 30fps (33.3ms) and 20fps (50ms) cleanly
+    // lock onto 60Hz/120Hz display ticks instead of jittering across frames.
+    const interval = matchMedia('(pointer: coarse)').matches ? 46 : 29
     let catalog: Float32Array | undefined
     let renderer: ReturnType<typeof createStarRenderer>
     let frame = 0, timer = 0, last = -Infinity

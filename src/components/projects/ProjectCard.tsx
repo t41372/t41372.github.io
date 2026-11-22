@@ -13,12 +13,15 @@ type Language = 'en' | 'zh'
 
 const L = ({ t }: { t: Text }) => <Localized en={t.en} zh={t.zh} />
 const surface =
-  'gap-0 rounded-2xl border-white/10 bg-surface/50 py-0 shadow-none glass-surface transition-colors hover:border-white/20 hover:bg-surface/70'
-const textLink = 'inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground'
+  'group/card gap-0 rounded-2xl border-white/10 bg-surface/50 py-0 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] glass-surface transition-[background-color,border-color,box-shadow] duration-500 ease-[var(--ease-out)] hover:border-white/22 hover:bg-surface/72 hover:shadow-[0_20px_50px_-20px_rgb(0_0_0/0.65),inset_0_1px_0_0_rgb(255_255_255/0.12)]'
+const textLink =
+  'group/link inline-flex items-center gap-1 text-sm text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:text-foreground'
+const linkArrow =
+  'transition-transform duration-300 ease-[var(--ease-out)] group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 motion-reduce:transform-none'
 const button =
-  'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-colors'
+  'group/btn inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-[color,background-color,border-color,box-shadow,transform] duration-300 ease-[var(--ease-out)] active:scale-[0.97] motion-reduce:transform-none'
 
-function Img({ picture, alt, altLang, sizes, copy, eager, className }: {
+function Img({ picture, alt, altLang, sizes, copy, eager, fetchPriority, className }: {
   picture: Picture
   alt: string
   /** language of `alt`, so screen readers use the right voice */
@@ -26,6 +29,7 @@ function Img({ picture, alt, altLang, sizes, copy, eager, className }: {
   sizes: string
   copy?: Language
   eager?: boolean
+  fetchPriority?: 'high' | 'low'
   className?: string
 }) {
   return (
@@ -37,6 +41,7 @@ function Img({ picture, alt, altLang, sizes, copy, eager, className }: {
       height={picture.height}
       alt={alt}
       loading={eager ? 'eager' : 'lazy'}
+      fetchPriority={fetchPriority}
       decoding="async"
       data-ui-copy={copy}
       lang={altLang === 'zh' ? 'zh-Hans' : 'en'}
@@ -49,14 +54,18 @@ const sizes = '(min-width: 1152px) 540px, (min-width: 768px) 46vw, 100vw'
 
 /** A screenshot. Localized pairs render both images, lazily, so CSS shows
  * the UI language's copy and the hidden one never downloads. */
-function ShotImage({ shot, language, eager }: { shot: ShotView; language: Language; eager?: boolean }) {
-  const img = cn('block h-full w-full', shot.frame === 'paper' ? 'object-contain' : 'object-cover object-top')
-  if (!shot.zh) return <Img picture={shot.img} alt={shot.alt[language]} altLang={language} sizes={sizes} eager={eager} className={img} />
+function ShotImage({ shot, language, eager, lowPriority }: { shot: ShotView; language: Language; eager?: boolean; lowPriority?: boolean }) {
+  const img = cn(
+    'block h-full w-full transition-transform duration-700 ease-[var(--ease-out)] group-hover/card:scale-[1.02] motion-reduce:transition-none motion-reduce:transform-none',
+    shot.frame === 'paper' ? 'object-contain' : 'object-cover object-top',
+  )
+  const fetchPriority = eager ? 'high' : lowPriority ? 'low' : undefined
+  if (!shot.zh) return <Img picture={shot.img} alt={shot.alt[language]} altLang={language} sizes={sizes} eager={eager} fetchPriority={fetchPriority} className={img} />
   // Paired copies stay lazy: an eager hidden twin would still download.
   return (
     <>
-      <Img picture={shot.img} alt={shot.alt.en} altLang="en" sizes={sizes} copy="en" className={img} />
-      <Img picture={shot.zh} alt={shot.alt.zh} altLang="zh" sizes={sizes} copy="zh" className={img} />
+      <Img picture={shot.img} alt={shot.alt.en} altLang="en" sizes={sizes} copy="en" fetchPriority={lowPriority ? 'low' : undefined} className={img} />
+      <Img picture={shot.zh} alt={shot.alt.zh} altLang="zh" sizes={sizes} copy="zh" fetchPriority={lowPriority ? 'low' : undefined} className={img} />
     </>
   )
 }
@@ -64,7 +73,7 @@ function ShotImage({ shot, language, eager }: { shot: ShotView; language: Langua
 // At either end the script sets aria-disabled instead of disabling: a
 // disabled (or hidden) button would drop keyboard focus to <body>.
 const pager =
-  'absolute top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-background/70 text-foreground opacity-0 backdrop-blur-sm transition-opacity group-hover/gallery:opacity-100 focus-visible:opacity-100 aria-disabled:cursor-default aria-disabled:text-foreground/25'
+  'absolute top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-background/80 text-foreground opacity-0 transition-[opacity,transform,background-color,border-color,color] duration-300 ease-[var(--ease-out)] hover:border-white/30 hover:bg-background/95 active:scale-92 motion-reduce:transform-none group-hover/gallery:opacity-100 group-hover/gallery:backdrop-blur-sm focus-visible:opacity-100 focus-visible:backdrop-blur-sm aria-disabled:pointer-events-none aria-disabled:cursor-default aria-disabled:text-foreground/25'
 
 /**
  * One screenshot in a frame, or several as a swipeable strip (CSS scroll
@@ -98,23 +107,30 @@ function Gallery({ project, language, priority }: { project: ProjectView; langua
       >
         {shots.map((shot, i) => (
           <div key={i} className="h-full w-full shrink-0 snap-start" role="group" aria-label={`${i + 1} / ${shots.length}`}>
-            <ShotImage shot={shot} language={language} eager={priority && i === 0} />
+            <ShotImage shot={shot} language={language} eager={priority && i === 0} lowPriority={i > 0} />
           </div>
         ))}
       </div>
-      <button type="button" data-gallery-prev className={cn(pager, 'left-2')}>
+      <button type="button" data-gallery-prev aria-disabled="true" className={cn(pager, 'left-2')}>
         <ChevronLeft size={16} aria-hidden />
         <span className="sr-only"><Localized en="Previous screenshot" zh="上一张截图" /></span>
       </button>
-      <button type="button" data-gallery-next className={cn(pager, 'right-2')}>
+      <button type="button" data-gallery-next aria-disabled="false" className={cn(pager, 'right-2')}>
         <ChevronRight size={16} aria-hidden />
         <span className="sr-only"><Localized en="Next screenshot" zh="下一张截图" /></span>
       </button>
       <div className="absolute inset-x-0 bottom-0.5 flex justify-center">
         {shots.map((_, i) => (
           // 24 px hit area around a 6 px dot (WCAG 2.5.8 target size)
-          <button key={i} type="button" data-gallery-dot className="group/dot p-[9px]">
-            <span className="block size-1.5 rounded-full bg-white/35 shadow-[0_0_2px_rgb(0_0_0/0.6)] transition-colors group-hover/dot:bg-white/70 group-data-[active]/dot:bg-white" />
+          <button
+            key={i}
+            type="button"
+            data-gallery-dot
+            data-active={i === 0 ? '' : undefined}
+            aria-current={i === 0 ? 'true' : 'false'}
+            className="group/dot p-[9px]"
+          >
+            <span className="block h-1.5 w-1.5 rounded-full bg-white/35 shadow-[0_0_2px_rgb(0_0_0/0.6)] transition-[width,background-color] duration-400 ease-[var(--ease-out)] motion-reduce:transition-colors group-hover/dot:bg-white/75 group-data-[active]/dot:w-4 group-data-[active]/dot:bg-white" />
             <span className="sr-only"><Localized en={`Screenshot ${i + 1}`} zh={`第 ${i + 1} 张截图`} /></span>
           </button>
         ))}
@@ -168,23 +184,39 @@ function StatItem({ stat, repo }: { stat: Stat; repo: string }) {
       : stat.live === 'stars' ? formatStars(live)
         : stat.live === 'rank' ? formatRank(live)
           : formatFloor(live)
-  // A live stat without a safe floor stays hidden until (unless) it loads.
-  if (!value) return null
+  // A live stat without a safe floor stays visually and semantically hidden
+  // until (unless) it loads, while reserving its line box so arrival after a
+  // page transition never shifts the card grid downward.
+  if (!value && !stat.live) return null
+  const pending = !value
+  const display = value ?? '#0,000'
   if (stat.label.en.includes('{value}')) {
     return (
-      <div>
+      <div
+        aria-hidden={pending || undefined}
+        className={cn(
+          'transition-opacity duration-700 ease-[var(--ease-out)]',
+          pending ? 'invisible pointer-events-none select-none opacity-0' : 'opacity-100',
+        )}
+      >
         <dt className="sr-only"><Localized en="GitHub rank" zh="GitHub 排名" /></dt>
         <dd className="text-xs text-muted">
-          <span data-ui-copy="en" lang="en">{sentence(stat.label.en, value)}</span>
-          <span data-ui-copy="zh" lang="zh-Hans">{sentence(stat.label.zh, value)}</span>
+          <span data-ui-copy="en" lang="en">{sentence(stat.label.en, display)}</span>
+          <span data-ui-copy="zh" lang="zh-Hans">{sentence(stat.label.zh, display)}</span>
         </dd>
       </div>
     )
   }
   return (
-    <div className="flex flex-row-reverse items-baseline justify-end gap-1.5">
+    <div
+      aria-hidden={pending || undefined}
+      className={cn(
+        'flex flex-row-reverse items-baseline justify-end gap-1.5 transition-opacity duration-700 ease-[var(--ease-out)]',
+        pending ? 'invisible pointer-events-none select-none opacity-0' : 'opacity-100',
+      )}
+    >
       <dt className="text-xs text-muted"><L t={stat.label} /></dt>
-      <dd className={strong}>{value}</dd>
+      <dd className={strong}>{display}</dd>
     </div>
   )
 }
@@ -237,14 +269,14 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
   const language = useUiLanguage()
   const [open, setOpen] = useState(false)
   const [ready, setReady] = useState(false)
+  const { shots, demo } = project
   useEffect(() => {
+    if (!demo) return
     setReady(true)
     const close = () => setOpen(false)
     document.addEventListener('astro:before-preparation', close)
     return () => document.removeEventListener('astro:before-preparation', close)
-  }, [])
-
-  const { shots, demo } = project
+  }, [demo])
   const repoUrl = `https://github.com/${project.repo}`
   const actions = (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -254,10 +286,10 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
           href={project.action.href}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn(button, 'bg-foreground font-medium text-background hover:bg-foreground/85')}
+          className={cn(button, 'bg-foreground font-medium text-background shadow-[0_2px_12px_rgb(255_255_255/0.12)] hover:bg-foreground/90 hover:shadow-[0_4px_18px_rgb(255_255_255/0.18)]')}
         >
           <L t={project.action.label} />
-          <ArrowUpRight size={14} aria-hidden />
+          <ArrowUpRight size={14} aria-hidden className="transition-transform duration-300 ease-[var(--ease-out)] group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 motion-reduce:transform-none" />
         </a>
       )}
       {/* Server-rendered as a plain link to the video (works without JS, no
@@ -265,13 +297,13 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
       {demo &&
         (ready ? (
           <CenterMorphModalTrigger>
-            <button type="button" className={cn(button, 'border border-white/15 text-foreground hover:bg-white/5')}>
-              <Play size={12} aria-hidden />
+            <button type="button" className={cn(button, 'border border-white/15 text-foreground hover:border-white/28 hover:bg-white/[0.06]')}>
+              <Play size={12} aria-hidden className="transition-transform duration-300 ease-[var(--ease-out)] group-hover/btn:scale-110 motion-reduce:transform-none" />
               <Localized en="Watch demo" zh="观看演示" />
             </button>
           </CenterMorphModalTrigger>
         ) : (
-          <a href={demo.src} target="_blank" rel="noopener" data-astro-prefetch="false" className={cn(button, 'border border-white/15 text-foreground hover:bg-white/5')}>
+          <a href={demo.src} target="_blank" rel="noopener" data-astro-prefetch="false" className={cn(button, 'border border-white/15 text-foreground hover:border-white/28 hover:bg-white/[0.06]')}>
             <Play size={12} aria-hidden />
             <Localized en="Watch demo" zh="观看演示" />
           </a>
@@ -279,12 +311,12 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
       {project.links?.map((link) => (
         <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className={textLink}>
           <L t={link.label} />
-          <ArrowUpRight size={14} aria-hidden />
+          <ArrowUpRight size={14} aria-hidden className={linkArrow} />
         </a>
       ))}
       <a href={repoUrl} target="_blank" rel="noopener noreferrer" className={textLink}>
         GitHub
-        <ArrowUpRight size={14} aria-hidden />
+        <ArrowUpRight size={14} aria-hidden className={linkArrow} />
       </a>
     </div>
   )
@@ -321,8 +353,8 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
       <CenterMorphModalContent
         ariaLabel={project.title}
         closeButtonLabel={language === 'zh' ? `关闭 ${project.title}` : `Close ${project.title}`}
-        className="max-w-3xl border-white/15 bg-surface"
-        backdropClassName="bg-background/60"
+        className="max-w-3xl border-white/12 bg-surface/90"
+        backdropClassName="bg-background-deep/75"
       >
         <div className="p-5 sm:p-8">
           <h2 className="pr-10 font-mono text-xl font-semibold text-foreground">{project.title}</h2>
@@ -336,12 +368,12 @@ export default function ProjectCard({ project, priority, tagline, stack, childre
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href={repoUrl} target="_blank" rel="noopener noreferrer" className={textLink}>
               GitHub
-              <ArrowUpRight size={14} aria-hidden />
+              <ArrowUpRight size={14} aria-hidden className={linkArrow} />
             </a>
             {project.action && (
               <a href={project.action.href} target="_blank" rel="noopener noreferrer" className={textLink}>
                 <L t={project.action.label} />
-                <ArrowUpRight size={14} aria-hidden />
+                <ArrowUpRight size={14} aria-hidden className={linkArrow} />
               </a>
             )}
           </div>

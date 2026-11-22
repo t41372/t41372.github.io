@@ -76,10 +76,10 @@ const exhibits = [
               data-astro-reload={x.current ? undefined : true}
               target={x.external ? '_blank' : undefined}
               rel={x.external ? 'noopener noreferrer' : undefined}
-              class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 glass-surface transition-colors duration-150 hover:border-aurora/40 hover:bg-surface/70"
+              class="group flex flex-col gap-2 rounded-2xl border border-border-subtle/70 bg-surface/50 p-6 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.04)] glass-surface transition-[background-color,border-color,box-shadow] duration-500 ease-[var(--ease-out)] hover:border-aurora/40 hover:bg-surface/72 hover:shadow-[0_18px_44px_-18px_rgb(0_0_0/0.6),inset_0_1px_0_0_rgb(255_255_255/0.12)]"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 class="font-mono text-lg font-semibold text-foreground transition-colors group-hover:text-aurora">
+                <h2 class="font-mono text-lg font-semibold text-foreground transition-colors duration-300 ease-[var(--ease-out)] group-hover:text-aurora">
                   <Localized en={x.name} zh={x.nameZh} />
                 </h2>
                 <span class="font-mono text-xs text-muted-dark"><Localized en={x.era} zh={x.eraZh ?? x.era} /></span>
@@ -90,7 +90,7 @@ const exhibits = [
                 <span
                   class:list={[
                     'font-mono text-xs',
-                    x.current ? 'text-aurora' : 'text-muted transition-colors group-hover:text-aurora',
+                    x.current ? 'text-aurora' : 'text-muted transition-[color,transform] duration-300 ease-[var(--ease-out)] group-hover:translate-x-1 group-hover:text-aurora motion-reduce:transform-none',
                   ]}
                 >
                   <Localized en={x.cta} zh={x.ctaZh} />

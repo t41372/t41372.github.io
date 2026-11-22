@@ -153,7 +153,7 @@ import AsciiSmoke from './AsciiSmoke'
      GSAP's own docs). Non-supporting browsers (Firefox stable, Safari <26)
      simply show the settled rest composition — the designed final state. -->
 <style is:global>
-  @supports (animation-timeline: view()) {
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
     /* 2.5D settle: each layer starts sunken by its depth and rises to the
        footer-aligned rest composition while the footer enters the viewport,
        reaching rest (translate 0) exactly at max scroll — the timeline
@@ -244,6 +244,7 @@ import AsciiSmoke from './AsciiSmoke'
     // height mark sit on the chimney mouth (the smoke component emits from
     // there, leaving 7% below so blobs aren't clipped flat).
     // preserveAspectRatio="xMidYMax slice": centered horizontally, bottom-aligned.
+    let prevKey = ''
     const layout = () => {
       const sect = section.getBoundingClientRect()
       const r = svg.getBoundingClientRect()
@@ -252,13 +253,20 @@ import AsciiSmoke from './AsciiSmoke'
       const my = r.top - sect.top + r.height - (SCENE_H - MOUTH.y) * scale
       const w = SMOKE.w * scale
       const h = SMOKE.h * scale
+      const left = mx - w / 2
+      const top = my - h * 0.93
+      const vdepth = Math.round(NEAR_DEPTH * scale)
+      const key = `${w.toFixed(1)}:${h.toFixed(1)}:${left.toFixed(1)}:${top.toFixed(1)}:${vdepth}`
+      if (key === prevKey) return
+      prevKey = key
       smokeWrap.style.width = `${w}px`
       smokeWrap.style.height = `${h}px`
-      smokeWrap.style.left = `${mx - w / 2}px`
-      smokeWrap.style.top = `${my - h * 0.93}px`
+      smokeWrap.style.left = `${left}px`
+      smokeWrap.style.top = `${top}px`
       // the smoke's settle animation shifts it with the cabin's layer; its
       // depth must be in RENDERED px (scene units × current svg scale)
-      smokeWrap.style.setProperty('--vdepth', `${Math.round(NEAR_DEPTH * scale)}px`)
+      smokeWrap.style.setProperty('--vdepth', `${vdepth}px`)
+      if (w > 0 && h > 0) smokeWrap.dataset.anchored = ''
     }
 
     layout()
@@ -274,6 +282,8 @@ import AsciiSmoke from './AsciiSmoke'
     }
   }
 
-  // fires on initial load AND after every Astro client navigation
+  // Anchor immediately once parsed (before window.load), and re-run after
+  // every Astro client navigation.
+  setup()
   document.addEventListener('astro:page-load', setup)
 </script>

@@ -23,15 +23,17 @@
 
   const apply = doc => {
     const root = doc.documentElement
-    root.dataset.uiLang = language
-    root.lang = root.dataset.contentLang || (language === 'zh' ? 'zh-Hans' : 'en')
+    if (root.dataset.uiLang !== language) root.dataset.uiLang = language
+    const nextLang = root.dataset.contentLang || (language === 'zh' ? 'zh-Hans' : 'en')
+    if (root.lang !== nextLang) root.lang = nextLang
     for (const link of doc.querySelectorAll('a[data-bilingual]')) {
       const href = link.getAttribute('data-href-' + language)
-      if (href) link.setAttribute('href', href)
+      if (href && link.getAttribute('href') !== href) link.setAttribute('href', href)
     }
     for (const button of doc.querySelectorAll('[data-blog-lang-toggle] button[data-lang]')) {
       const on = button.dataset.lang === language
-      button.setAttribute('aria-pressed', String(on))
+      const pressed = String(on)
+      if (button.getAttribute('aria-pressed') !== pressed) button.setAttribute('aria-pressed', pressed)
       button.classList.toggle('text-foreground', on)
       button.classList.toggle('text-muted', !on)
     }

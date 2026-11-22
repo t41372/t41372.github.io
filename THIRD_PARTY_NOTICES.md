@@ -91,7 +91,7 @@ Source: [beUI Center Morph Modal](https://beui.dev/components/motion/center-morp
 
 Retrieved source SHA-256: `b74589ea5aff31a332312dcc89b3e78a49772751bb251a8ad206a06513c1c95e`
 
-Local changes: Registry source, ease and PresenceGate included. Source placed under components/vendor. Site wrappers supply content and styling; upstream motion and focus lifecycle retained. The scrolling layer centers with `align-items: safe center` so a dialog taller than the viewport scrolls from its top instead of clipping it.
+Local changes: Registry source, ease and PresenceGate included. Source placed under components/vendor. Site wrappers supply content and styling; upstream presence and focus lifecycle retained, while the clip-path pinhole unfold and drop-shadow filter were replaced with compositor-only opacity/scale/translate transitions matching the site's easing tokens. The scrolling layer centers with `align-items: safe center` so a dialog taller than the viewport scrolls from its top instead of clipping it.
 
 MIT License
 

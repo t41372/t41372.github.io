@@ -1,5 +1,7 @@
 "use client";
-// beui.dev/components/motion/center-morph-modal
+// Adapted from beui.dev/components/motion/center-morph-modal (MIT).
+// Replaced clip-path pinhole unfold + filter drop-shadow with compositor-only
+// opacity/scale/translate transitions matching the site's easing tokens.
 
 import { X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -50,8 +52,8 @@ export interface CenterMorphModalProps {
 }
 
 /**
- * A modal whose full-size surface unfolds outward from its exact center.
- * Supports controlled and uncontrolled state through composable primitives.
+ * Accessible modal dialog with compositor-driven enter/exit motion, focus
+ * containment, Escape/backdrop dismissal, and PresenceGate exit release.
  */
 export function CenterMorphModal({
   children,
@@ -167,18 +169,7 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-const CENTER_FOLDED_CLIP =
-  "inset(48% 48% 48% 48% round 30px)";
-const CENTER_OPEN_CLIP = "inset(0% 0% 0% 0% round 30px)";
-
-// Complex clip-path strings can snap when a spring resolves its final distance.
-// Keep the radius constant so the whole duration reads as surface unfolding,
-// rather than finishing early and spending its last frames rounding corners.
-const CENTER_UNFOLD_EASE = [0.2, 0, 0.2, 1] as const;
-const CENTER_UNFOLD_TRANSITION = {
-  duration: 0.43,
-  ease: CENTER_UNFOLD_EASE,
-} as const;
+const EXIT_EASE = [0.32, 0, 0.67, 0] as const;
 
 function getFocusableElements(root: HTMLElement | null) {
   if (!root) return [];
@@ -198,6 +189,7 @@ export function CenterMorphModalContent({
   backdropClassName,
 }: CenterMorphModalContentProps) {
   const context = useCenterMorphModalContext("CenterMorphModalContent");
+  const { open, setOpen, triggerId, contentId } = context;
   const reduce = useReducedMotion() ?? false;
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -205,10 +197,16 @@ export function CenterMorphModalContent({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!context.open) return;
+    if (!open) return;
 
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
     const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
 
     const focusFrame = requestAnimationFrame(() => {
       const [firstFocusable] = getFocusableElements(panelRef.current);
@@ -218,7 +216,7 @@ export function CenterMorphModalContent({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && dismissible) {
         event.preventDefault();
-        context.setOpen(false);
+        setOpen(false);
         return;
       }
 
@@ -246,15 +244,16 @@ export function CenterMorphModalContent({
       cancelAnimationFrame(focusFrame);
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
-      document.getElementById(context.triggerId)?.focus();
+      document.body.style.paddingRight = previousPaddingRight;
+      document.getElementById(triggerId)?.focus();
     };
-  }, [context, dismissible]);
+  }, [open, setOpen, triggerId, dismissible]);
 
   if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
-      {context.open ? (
+      {open ? (
         <PresenceGate>
           {({ isPresent, gate }) => (
             <>
@@ -264,34 +263,39 @@ export function CenterMorphModalContent({
                 tabIndex={-1}
                 disabled={!dismissible}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                {...gate}
-                transition={{
-                  duration: reduce ? 0.1 : 0.28,
-                  ease: EASE_OUT,
+                animate={{
+                  opacity: 1,
+                  transition: {
+                    duration: reduce ? 0.14 : 0.44,
+                    ease: EASE_OUT,
+                  },
                 }}
-                onClick={() => context.setOpen(false)}
+                exit={{
+                  opacity: 0,
+                  transition: {
+                    duration: reduce ? 0.12 : 0.28,
+                    ease: EXIT_EASE,
+                  },
+                }}
+                {...gate}
+                onClick={() => setOpen(false)}
                 className={cn(
-                  "pointer-events-auto fixed inset-0 z-[100] h-full w-full cursor-default bg-background/10 backdrop-blur-sm",
+                  "pointer-events-auto fixed inset-0 z-[100] h-full w-full cursor-default overflow-hidden overscroll-contain bg-background-deep/75 backdrop-blur-md",
                   backdropClassName,
                 )}
               />
 
               {/* `inset-4` rather than `inset-0 p-4`: same content box, but the
                   layer stays off the viewport edges. It never takes pointer
-                  events, so it carries `inert` alone. See
-                  tests/fixed-overlay-edge-sampling.test.tsx. */}
+                  events, so it carries `inert` alone. */}
               <div
                 inert={!isPresent}
-                className="pointer-events-none fixed inset-4 z-[100] flex items-center-safe justify-center overflow-y-auto drop-shadow-2xl"
+                className="pointer-events-none fixed inset-4 z-[100] flex items-center-safe justify-center overflow-y-auto overscroll-contain"
               >
-                {/* Drop-shadow reads the clipped child's alpha, so depth follows the
-                    unfolding silhouette without introducing another panel layer. */}
                 <div className="flex w-full flex-col items-center py-8">
                   <motion.div
                     ref={panelRef}
-                    id={context.contentId}
+                    id={contentId}
                     role="dialog"
                     aria-modal="true"
                     aria-label={ariaLabel}
@@ -299,62 +303,52 @@ export function CenterMorphModalContent({
                     tabIndex={-1}
                     initial={
                       reduce
-                        ? { opacity: 0, clipPath: CENTER_OPEN_CLIP }
-                        : { opacity: 1, clipPath: CENTER_FOLDED_CLIP }
+                        ? { opacity: 0 }
+                        : { opacity: 0, scale: 0.945, y: 18 }
                     }
-                    animate={{
-                      opacity: 1,
-                      clipPath: CENTER_OPEN_CLIP,
-                    }}
+                    animate={
+                      reduce
+                        ? {
+                            opacity: 1,
+                            transition: { duration: 0.16, ease: EASE_OUT },
+                          }
+                        : {
+                            opacity: 1,
+                            scale: 1,
+                            y: 0,
+                            transition: { duration: 0.48, ease: EASE_OUT },
+                          }
+                    }
                     exit={
                       reduce
                         ? {
                             opacity: 0,
-                            clipPath: CENTER_OPEN_CLIP,
+                            transition: { duration: 0.12, ease: EXIT_EASE },
                           }
                         : {
-                            opacity: 1,
-                            clipPath: CENTER_FOLDED_CLIP,
+                            opacity: 0,
+                            scale: 0.965,
+                            y: 10,
+                            transition: { duration: 0.28, ease: EXIT_EASE },
                           }
                     }
                     {...gate}
-                    transition={
-                      reduce
-                        ? { duration: 0.14, ease: EASE_OUT }
-                        : CENTER_UNFOLD_TRANSITION
-                    }
                     className={cn(
-                      "pointer-events-auto relative w-full max-w-[26rem] origin-center overflow-hidden rounded-[30px] border border-border bg-background will-change-[clip-path]",
+                      "pointer-events-auto relative w-full max-w-[26rem] origin-center overflow-hidden rounded-2xl border border-white/14 bg-surface/90 shadow-[0_32px_80px_-16px_rgb(0_0_0/0.78),inset_0_1px_0_0_rgb(255_255_255/0.14)] glass-surface",
                       className,
                     )}
                   >
                     {children}
 
                     {showCloseButton ? (
-                      <motion.button
+                      <button
                         type="button"
                         aria-label={closeButtonLabel}
-                        onClick={() => context.setOpen(false)}
-                        initial={
-                          reduce
-                            ? { opacity: 0 }
-                            : { opacity: 0, scale: 0.8 }
-                        }
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{
-                          opacity: 0,
-                          scale: reduce ? 1 : 0.88,
-                          transition: { duration: 0.1, ease: EASE_OUT },
-                        }}
-                        transition={{
-                          delay: reduce ? 0 : 0.16,
-                          duration: reduce ? 0.12 : 0.2,
-                          ease: EASE_OUT,
-                        }}
-                        className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-foreground/[0.05] text-muted-foreground transition-colors hover:bg-foreground/[0.08] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => setOpen(false)}
+                        className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition-[color,background-color,transform] duration-300 ease-[var(--ease-out)] hover:bg-white/[0.13] hover:text-foreground active:scale-92 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
-                      </motion.button>
+                      </button>
                     ) : null}
                   </motion.div>
                 </div>

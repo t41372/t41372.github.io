@@ -8,6 +8,9 @@ html[data-ui-lang="zh"] [data-ui-copy="zh"] { display: inline; }
 /* Localized screenshot pairs fill their frame; inline would add a baseline gap. */
 html[data-ui-lang="zh"] img[data-ui-copy="zh"] { display: block; }
 html[data-language-redirect] body { visibility: hidden; }
+/* Hide SSR-settled hero copy before first paint when JS will play the authored
+   typewriter intro; removed synchronously in HeroIntro before first commit. */
+html[data-hero-boot] [data-hero-intro] { visibility: hidden; }
 
 @theme {
   /* ---------- Night sky / aurora palette ---------- */
@@ -33,8 +36,8 @@ html[data-language-redirect] body { visibility: hidden; }
   --color-aurora-pink: oklch(0.72 0.16 356);
 
   /* ---------- fonts ---------- */
-  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: 'Geist Variable', 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', 'Geist Mono Fallback', ui-monospace, 'SFMono-Regular', monospace;
 }
 
 :root {
@@ -42,11 +45,13 @@ html[data-language-redirect] body { visibility: hidden; }
      just gets a touch deeper — reads as sky, never as a scrim. Layer 2 of the
      hero-legibility pair (layer 1 is the aurora's exclusion zone in StarSky).
      em-based so it scales with each line's font size. */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* matches EASE_IN_OUT in lib/ease.ts */
-  --ease-scene: cubic-bezier(0.37, 0, 0.63, 1); /* EASE_SCENE: easeInOutSine */
-  --scene-duration: 420ms; /* SCENE_DURATION_MS */
-  --blog-surface-duration: 420ms; /* BLOG_SURFACE_DURATION_MS */
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* matches EASE_OUT in lib/ease.ts */
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1); /* matches EASE_IN_OUT in lib/ease.ts */
+  --ease-scene: cubic-bezier(0.42, 0, 0.22, 1); /* EASE_SCENE */
+  --scene-duration: 640ms; /* SCENE_DURATION_MS */
+  --blog-surface-duration: 660ms; /* BLOG_SURFACE_DURATION_MS */
+  --ease-drawer: cubic-bezier(0.22, 1, 0.36, 1);
+  --nav-shadow: 0 10px 36px -8px rgb(0 0 0 / 0.45);
   --footer-ground-bleed: env(safe-area-inset-bottom);
   --night-halo:
     0 0 0.08em oklch(0.16 0.04 265 / 0.9),
@@ -64,15 +69,26 @@ html[data-language-redirect] body { visibility: hidden; }
    canvas fades in over it, so "page open" reads as a sky that ignites, not a
    black screen that pops. Also the permanent fallback if WebGL is missing. */
 .sky-fallback {
-  /* mirrors the page's own vertical structure: sky-navy through the viewport,
-     valley-ground black across the bottom overdraw — whichever edge iOS
-     exposes (toolbar lag, rubber-band bounce), it sees the color that belongs
-     there: navy above, ground below. The ENTIRE bottom overdraw (288px, see
-     -bottom-72 in BaseLayout) is solid ground-black — a ramp that only
-     darkened at the very edge left the bounce region navy. */
+  /* mirrors the shader's exact base sky (nTop -> nLow S-curve + milky haze +
+     quadratic radial vignette centered in the viewport, accounting for -top-36
+     / -bottom-72 overdraw) so StarSky's opacity fade-in causes zero brightness
+     shift. Below the viewport edge (calc(100% - 288px)), the 288px bottom
+     overdraw drops into solid ground-black for rubber-band bounce. */
   background:
-    radial-gradient(120% 90% at 50% 50%, transparent 55%, rgb(2 4 10 / 0.4) 100%),
-    linear-gradient(to bottom, rgb(11 19 57), rgb(26 37 84) calc(100% - 460px), rgb(5 7 11) calc(100% - 288px));
+    radial-gradient(
+      72% 56% at 50% calc(50% - 72px),
+      transparent 0%,
+      rgb(2 4 10 / 0.13) 70%,
+      rgb(2 4 10 / 0.26) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(11 19 57) 0px,
+      rgb(13 21 61) 144px,
+      rgb(20 30 75) calc(50% - 72px),
+      rgb(27 39 88) calc(100% - 288px),
+      rgb(5 7 11) calc(100% - 220px)
+    );
 }
 
 /* .hero-lag (the hero text's scroll parallax): a scroll-driven CSS animation.
@@ -139,7 +155,6 @@ html {
   background-image: linear-gradient(to bottom, rgb(11 19 57), rgb(26 37 84) 1200px, rgb(5 7 11) 5800px);
   background-repeat: no-repeat;
   color-scheme: dark;
-  scroll-behavior: smooth;
   /* kill the rubber-band overscroll bounce: without it, bouncing past the
      page bottom exposes the fixed star sky below the black mountains */
   overscroll-behavior-y: none;
@@ -204,27 +219,10 @@ body {
 }
 
 /* ---------- name glitch (ported from the old site's glitch.css, aurora-recolored) ---------- */
-@property --text-glitch-y1 {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 30%;
-}
-@property --text-glitch-y2 {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 35%;
-}
-@property --text-glitch-y3 {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 50%;
-}
-@property --text-glitch-y4 {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 55%;
-}
-
+/* Step-timed polygon slices directly inside glitch-right / glitch-left:
+   avoid registering @property custom properties, which animated on the main
+   thread at 60–120fps forever (forcing per-frame Style Recalc + triple-shadow
+   CPU paint even during the 89% of each second when transform is none). */
 .text-glitch {
   position: relative;
   color: transparent;
@@ -232,19 +230,6 @@ body {
      outlines — drop the inherited night halo here or it stacks three deep
      (base + both pseudos) and reads as a black outline */
   text-shadow: none;
-  --text-glitch-y1: 30%;
-  --text-glitch-y2: 35%;
-  --text-glitch-y3: 50%;
-  --text-glitch-y4: 55%;
-  animation: glitch-slice 0.2s infinite;
-}
-@keyframes glitch-slice {
-  100% {
-    --text-glitch-y1: 10%;
-    --text-glitch-y2: 50%;
-    --text-glitch-y3: 70%;
-    --text-glitch-y4: 95%;
-  }
 }
 .text-glitch::before,
 .text-glitch::after {
@@ -262,74 +247,106 @@ body {
   clip-path: polygon(
     0% 0%,
     100% 0%,
-    100% var(--text-glitch-y1),
-    0% var(--text-glitch-y1),
-    0% var(--text-glitch-y2),
-    100% var(--text-glitch-y2),
-    100% var(--text-glitch-y3),
-    0% var(--text-glitch-y3),
-    0% var(--text-glitch-y4),
-    100% var(--text-glitch-y4),
+    100% 30%,
+    0% 30%,
+    0% 35%,
+    100% 35%,
+    100% 50%,
+    0% 50%,
+    0% 55%,
+    100% 55%,
     100% 100%,
     0% 100%
   );
-  animation: glitch-right var(--text-glitch-time, 1s) infinite;
+  animation: glitch-right var(--text-glitch-time, 2.6s) steps(1, end) infinite;
 }
 /* the glitch pseudos carry the visible glyphs while .text-glitch itself is
-   transparent — keep the night halo on them through both keyframe states, or
+   transparent — keep the night halo on them through all keyframe states, or
    the name would lose its legibility shadow the moment the glitch starts */
 @keyframes glitch-right {
-  0%,
-  10% {
-    transform: translateX(5px);
-    text-shadow: 5px 0 var(--color-aurora-teal), var(--night-halo);
+  0% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 30%, 0% 30%, 0% 35%, 100% 35%, 100% 50%, 0% 50%, 0% 55%, 100% 55%, 100% 100%, 0% 100%);
+    transform: translateX(4px);
+    text-shadow: 4px 0 var(--color-aurora-teal), var(--night-halo);
   }
-  11% {
+  2.6% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 18%, 0% 18%, 0% 42%, 100% 42%, 100% 62%, 0% 62%, 0% 78%, 100% 78%, 100% 100%, 0% 100%);
+    transform: translateX(4px);
+    text-shadow: 4px 0 var(--color-aurora-teal), var(--night-halo);
+  }
+  5.2% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 10%, 0% 10%, 0% 50%, 100% 50%, 100% 70%, 0% 70%, 0% 95%, 100% 95%, 100% 100%, 0% 100%);
+    transform: translateX(4px);
+    text-shadow: 4px 0 var(--color-aurora-teal), var(--night-halo);
+  }
+  7.8% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 30%, 0% 30%, 0% 35%, 100% 35%, 100% 50%, 0% 50%, 0% 55%, 100% 55%, 100% 100%, 0% 100%);
     transform: none;
     text-shadow: var(--night-halo);
   }
 }
 .text-glitch::after {
   clip-path: polygon(
-    0% var(--text-glitch-y1),
-    100% var(--text-glitch-y1),
-    100% var(--text-glitch-y2),
-    0% var(--text-glitch-y2),
-    0% var(--text-glitch-y3),
-    100% var(--text-glitch-y3),
-    100% var(--text-glitch-y4),
-    0% var(--text-glitch-y4)
+    0% 30%,
+    100% 30%,
+    100% 35%,
+    0% 35%,
+    0% 50%,
+    100% 50%,
+    100% 55%,
+    0% 55%
   );
-  animation: glitch-left var(--text-glitch-time, 1s) infinite;
+  animation: glitch-left var(--text-glitch-time, 2.6s) steps(1, end) infinite;
 }
 @keyframes glitch-left {
-  0%,
-  10% {
-    transform: translateX(-5px);
-    text-shadow: -5px 0 var(--color-aurora-pink), var(--night-halo);
+  0% {
+    clip-path: polygon(0% 30%, 100% 30%, 100% 35%, 0% 35%, 0% 50%, 100% 50%, 100% 55%, 0% 55%);
+    transform: translateX(-4px);
+    text-shadow: -4px 0 var(--color-aurora-pink), var(--night-halo);
   }
-  11% {
+  2.6% {
+    clip-path: polygon(0% 18%, 100% 18%, 100% 42%, 0% 42%, 0% 62%, 100% 62%, 0% 78%, 0% 78%);
+    transform: translateX(-4px);
+    text-shadow: -4px 0 var(--color-aurora-pink), var(--night-halo);
+  }
+  5.2% {
+    clip-path: polygon(0% 10%, 100% 10%, 100% 50%, 0% 50%, 0% 70%, 100% 70%, 0% 95%, 0% 95%);
+    transform: translateX(-4px);
+    text-shadow: -4px 0 var(--color-aurora-pink), var(--night-halo);
+  }
+  7.8% {
+    clip-path: polygon(0% 30%, 100% 30%, 100% 35%, 0% 35%, 0% 50%, 100% 50%, 100% 55%, 0% 55%);
     transform: none;
     text-shadow: var(--night-halo);
   }
 }
 
 /* name "selected" flash before glitch kicks in */
+.name-selected,
+.name-hl,
+.fun-text {
+  border-radius: 0.24em;
+  padding-inline: 0.08em;
+  margin-inline: -0.08em;
+  transition:
+    background-color 280ms var(--ease-out),
+    color 280ms var(--ease-out);
+}
 .name-selected {
   background-color: var(--color-aurora-teal);
   color: var(--color-background);
 }
 
 /* ---------- hero "fun stuff" font-iteration (restored from the old site) ---------- */
-@font-face { font-family: 'Cascadia-Code'; src: url('/fonts/CascadiaMono-Regular.otf'); font-display: swap; }
-@font-face { font-family: 'CascadiaMono-Bold'; src: url('/fonts/CascadiaMono-Bold.otf'); font-display: swap; }
-@font-face { font-family: 'CascadiaMonoPL-BoldItalic'; src: url('/fonts/CascadiaMonoPL-BoldItalic.otf'); font-display: swap; }
-@font-face { font-family: 'PlayfairDisplay-BlackItalic'; src: url('/fonts/PlayfairDisplay-BlackItalic.ttf'); font-display: swap; }
-@font-face { font-family: 'PlayfairDisplay-ExtraBold'; src: url('/fonts/PlayfairDisplay-ExtraBold.ttf'); font-display: swap; }
-@font-face { font-family: 'PlayfairDisplay-Italic'; src: url('/fonts/PlayfairDisplay-Italic.ttf'); font-display: swap; }
-@font-face { font-family: 'Roboto-BlackItalic'; src: url('/fonts/Roboto-BlackItalic.ttf'); font-display: swap; }
-@font-face { font-family: 'Roboto-Bold'; src: url('/fonts/Roboto-Bold.ttf'); font-display: swap; }
-@font-face { font-family: 'Roboto-ThinItalic'; src: url('/fonts/Roboto-ThinItalic.ttf'); font-display: swap; }
+@font-face { font-family: 'Cascadia-Code'; src: url('/fonts/CascadiaMono-Regular.woff2') format('woff2'), url('/fonts/CascadiaMono-Regular.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'CascadiaMono-Bold'; src: url('/fonts/CascadiaMono-Bold.woff2') format('woff2'), url('/fonts/CascadiaMono-Bold.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'CascadiaMonoPL-BoldItalic'; src: url('/fonts/CascadiaMonoPL-BoldItalic.woff2') format('woff2'), url('/fonts/CascadiaMonoPL-BoldItalic.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-BlackItalic'; src: url('/fonts/PlayfairDisplay-BlackItalic.woff2') format('woff2'), url('/fonts/PlayfairDisplay-BlackItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-ExtraBold'; src: url('/fonts/PlayfairDisplay-ExtraBold.woff2') format('woff2'), url('/fonts/PlayfairDisplay-ExtraBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'PlayfairDisplay-Italic'; src: url('/fonts/PlayfairDisplay-Italic.woff2') format('woff2'), url('/fonts/PlayfairDisplay-Italic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Roboto-BlackItalic'; src: url('/fonts/Roboto-BlackItalic.woff2') format('woff2'), url('/fonts/Roboto-BlackItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Roboto-Bold'; src: url('/fonts/Roboto-Bold.woff2') format('woff2'), url('/fonts/Roboto-Bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Roboto-ThinItalic'; src: url('/fonts/Roboto-ThinItalic.woff2') format('woff2'), url('/fonts/Roboto-ThinItalic.ttf') format('truetype'); font-display: swap; }
 
 /* name highlight kept UNDER the glitch (bg only, so text-glitch's transparent color wins) */
 .name-hl { background-color: var(--color-aurora-teal); }
@@ -354,22 +371,30 @@ body {
 /* ---------- typing cursor ---------- */
 .type-cursor {
   display: inline-block;
-  width: 0.55em;
+  width: 0.52em;
   height: 1.05em;
-  margin-left: 2px;
+  margin-left: 3px;
+  border-radius: 2px;
   transform: translateY(0.15em);
   background: var(--color-aurora);
-  animation: cursor-blink 1.06s steps(1) infinite;
+  box-shadow: 0 0 12px oklch(0.82 0.19 160 / 0.35);
+  animation: cursor-blink 1.3s ease-in-out infinite;
 }
 @keyframes cursor-blink {
-  50% {
-    opacity: 0;
+  0%,
+  36%,
+  100% {
+    opacity: 1;
+  }
+  56%,
+  80% {
+    opacity: 0.08;
   }
 }
 
 /* ---------- scroll cue ---------- */
 .scroll-line {
-  animation: scroll-cue 2.2s ease-in-out infinite;
+  animation: scroll-cue 3s var(--ease-in-out) infinite;
   transform-origin: top;
 }
 @keyframes scroll-cue {
@@ -389,24 +414,24 @@ body {
 
 /* ---------- ASCII flicker for the valley house ---------- */
 .ascii-flicker {
-  animation: ascii-flicker 4s ease-in-out infinite;
+  animation: ascii-flicker 6s ease-in-out infinite;
 }
 @keyframes ascii-flicker {
   0%,
   100% {
     opacity: 1;
   }
-  92% {
+  91% {
     opacity: 1;
   }
   93% {
-    opacity: 0.7;
+    opacity: 0.82;
   }
-  94% {
+  95% {
     opacity: 1;
   }
-  97% {
-    opacity: 0.85;
+  97.5% {
+    opacity: 0.9;
   }
 }
 
@@ -458,29 +483,51 @@ main, astro-island, [data-astro-transition-persist] {
   animation-duration: var(--scene-duration);
   animation-timing-function: var(--ease-scene);
 }
-::view-transition-group(site-nav) { z-index: 100; }
+/* overflow: clip rounds the group's backdrop-filter to the pill, which also
+   clips the child snapshot's outer ink overflow. Paint the outer drop shadow on
+   the group itself so it stays continuous outside the clipped border-box. */
+::view-transition-group(site-nav) {
+  z-index: 100;
+  border-radius: 9999px;
+  overflow: clip;
+  box-shadow: var(--nav-shadow);
+}
 ::view-transition-old(site-nav) { display: none; }
 ::view-transition-new(site-nav) { animation: none; }
 ::view-transition-group(.page-content) { z-index: 10; }
-/* Backdrop filters live on the group. Fading only its old/new image leaves
-   an invisible glass rectangle blurring the destination until group cleanup. */
+::view-transition-group(.page-glass) {
+  border-radius: 1rem;
+  overflow: clip;
+}
+::view-transition-group(.page-glass-lg) {
+  border-radius: 1.5rem;
+  overflow: clip;
+}
+/* Backdrop filters live on the group. Animating both opacity and individual
+   translate on the group itself keeps its rounded backdrop blur locked to the
+   card border instead of floating above the rising snapshot image. */
 ::view-transition-group(.page-out) {
-  animation: page-copy-out 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: page-copy-out 190ms cubic-bezier(0.32, 0, 0.67, 0) both;
 }
 ::view-transition-group(.page-in) {
-  animation: page-copy-opacity-in 280ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+  animation: page-copy-in 520ms var(--ease-out) 150ms both;
 }
-::view-transition-group(.page-return) { animation-delay: 220ms; }
-::view-transition-old(.page-content) { animation: none; }
-::view-transition-new(.page-content) {
-  animation: page-copy-lift 280ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
-}
-::view-transition-new(.page-return) { animation-delay: 220ms; }
+::view-transition-group(.page-step-1) { animation-delay: 205ms; }
+::view-transition-group(.page-step-2) { animation-delay: 260ms; }
+::view-transition-group(.page-step-3) { animation-delay: 315ms; }
+::view-transition-group(.page-return) { animation-delay: 290ms; }
+::view-transition-old(.page-content),
+::view-transition-new(.page-content) { animation: none; }
 @keyframes page-copy-out { to { opacity: 0; } }
-@keyframes page-copy-opacity-in { from { opacity: 0; } }
-@keyframes page-copy-lift {
-  from { transform: translateY(8px); }
-  to { transform: none; }
+@keyframes page-copy-in {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 ::view-transition-group(blog-surface) {
   z-index: 20;
@@ -500,6 +547,7 @@ html:has([data-blog-article])::view-transition-group(blog-surface) {
 html[data-astro-transition] [data-transition-part="blog-surface"] {
   border-color: transparent !important;
   border-radius: 0 !important;
+  box-shadow: none !important;
   /* Do not capture a halfway-faded hover border. */
   transition: none !important;
 }
@@ -519,17 +567,41 @@ html[data-astro-transition] [data-transition-part="blog-surface"] {
 /* No shared title geometry: line wrapping must not scale/throw a headline
    across the screen. Copy stays at its final size while the material moves. */
 ::view-transition-old(blog-list-copy), ::view-transition-old(blog-article-copy), ::view-transition-old(blog-outgoing-copy) {
-  animation-duration: 140ms;
+  animation-duration: 200ms;
 }
 ::view-transition-new(blog-list-copy) {
-  animation-duration: 260ms;
-  animation-delay: 180ms;
+  animation-duration: 460ms;
+  animation-delay: 240ms;
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: both;
 }
 ::view-transition-new(blog-article-copy) { animation: none; }
 .glass-surface {
-  -webkit-backdrop-filter: blur(16px) saturate(1.12);
-  backdrop-filter: blur(16px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+
+/* Smooth disclosure unfurl for the footer's real-sky note. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports selector(::details-content) {
+    details.sky-disclosure {
+      interpolate-size: allow-keywords;
+    }
+    details.sky-disclosure::details-content {
+      block-size: 0;
+      opacity: 0;
+      overflow: clip;
+      transition:
+        block-size 440ms var(--ease-out),
+        opacity 360ms var(--ease-out),
+        content-visibility 440ms;
+      transition-behavior: allow-discrete;
+    }
+    details.sky-disclosure[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {

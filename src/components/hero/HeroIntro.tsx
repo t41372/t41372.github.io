@@ -1,4 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+
+declare global {
+  interface Window {
+    __heroIntroSeen?: boolean
+  }
+}
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 /**
  * HeroIntro — a 1:1 re-port of the old site's hero typing timeline
@@ -48,20 +56,20 @@ type TechStep = {
   gapAfter?: number
 }
 const TECH_CYCLE: TechStep[] = [
-  { word: 'Java', speed: 120, hold: 1200 },
-  { word: 'C++', speed: 120, hold: 1200 },
-  { word: 'C#', speed: 120, hold: 800 },
-  { word: 'Node.js', speed: 100, hold: 1200 },
-  { word: 'Express.js', speed: 120, hold: 1200 },
-  { word: 'SQLite', speed: 120, hold: 1200, fun: 'step', gapAfter: 2000 },
-  { word: 'HTML', speed: 120, hold: 800 },
-  { word: 'CSS', speed: 80, hold: 1200 },
-  { word: 'JavaScript', speed: 120, hold: 800, fun: 'step' },
-  { word: 'Unity', speed: 100, hold: 800 },
-  { word: 'WinForm', speed: 80, hold: 500 },
-  { word: 'JavaFX', speed: 80, hold: 800 },
-  { word: 'AWS', speed: 80, hold: 500 },
-  { word: 'Brain', speed: 80, hold: 500, append: '🧠', appendHold: 1200, fun: 'animate' },
+  { word: 'Java', speed: 132, hold: 1650 },
+  { word: 'C++', speed: 132, hold: 1600 },
+  { word: 'C#', speed: 132, hold: 1150 },
+  { word: 'Node.js', speed: 112, hold: 1600 },
+  { word: 'Express.js', speed: 132, hold: 1600 },
+  { word: 'SQLite', speed: 132, hold: 1600, fun: 'step', gapAfter: 2200 },
+  { word: 'HTML', speed: 132, hold: 1150 },
+  { word: 'CSS', speed: 92, hold: 1600 },
+  { word: 'JavaScript', speed: 132, hold: 1150, fun: 'step' },
+  { word: 'Unity', speed: 112, hold: 1150 },
+  { word: 'WinForm', speed: 92, hold: 750 },
+  { word: 'JavaFX', speed: 92, hold: 1150 },
+  { word: 'AWS', speed: 92, hold: 750 },
+  { word: 'Brain', speed: 92, hold: 750, append: '🧠', appendHold: 1600, fun: 'animate' },
 ]
 
 export default function HeroIntro() {
@@ -82,7 +90,7 @@ export default function HeroIntro() {
   const ghostRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (started.current) return
     started.current = true
 
@@ -102,8 +110,15 @@ export default function HeroIntro() {
       tech: techRef.current!,
     }
 
-    const skipIntro = introSeen || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // keep the single cursor right after whatever is being typed
+    const putCursor = (node: HTMLElement) => node.after(el.cur)
+
+    const skipIntro =
+      introSeen ||
+      Boolean(window.__heroIntroSeen) ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     introSeen = true
+    window.__heroIntroSeen = true
     const settle = () => {
       el.hello.textContent = 'Hello!'
       el.wave.textContent = ' 👋'
@@ -119,16 +134,42 @@ export default function HeroIntro() {
       el.l2c.textContent = ' with '
       el.tech.textContent = 'LLMs'
       el.cur.style.display = 'none'
+      delete document.documentElement.dataset.heroBoot
     }
     if (skipIntro) {
       settle()
       return
     }
-    // Static HTML is readable without JS; clear only for the first performance.
+    // Static HTML is readable without JS; clear synchronously before first
+    // paint after hydration and park the cursor on line 1 so it never jumps.
     for (const node of [
       el.hello, el.wave, el.this, el.name, el.dot,
       el.l2a, el.sad, el.l2b, el.fun, el.l2c, el.tech,
     ]) node.textContent = ''
+    putCursor(el.hello)
+    delete document.documentElement.dataset.heroBoot
+
+    // Warm the subsetted ~10KB WOFF2 display faces while line 1 is typing so
+    // the 1s "fun stuff" font-iteration sequence renders all 9 faces cleanly
+    // on its very first pass without network lag or late font-swap reflows.
+    const warmFonts = () => {
+      if (!document.fonts?.load) return
+      for (const family of [
+        'Cascadia-Code',
+        'CascadiaMono-Bold',
+        'CascadiaMonoPL-BoldItalic',
+        'PlayfairDisplay-BlackItalic',
+        'PlayfairDisplay-ExtraBold',
+        'PlayfairDisplay-Italic',
+        'Roboto-BlackItalic',
+        'Roboto-Bold',
+        'Roboto-ThinItalic',
+      ]) {
+        void document.fonts.load(`1em "${family}"`, 'fun stuff').catch(() => {})
+      }
+    }
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warmFonts, { timeout: 2000 })
+    else globalThis.setTimeout(warmFonts, 400)
 
     const ac = new AbortController()
     const { signal } = ac
@@ -146,9 +187,6 @@ export default function HeroIntro() {
         }, ms)
         signal.addEventListener('abort', abort, { once: true })
       })
-
-    // keep the single cursor right after whatever is being typed
-    const putCursor = (node: HTMLElement) => node.after(el.cur)
 
     // TypeIt's EXACT lifeLike pace: randomInRange(speed, speed/2) reduces to a
     // uniform draw over [0.5x, 1.5x] of the base speed. Deletes default to
@@ -336,12 +374,12 @@ export default function HeroIntro() {
       const step = (now: number) => {
         const dt = Math.min((now - lastT) / 1000, 0.032)
         lastT = now
-        const K = 180 // stiffness; damping 24 ≈ 0.9 ratio — one soft bounce
-        vel.x += (-K * pos.x - 24 * vel.x) * dt
-        vel.y += (-K * pos.y - 24 * vel.y) * dt
+        const K = 88 // cushioned precision spring; damping 15.5 ≈ silky critical settle
+        vel.x += (-K * pos.x - 15.5 * vel.x) * dt
+        vel.y += (-K * pos.y - 15.5 * vel.y) * dt
         pos.x += vel.x * dt
         pos.y += vel.y * dt
-        if (Math.hypot(pos.x, pos.y) < 0.5 && Math.hypot(vel.x, vel.y) < 8) {
+        if (Math.hypot(pos.x, pos.y) < 0.25 && Math.hypot(vel.x, vel.y) < 4) {
           pos.x = 0
           pos.y = 0
           raf = 0
@@ -459,10 +497,11 @@ export default function HeroIntro() {
       <div
         ref={ghostRef}
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-2xl border border-dashed border-foreground/30 opacity-0 transition-opacity duration-300"
+        className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-2xl border border-dashed border-foreground/30 opacity-0 transition-opacity duration-500 ease-[var(--ease-out)]"
       />
       <div
         ref={dragRef}
+        data-hero-intro
         className="flex cursor-grab touch-pan-y flex-col gap-5 text-left select-none"
       >
         {/* data-aurora-avoid: StarSky measures the INLINE CONTENTS of these two

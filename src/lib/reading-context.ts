@@ -40,17 +40,26 @@ export function initReadingContext() {
     // is captured at full size, and a long page of offscreen cards stalled
     // frames during capture. Offscreen content stays in the root snapshot,
     // where it is invisible anyway. Runs on the live, laid-out document.
-    let index = 0
-    document.querySelectorAll<HTMLElement>('main .glass-surface, [data-page-intro], [data-page-tail]')
-      .forEach(el => {
-        if (el.dataset.transitionPart) return
-        const rect = el.getBoundingClientRect()
-        if (rect.bottom <= 0 || rect.top >= innerHeight) return
-        name(el, `page-${phase}-${index++}`)
-        // A shrinking article passes over neighboring list rows. Reveal them
-        // only near the end of the contraction, once that area is uncovered.
-        el.style.viewTransitionClass = returnReveal ? 'page-content page-in page-return' : `page-content page-${phase}`
-      })
+    // Batch all rect reads before style/attribute writes to avoid O(N^2) reflows.
+    const vh = innerHeight
+    const candidates = [...document.querySelectorAll<HTMLElement>('main .glass-surface, [data-page-intro], [data-page-tail]')]
+      .filter(el => !el.dataset.transitionPart)
+    const visible = candidates.filter(el => {
+      const rect = el.getBoundingClientRect()
+      return rect.bottom > 0 && rect.top < vh
+    })
+    visible.forEach((el, index) => {
+      name(el, `page-${phase}-${index}`)
+      const glass = el.classList.contains('glass-surface')
+        ? (el.hasAttribute('data-blog-article') ? ' page-glass-lg' : ' page-glass')
+        : ''
+      const step = phase === 'in' && !returnReveal && index > 0
+        ? ` page-step-${Math.min(index, 3)}`
+        : ''
+      // A shrinking article passes over neighboring list rows. Reveal them
+      // only near the end of the contraction, once that area is uncovered.
+      el.style.viewTransitionClass = (returnReveal ? 'page-content page-in page-return' : `page-content page-${phase}${step}`) + glass
+    })
   }
   // Browsers hit-test a captured nav as the transition root, even with
   // pointer-events:none on its snapshots. The persistent nav never changes
@@ -140,21 +149,26 @@ export function initReadingContext() {
     // farther down is immediately readable when scrolled into view; no long
     // timer chain and no scroll listener. The new VT copy is live, so these
     // opacity/transform animations also run inside its snapshot.
+    const copyRoot = document.querySelector<HTMLElement>('[data-blog-copy]')
+    if (!copyRoot) return
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
     // Content has its own quiet reading cadence. Only the glass travels from
     // the selected card; copy appears at its final reading position.
-    const lead = pending?.shared ? BLOG_SURFACE_DURATION_MS - 60 : 140
-    const blocks = [...document.querySelectorAll<HTMLElement>(
-      '[data-blog-copy] > header > *, [data-blog-copy] > .prose-night > *, [data-blog-copy] > footer',
-    )].filter(el => {
+    const lead = pending?.shared ? BLOG_SURFACE_DURATION_MS - 240 : 180
+    const vh = innerHeight
+    const blocks: HTMLElement[] = []
+    for (const el of copyRoot.querySelectorAll<HTMLElement>(
+      ':scope > header > *, :scope > .prose-night > *, :scope > footer',
+    )) {
       const rect = el.getBoundingClientRect()
-      return rect.bottom > 0 && rect.top < innerHeight
-    })
+      if (rect.top >= vh) break
+      if (rect.bottom > 0) blocks.push(el)
+    }
     const entering = blocks.map((el, index) => {
       const animation = el.animate([
-        { opacity: 0, transform: reduce ? 'none' : 'translateY(8px)' },
+        { opacity: 0, transform: reduce ? 'none' : 'translateY(12px)' },
         { opacity: 1, transform: 'none' },
-      ], { duration: reduce ? 150 : 600, delay: reduce ? 0 : lead + Math.min(index, 7) * 60, easing: EASE_OUT_CSS, fill: 'both' })
+      ], { duration: reduce ? 160 : 780, delay: reduce ? 0 : lead + Math.min(index, 7) * 72, easing: EASE_OUT_CSS, fill: 'both' })
       animation.id = 'reading-enter'
       animation.pause()
       animation.currentTime = 0

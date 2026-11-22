@@ -23,7 +23,7 @@ The reading-context adapter matches a selected list card to its article after
 loading succeeds. Only that matched pair shares `blog-surface`. Direct article
 navigation to Home/Projects uses an outgoing leaf fade, so an enormous article
 snapshot cannot cover the new page. The browser interpolates the matched
-material over 420ms with EASE_DRAWER, without overshoot. Both material snapshot images
+material over 660ms with EASE_DRAWER, without overshoot. Both material snapshot images
 fill the group's animated height; auto height leaves a short dark card floating
 over a full-height article. There are no proxy divs.
 
@@ -36,8 +36,8 @@ first 8–240ms of the longest article's expansion on desktop and mobile.
 List and article copy have different names and sit **above** the surface in the
 transition tree. Copy below the glass gets blurred until the transition ends.
 The title stays inside its copy instead of scaling between different line wraps.
-Visible article header/prose blocks fade in independently over 600ms with 60ms between blocks
-and an 8px rise. A matched panel arrives before its content starts to appear, so
+Visible article header/prose blocks fade in independently over 780ms with 72ms between blocks
+and a 12px rise. A matched panel arrives before its content starts to appear, so
 controls/title never float outside the moving material. WAAPI animations are
 prepared before capture and start at ViewTransition.ready, inside the live
 incoming copy. Offscreen blocks remain readable; scrolling does not trigger a
@@ -62,7 +62,7 @@ The root keeps the browser's additive scene crossfade. Reading position and the
 index language are restored on `astro:after-swap`, before the new snapshot.
 StarSky saves the visible camera before swap and redraws after scroll restoration
 with that same camera. Starting at ready, it interpolates the sky offset and
-painting length over 420ms with EASE_SCENE (easeInOutSine). This is a time-based navigation animation; normal
+painting length over 640ms with EASE_SCENE. This is a time-based navigation animation; normal
 scrolling keeps the original native tall-canvas/CSS parallax path. A second
 navigation starts from the currently displayed camera. Do not restore reading
 scroll on page-load: that can visibly jump after capture.
@@ -71,12 +71,16 @@ scroll on page-load: that can visibly jump after capture.
 
 - Header: Motion Primitives Animated Background in a persistent React island;
   semantic anchors and committed route state, flushed on after-swap before
-  capture. Its 280ms ease-out tween settles with the arriving heading, without
-  spring overshoot. Clicks that the browser retargets from the captured nav to
-  the transition root are forwarded to the same persistent semantic anchor.
+  capture. Its 480ms ease-out tween settles with the arriving heading, without
+  spring overshoot. `::view-transition-group(site-nav)` paints `--nav-shadow`
+  directly so `overflow: clip` rounds its backdrop blur without clipping the
+  capsule's outer drop shadow. Clicks that the browser retargets from the
+  captured nav to the transition root are forwarded to the same persistent
+  semantic anchor.
 - Cards: shadcn/ui Card with site tokens and actual `.glass-surface` blur.
-- Project demo video: beUI Center Morph Modal, retaining upstream presence/focus
-  handling; site wrappers supply data, styling and close on route navigation.
+- Project demo video: adapted from beUI Center Morph Modal, retaining upstream
+  presence/focus handling with compositor-only scale/opacity/translate dialog
+  motion; site wrappers supply data, glass styling and close on route navigation.
 - Background scroll effects: original CSS-driven parallax and iOS svh/lvh guards.
 
 See THIRD_PARTY_NOTICES.md for vendor sources, MIT notices and local adaptations.

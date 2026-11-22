@@ -95,10 +95,10 @@ const views: ProjectView[] = await Promise.all(
         href="https://github.com/t41372"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-aurora"
+        class="group inline-flex items-center gap-2 font-mono text-sm text-muted transition-colors duration-300 ease-[var(--ease-out)] hover:text-aurora"
       >
         <Localized en="and many more on github" zh="GitHub 上还有更多" />
-        <span aria-hidden="true">→</span>
+        <span aria-hidden="true" class="transition-transform duration-300 ease-[var(--ease-out)] group-hover:translate-x-1 motion-reduce:transform-none">→</span>
       </a>
     </div>
   </main>
@@ -120,12 +120,16 @@ const views: ProjectView[] = await Promise.all(
     const { track, dots, prev, next } = parts(gallery)
     const index = current(track)
     dots.forEach((dot, i) => {
-      dot.toggleAttribute('data-active', i === index)
-      dot.setAttribute('aria-current', String(i === index))
+      const active = i === index
+      if (dot.hasAttribute('data-active') !== active) dot.toggleAttribute('data-active', active)
+      const currentAttr = String(active)
+      if (dot.getAttribute('aria-current') !== currentAttr) dot.setAttribute('aria-current', currentAttr)
     })
     // aria-disabled, not disabled: disabling the focused button drops focus.
-    prev.setAttribute('aria-disabled', String(index <= 0))
-    next.setAttribute('aria-disabled', String(index >= dots.length - 1))
+    const prevDisabled = String(index <= 0)
+    const nextDisabled = String(index >= dots.length - 1)
+    if (prev.getAttribute('aria-disabled') !== prevDisabled) prev.setAttribute('aria-disabled', prevDisabled)
+    if (next.getAttribute('aria-disabled') !== nextDisabled) next.setAttribute('aria-disabled', nextDisabled)
   }
   document.addEventListener('click', (event) => {
     const control = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-gallery-prev], [data-gallery-next], [data-gallery-dot]')

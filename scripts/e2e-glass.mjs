@@ -58,6 +58,10 @@ export async function testGlass(browser, BASE, check) {
   await page.waitForFunction(() => window.__captured)
   check('scrolled tab change: destination scroll is settled before reveal', await page.evaluate(() => scrollY === 0))
   check('scrolled tab change: both background snapshots participate', await page.evaluate(() => ['old', 'new'].every(state => window.__parts.some(a => a.effect.pseudoElement === `::view-transition-${state}(root)`))))
+  check('nav: capsule outer shadow persists during view transition', await page.evaluate(() => {
+    const group = getComputedStyle(document.documentElement, '::view-transition-group(site-nav)')
+    return group.overflow === 'clip' && group.boxShadow !== 'none'
+  }))
   await page.evaluate(() => window.__parts.forEach(a => a.finish()))
   await page.evaluate(() => window.__transition.finished)
   check('glass / shared transitions: no page errors', errors.length === 0, errors.join('; '))

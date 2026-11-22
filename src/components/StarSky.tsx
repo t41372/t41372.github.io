@@ -111,116 +111,124 @@ void main() {
   // vertical rays hanging from it, and fold heights that vary wildly along
   // the ribbon so the tops dissolve raggedly at different altitudes instead
   // of at one uniform ceiling.
-  // Aurora coordinate: on portrait screens the true aspect (< 1) makes the
-  // noise domain so narrow that the ray fbm barely varies across the screen —
-  // whole minutes can pass with no visible curtain. Clamping the horizontal
-  // span to at least ~1.5 "landscape units" guarantees every viewport,
-  // portrait or ultrawide, always spans enough noise features to show a
-  // proper curtain. Stars keep the true aspect (they must stay round).
-  float ax = uv.x * max(aspect, 1.5);
+  // Below wy = -0.12 (more than ~1.12 viewports down the scroll painting),
+  // both curtain profiles are identically zero; skip the 6 fbm octaves and
+  // halftone math for off-aurora sky rows.
+  vec3 color = scene;
+  if (wy > -0.12) {
+    // Aurora coordinate: on portrait screens the true aspect (< 1) makes the
+    // noise domain so narrow that the ray fbm barely varies across the screen —
+    // whole minutes can pass with no visible curtain. Clamping the horizontal
+    // span to at least ~1.5 "landscape units" guarantees every viewport,
+    // portrait or ultrawide, always spans enough noise features to show a
+    // proper curtain. Stars keep the true aspect (they must stay round).
+    float ax = uv.x * max(aspect, 1.5);
 
-  // lower edge of the curtain: one long swooping arc plus per-fold dips —
-  // without the second term the fringe straightens into a ruler line
-  float baseY = 0.26
-    + 0.26 * (fbm(vec2(ax * 0.7 + uTime * 0.022, uTime * 0.03)) - 0.5) * 2.0
-    + 0.09 * (fbm(vec2(ax * 2.3 + 11.0, uTime * 0.045)) - 0.5) * 2.0;
-  float hgt = wy - baseY; // height above the curtain's lower edge
+    // lower edge of the curtain: one long swooping arc plus per-fold dips —
+    // without the second term the fringe straightens into a ruler line
+    float baseY = 0.26
+      + 0.26 * (fbm(vec2(ax * 0.7 + uTime * 0.014, uTime * 0.02)) - 0.5) * 2.0
+      + 0.09 * (fbm(vec2(ax * 2.3 + 11.0, uTime * 0.03)) - 0.5) * 2.0;
+    float hgt = wy - baseY; // height above the curtain's lower edge
 
-  // domain warp -> drapery folds
-  float warp = (fbm(vec2(ax * 1.6 - uTime * 0.035, wy * 1.1 + uTime * 0.012)) - 0.5) * 0.55;
+    // domain warp -> drapery folds
+    float warp = (fbm(vec2(ax * 1.6 - uTime * 0.023, wy * 1.1 + uTime * 0.008)) - 0.5) * 0.55;
 
-  // folds lean sideways a little more with altitude — the gentle shear that
-  // sells "drapery seen at an angle" rather than "patches straight overhead"
-  float lean = (fbm(vec2(ax * 0.4 + 21.0, uTime * 0.015)) - 0.5) * 0.9;
-  float rx = ax + warp + max(hgt, 0.0) * lean;
+    // folds lean sideways a little more with altitude — the gentle shear that
+    // sells "drapery seen at an angle" rather than "patches straight overhead"
+    float lean = (fbm(vec2(ax * 0.4 + 21.0, uTime * 0.01)) - 0.5) * 0.9;
+    float rx = ax + warp + max(hgt, 0.0) * lean;
 
-  // vertical rays: anisotropic noise (high freq in x, stretched in y)
-  float rays = fbm(vec2(rx * 5.5, wy * 0.5 - uTime * 0.045));
-  rays = smoothstep(0.30, 0.75, rays);
-  // finer secondary ray detail
-  float rays2 = vnoise(vec2(rx * 22.0, wy * 0.6 - uTime * 0.07));
-  rays *= 0.72 + 0.28 * rays2;
+    // vertical rays: anisotropic noise (high freq in x, stretched in y)
+    float rays = fbm(vec2(rx * 5.5, wy * 0.5 - uTime * 0.03));
+    rays = smoothstep(0.30, 0.75, rays);
+    // finer secondary ray detail
+    float rays2 = vnoise(vec2(rx * 22.0, wy * 0.6 - uTime * 0.045));
+    rays *= 0.72 + 0.28 * rays2;
 
-  // per-fold ray height: some folds climb far past the screen top, others
-  // stay short — heights come from their own noise, never from the viewport
-  float tall = 0.30 + 1.30 * fbm(vec2(ax * 1.1 + 7.0, uTime * 0.018));
-  float profile = smoothstep(-0.015, 0.045, hgt) * exp(-max(hgt, 0.0) * 2.2 / tall);
+    // per-fold ray height: some folds climb far past the screen top, others
+    // stay short — heights come from their own noise, never from the viewport
+    float tall = 0.30 + 1.30 * fbm(vec2(ax * 1.1 + 7.0, uTime * 0.012));
+    float profile = smoothstep(-0.015, 0.045, hgt) * exp(-max(hgt, 0.0) * 2.2 / tall);
 
-  // the side view's signature: a hot, crisp rim right at the lower edge
-  float rim = smoothstep(-0.012, 0.02, hgt) * exp(-max(hgt, 0.0) * 10.0);
+    // the side view's signature: a hot, crisp rim right at the lower edge
+    float rim = smoothstep(-0.012, 0.02, hgt) * exp(-max(hgt, 0.0) * 10.0);
 
-  // waves of brightness traveling along the curtain
-  float shimmer = 0.78 + 0.22 * sin(ax * 9.0 - uTime * 0.55 + warp * 8.0);
+    // waves of brightness traveling along the curtain
+    float shimmer = 0.80 + 0.20 * sin(ax * 9.0 - uTime * 0.36 + warp * 8.0);
 
-  // gentle horizontal mask (fades only at the far edges)
-  float edgeMask = smoothstep(0.0, 0.18, uv.x) * smoothstep(1.0, 0.80, uv.x);
+    // gentle horizontal mask (fades only at the far edges)
+    float edgeMask = smoothstep(0.0, 0.18, uv.x) * smoothstep(1.0, 0.80, uv.x);
 
-  // hero-text exclusion: the curtain "happens" to run thin behind the intro
-  // text. One rect PER TEXT LINE (distance to the nearest), so a short line
-  // like "Hello!" doesn't drag a big empty quiet zone across the sky to the
-  // right of it; a long, soft feather makes the falloff read as a gradient.
-  // painting-space too (JS supplies the rect y's in wy units), so the quiet
-  // zone stays glued to the sky whether the canvas rolls or the compositor
-  // slides it
-  vec2 ap = vec2(uv.x * aspect, wy);
-  float ad = 1e3;
-  for (int i = 0; i < 4; i++) {
-    vec2 alo = vec2(uAvoid[i].x * aspect, uAvoid[i].y);
-    vec2 ahi = vec2(uAvoid[i].z * aspect, uAvoid[i].w);
-    ad = min(ad, distance(ap, clamp(ap, alo, ahi)));
+    // hero-text exclusion: the curtain "happens" to run thin behind the intro
+    // text. One rect PER TEXT LINE (distance to the nearest), so a short line
+    // like "Hello!" doesn't drag a big empty quiet zone across the sky to the
+    // right of it; a long, soft feather makes the falloff read as a gradient.
+    // painting-space too (JS supplies the rect y's in wy units), so the quiet
+    // zone stays glued to the sky whether the canvas rolls or the compositor
+    // slides it
+    vec2 ap = vec2(uv.x * aspect, wy);
+    float ad = 1e3;
+    for (int i = 0; i < 4; i++) {
+      vec2 alo = vec2(uAvoid[i].x * aspect, uAvoid[i].y);
+      vec2 ahi = vec2(uAvoid[i].z * aspect, uAvoid[i].w);
+      ad = min(ad, distance(ap, clamp(ap, alo, ahi)));
+    }
+    float avoid = 1.0 - uAvoidK * (1.0 - smoothstep(0.0, 0.24, ad));
+
+    // aurBoot: the curtain blooms in AFTER the stars (second act of the boot)
+    float aurBoot = smoothstep(0.35, 1.0, uBoot);
+
+    // rim weight follows ray density, so the hot fringe lights up only under
+    // the strongest folds instead of underlining the whole curtain
+    float aur = clamp((profile + rim * (0.2 + 0.8 * rays)) * rays * shimmer * edgeMask * 2.2, 0.0, 1.0) * avoid * aurBoot;
+
+    // second, fainter and higher curtain for depth
+    float baseY2 = baseY + 0.32 + 0.05 * sin(uTime * 0.032 + 2.0);
+    float hgt2 = wy - baseY2;
+    float rays2b = fbm(vec2((ax - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.02));
+    rays2b = smoothstep(0.42, 0.85, rays2b);
+    float tall2 = 0.25 + 0.85 * fbm(vec2(ax * 1.3 + 43.0, uTime * 0.014));
+    float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 2.6 / tall2);
+    float aur2 = clamp(rays2b * profile2 * edgeMask * 1.3, 0.0, 1.0) * avoid * aurBoot;
+
+    // ---------- aurora color ramp (by height above lower edge) ----------
+    vec3 cFringe = vec3(0.92, 0.45, 0.62); // pink fringe at the very bottom
+    vec3 cGreen  = vec3(0.32, 0.94, 0.55); // oxygen green
+    vec3 cTeal   = vec3(0.30, 0.84, 0.86); // teal mid
+    vec3 cPurple = vec3(0.52, 0.38, 0.88); // purple top
+    float ch = clamp(hgt * 1.2, 0.0, 1.0);
+    vec3 aurCol = mix(cGreen, cTeal, smoothstep(0.05, 0.45, ch));
+    aurCol = mix(aurCol, cPurple, smoothstep(0.45, 1.0, ch));
+    aurCol = mix(cFringe, aurCol, smoothstep(-0.005, 0.05, hgt));
+
+    vec3 aurCol2 = mix(cTeal, cPurple, clamp(hgt2 * 2.5, 0.0, 1.0));
+
+    // combine: primary curtain wins, secondary fills behind
+    float dotB = max(aur, aur2 * 0.7);
+    vec3 dotCol = aur >= aur2 * 0.7 ? aurCol : aurCol2;
+
+    // soft atmospheric glow behind the halftone dots (ties dots to the sky)
+    color += aurCol * aur * 0.14 + aurCol2 * aur2 * 0.08;
+
+    // ---------- halftone dots ----------
+    // cell size follows the VIEWPORT height (uVh), not the canvas — on the tall
+    // touch canvas uRes.y is several viewports and would blow the dots up
+    if (dotB >= 0.02) {
+      float cellPx = max(4.0, uVh / 130.0);
+      vec2 g = gl_FragCoord.xy / cellPx;
+      vec2 cell = floor(g);
+      vec2 gv = fract(g) - 0.5;
+
+      float jitter = hash21(cell);
+      float twinkle = 0.80 + 0.20 * sin(uTime * (0.78 + jitter * 1.45) + jitter * 6.283);
+      float b = clamp(dotB, 0.0, 1.0) * twinkle;
+      float radius = 0.42 * sqrt(b);
+      float dotMask = smoothstep(radius, radius - 0.18, length(gv)) * step(0.02, b);
+
+      color += dotCol * dotMask * (0.35 + 0.65 * b);
+    }
   }
-  float avoid = 1.0 - uAvoidK * (1.0 - smoothstep(0.0, 0.24, ad));
-
-  // aurBoot: the curtain blooms in AFTER the stars (second act of the boot)
-  float aurBoot = smoothstep(0.35, 1.0, uBoot);
-
-  // rim weight follows ray density, so the hot fringe lights up only under
-  // the strongest folds instead of underlining the whole curtain
-  float aur = clamp((profile + rim * (0.2 + 0.8 * rays)) * rays * shimmer * edgeMask * 2.2, 0.0, 1.0) * avoid * aurBoot;
-
-  // second, fainter and higher curtain for depth
-  float baseY2 = baseY + 0.32 + 0.05 * sin(uTime * 0.05 + 2.0);
-  float hgt2 = wy - baseY2;
-  float rays2b = fbm(vec2((ax - warp * 0.8) * 5.0 + 31.0, wy * 0.4 + uTime * 0.03));
-  rays2b = smoothstep(0.42, 0.85, rays2b);
-  float tall2 = 0.25 + 0.85 * fbm(vec2(ax * 1.3 + 43.0, uTime * 0.02));
-  float profile2 = smoothstep(-0.02, 0.06, hgt2) * exp(-max(hgt2, 0.0) * 2.6 / tall2);
-  float aur2 = clamp(rays2b * profile2 * edgeMask * 1.3, 0.0, 1.0) * avoid * aurBoot;
-
-  // ---------- aurora color ramp (by height above lower edge) ----------
-  vec3 cFringe = vec3(0.92, 0.45, 0.62); // pink fringe at the very bottom
-  vec3 cGreen  = vec3(0.32, 0.94, 0.55); // oxygen green
-  vec3 cTeal   = vec3(0.30, 0.84, 0.86); // teal mid
-  vec3 cPurple = vec3(0.52, 0.38, 0.88); // purple top
-  float ch = clamp(hgt * 1.2, 0.0, 1.0);
-  vec3 aurCol = mix(cGreen, cTeal, smoothstep(0.05, 0.45, ch));
-  aurCol = mix(aurCol, cPurple, smoothstep(0.45, 1.0, ch));
-  aurCol = mix(cFringe, aurCol, smoothstep(-0.005, 0.05, hgt));
-
-  vec3 aurCol2 = mix(cTeal, cPurple, clamp(hgt2 * 2.5, 0.0, 1.0));
-
-  // combine: primary curtain wins, secondary fills behind
-  float dotB = max(aur, aur2 * 0.7);
-  vec3 dotCol = aur >= aur2 * 0.7 ? aurCol : aurCol2;
-
-  // soft atmospheric glow behind the halftone dots (ties dots to the sky)
-  scene += aurCol * aur * 0.14 + aurCol2 * aur2 * 0.08;
-
-  // ---------- halftone dots ----------
-  // cell size follows the VIEWPORT height (uVh), not the canvas — on the tall
-  // touch canvas uRes.y is several viewports and would blow the dots up
-  float cellPx = max(4.0, uVh / 130.0);
-  vec2 g = gl_FragCoord.xy / cellPx;
-  vec2 cell = floor(g);
-  vec2 gv = fract(g) - 0.5;
-
-  float jitter = hash21(cell);
-  float twinkle = 0.78 + 0.22 * sin(uTime * (1.2 + jitter * 2.4) + jitter * 6.283);
-  float b = clamp(dotB, 0.0, 1.0) * twinkle;
-  float radius = 0.42 * sqrt(b);
-  float dotMask = smoothstep(radius, radius - 0.18, length(gv)) * step(0.02, b);
-
-  vec3 color = scene + dotCol * dotMask * (0.35 + 0.65 * b);
 
   // ---------- vignette + grain ----------
   // vertical component gated by uVigY: on the tall canvas "canvas edges" are
@@ -391,8 +399,31 @@ export default function StarSky() {
     // (Range API), not their boxes: h1/p are block elements spanning the full
     // container width, and a box-based rect read as an invisible billboard.
     let avoidEls: Element[] = []
+    let avoidDirty = true
+    let lastAvoidSy = NaN
+    let cachedLines: { l: number; t: number; r: number; b: number }[] = []
+    let cachedCanvasW = 1
+    const avoidObserver = new MutationObserver(() => {
+      avoidDirty = true
+    })
     const findAvoid = () => {
       avoidEls = Array.from(document.querySelectorAll('[data-aurora-avoid]'))
+      avoidDirty = true
+      avoidObserver.disconnect()
+      const observed = new Set<Node>()
+      for (const el of avoidEls) {
+        const root = el.parentElement ?? el
+        if (!observed.has(root)) {
+          observed.add(root)
+          avoidObserver.observe(root, {
+            attributes: true,
+            attributeFilter: ['style', 'class'],
+            childList: true,
+            characterData: true,
+            subtree: true,
+          })
+        }
+      }
     }
     findAvoid()
     const avoidRange = document.createRange()
@@ -400,11 +431,11 @@ export default function StarSky() {
 
     // Stable viewport reference = 100lvh (the LARGE viewport), which does NOT
     // change while the iOS address bar collapses/expands mid-scroll. Measured
-    // via a probe (the tall canvas is no longer viewport-sized itself); using
-    // it instead of live window.innerHeight kills the "sky slightly zooms /
-    // jitters while scrolling on iPhone" feedback loop.
+    // via a probe only on initial mount and window resize (client-side route
+    // swaps never change 100lvh, so avoid mutating document.body during swaps).
     let vhRef = 1
     let skyH = 1
+    let lastContentH = 0
     const probeLvh = () => {
       const d = document.createElement('div')
       d.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none'
@@ -413,19 +444,22 @@ export default function StarSky() {
       d.remove()
       return Math.max(h, 1)
     }
+    vhRef = probeLvh()
     const measureDoc = () => {
       // body.offsetHeight, NOT documentElement.scrollHeight: the tall canvas
       // is an abspos child of body, so scrollHeight includes it — measuring
       // it would feed the canvas's own height back into itself (see above)
       const contentH = Math.max(document.body.offsetHeight, vhRef)
+      lastContentH = contentH
       const sMax = Math.max(contentH - vhRef, 0)
       // touch scrolls the painting 1:1 (in-flow); desktop rolls it at the
       // parallax factor
       skyH = 1 + ((tall ? 1 : SKY_SCROLL_FACTOR) * sMax) / vhRef
     }
 
-    const resize = () => {
-      vhRef = probeLvh()
+    const resize = (reprobeLvh = false) => {
+      if (reprobeLvh) vhRef = probeLvh()
+      avoidDirty = true
       measureDoc()
       if (tall) {
         // whole painting; capped so the buffer stays well inside mobile
@@ -441,13 +475,14 @@ export default function StarSky() {
       bufDpr = Math.min(window.devicePixelRatio || 1, coarse ? 1 : 1.5)
       const w = Math.floor(canvas.clientWidth * bufDpr)
       const h = Math.floor(canvas.clientHeight * bufDpr)
+      cachedCanvasW = Math.max(canvas.clientWidth, 1)
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w
         canvas.height = h
         gl.viewport(0, 0, w, h)
       }
     }
-    resize()
+    resize(false)
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
@@ -455,7 +490,9 @@ export default function StarSky() {
     let settleTimer = 0
     let frame = 0
     let lastTimeSec = reduced ? 2.0 : 0
-    const frameInterval = 1000 / 40 // 40 fps cap — while IDLE only (see render)
+    // 30 fps idle cap (subtract 4ms tolerance so 2×16.67ms and 4×8.33ms vsyncs
+    // never slip a frame, and stay phase-aligned with CataloguedStars).
+    const frameInterval = 29
     const start = performance.now()
     // boot ignition: starts at the first real draw, runs ~1.8s in the shader
     let bootStart = -1
@@ -472,15 +509,19 @@ export default function StarSky() {
 
     const draw = (timeSec: number, full = false) => {
       lastTimeSec = timeSec
+      const sy = window.scrollY
       // clamp overscroll so the painting never rolls past its bottom edge
       const offset = Math.min(
-        ((tall ? 1 : SKY_SCROLL_FACTOR) * Math.max(window.scrollY, 0)) / vhRef,
+        ((tall ? 1 : SKY_SCROLL_FACTOR) * Math.max(sy, 0)) / vhRef,
         skyH - 1,
       )
       const height = tall ? Math.min(skyH, paintPx / vhRef) - 0.07 : skyH
       const progress = !journey ? 1 : journey.start === null ? 0
         : Math.min(1, (performance.now() - journey.start) / SCENE_DURATION_MS)
-      const eased = -(Math.cos(Math.PI * progress) - 1) / 2
+      // Smoothstep^2 / cubic-sine blend: softer acceleration and longer glide tail.
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress * 0.4 + (-(Math.cos(Math.PI * progress) - 1) / 2) * 0.6
+        : (1 - Math.pow(-2 * progress + 2, 3) / 2) * 0.4 + (-(Math.cos(Math.PI * progress) - 1) / 2) * 0.6
       camera = journey ? {
         offset: journey.from.offset + (offset - journey.from.offset) * eased,
         height: journey.from.height + (height - journey.from.height) * eased,
@@ -491,56 +532,59 @@ export default function StarSky() {
       const wyTop = tall ? 1 + OVER_T / vhRef + offset - camera.offset : 1 - camera.offset
       // canvas top in window coords — known analytically (style top + current
       // transform), no getBoundingClientRect layout hit per frame
-      const cTop = tall ? -OVER_T - window.scrollY : 0
-      // measured per frame: the hero text rides a scroll-lag transform AND the
-      // typewriter grows it character by character. getClientRects() gives
-      // one rect per inline fragment; fragments sharing a line are merged, so
-      // each TEXT LINE becomes its own snug exclusion rect — a short line
-      // ("Hello!") never widens the quiet zone of the lines below it.
+      const cTop = tall ? -OVER_T - sy : 0
+      // Re-measure inline text rects only when hero DOM/styles mutated or
+      // scrollY moved (while idle, cachedLines avoids per-frame sync layout).
       avoidData.fill(-9) // park unused slots far off-screen
       let ak = 0
       if (avoidEls.length > 0) {
-        const lines: { l: number; t: number; r: number; b: number }[] = []
-        for (const el of avoidEls) {
-          avoidRange.selectNodeContents(el)
-          for (const r of avoidRange.getClientRects()) {
-            if (r.width <= 0 || r.height <= 0) continue
-            let merged = false
-            for (const q of lines) {
-              const overlap = Math.min(r.bottom, q.b) - Math.max(r.top, q.t)
-              if (overlap > 0.5 * Math.min(r.height, q.b - q.t)) {
-                q.l = Math.min(q.l, r.left)
-                q.t = Math.min(q.t, r.top)
-                q.r = Math.max(q.r, r.right)
-                q.b = Math.max(q.b, r.bottom)
-                merged = true
-                break
+        if (avoidDirty || sy !== lastAvoidSy) {
+          avoidDirty = false
+          lastAvoidSy = sy
+          if (sy > vhRef * 1.2) {
+            cachedLines = []
+          } else {
+            const lines: { l: number; t: number; r: number; b: number }[] = []
+            for (const el of avoidEls) {
+              avoidRange.selectNodeContents(el)
+              for (const r of avoidRange.getClientRects()) {
+                if (r.width <= 0 || r.height <= 0) continue
+                let merged = false
+                for (const q of lines) {
+                  const overlap = Math.min(r.bottom, q.b) - Math.max(r.top, q.t)
+                  if (overlap > 0.5 * Math.min(r.height, q.b - q.t)) {
+                    q.l = Math.min(q.l, r.left)
+                    q.t = Math.min(q.t, r.top)
+                    q.r = Math.max(q.r, r.right)
+                    q.b = Math.max(q.b, r.bottom)
+                    merged = true
+                    break
+                  }
+                }
+                if (!merged) lines.push({ l: r.left, t: r.top, r: r.right, b: r.bottom })
               }
             }
-            if (!merged) lines.push({ l: r.left, t: r.top, r: r.right, b: r.bottom })
+            while (lines.length > 4) {
+              const extra = lines.pop()!
+              const lastLine = lines[lines.length - 1]!
+              lastLine.l = Math.min(lastLine.l, extra.l)
+              lastLine.t = Math.min(lastLine.t, extra.t)
+              lastLine.r = Math.max(lastLine.r, extra.r)
+              lastLine.b = Math.max(lastLine.b, extra.b)
+            }
+            cachedLines = lines
+            cachedCanvasW = Math.max(canvas.clientWidth, 1)
           }
         }
-        // more lines than slots (deep mobile wrapping): union the overflow
-        // into the last slot rather than dropping it
-        while (lines.length > 4) {
-          const extra = lines.pop()!
-          const last = lines[lines.length - 1]!
-          last.l = Math.min(last.l, extra.l)
-          last.t = Math.min(last.t, extra.t)
-          last.r = Math.max(last.r, extra.r)
-          last.b = Math.max(last.b, extra.b)
-        }
-        const w = Math.max(canvas.clientWidth, 1)
-        for (let i = 0; i < lines.length; i++) {
-          const q = lines[i]!
-          // y goes to painting-space wy (window coords -> canvas -> painting),
-          // matching the shader's `ap` — works under both scroll models
+        const w = cachedCanvasW
+        for (let i = 0; i < cachedLines.length; i++) {
+          const q = cachedLines[i]!
           avoidData[i * 4] = q.l / w
           avoidData[i * 4 + 1] = wyTop - (q.b - cTop) / vhRef
           avoidData[i * 4 + 2] = q.r / w
           avoidData[i * 4 + 3] = wyTop - (q.t - cTop) / vhRef
         }
-        if (lines.length > 0) ak = 0.6
+        if (cachedLines.length > 0) ak = 0.6
       }
       // tall mode: after the boot, redraws only service the twinkle — scissor
       // them to the visible slice (+margin). Off-slice rows keep their last
@@ -570,7 +614,7 @@ export default function StarSky() {
       // ignition ramp: stars first, aurora second (split inside the shader);
       // reduced motion skips the theatrics and lights everything at once
       if (bootStart < 0) bootStart = performance.now()
-      gl.uniform1f(uBoot, reduced ? 1 : Math.min(1, (performance.now() - bootStart) / 1800))
+      gl.uniform1f(uBoot, reduced ? 1 : Math.min(1, (performance.now() - bootStart) / 2600))
       gl.drawArrays(gl.TRIANGLES, 0, 3)
       if (!revealed) {
         revealed = true
@@ -584,25 +628,16 @@ export default function StarSky() {
     // (the "high-frequency starfield/black flicker" during window resize).
     // Resize + redraw synchronously in the same handler instead.
     const onResize = () => {
-      resize()
+      resize(true)
       draw(lastTimeSec, true)
     }
     window.addEventListener('resize', onResize)
 
-    // A client-side navigation (Astro astro:page-load) swaps pages
-    // without reloading: the persisted sky — it lives outside the swapped
-    // <main> — just re-measures its painting length for the new page's scroll
-    // height.
-    const onPageLoad = () => {
+    let syncedAfterSwap = false
+    const syncScene = () => {
       findAvoid()
-      resize()
+      resize(false)
       draw(lastTimeSec, true)
-      // reduced motion runs NO render loop, so this single immediate draw is
-      // all the aurora would ever get — but the swapped-in HeroIntro island
-      // hydrates AFTER page-load, so it captures empty avoid-rects and the
-      // aurora never learns the text arrived. Re-assert on the next frame
-      // (post-hydration paint) and once more after layout settles (fonts/images
-      // can still grow the doc with no resize event).
       if (reduced) {
         cancelAnimationFrame(scrollRaf)
         scrollRaf = requestAnimationFrame(() => {
@@ -611,18 +646,33 @@ export default function StarSky() {
         })
         clearTimeout(settleTimer)
         settleTimer = window.setTimeout(() => {
-          resize()
+          resize(false)
           draw(2.0, true)
         }, 900)
       }
     }
+    const onPageLoad = () => {
+      if (syncedAfterSwap) {
+        syncedAfterSwap = false
+        findAvoid()
+        if (Math.max(document.body.offsetHeight, vhRef) !== lastContentH) {
+          resize(false)
+          draw(lastTimeSec, true)
+        } else if (reduced) {
+          cancelAnimationFrame(scrollRaf)
+          scrollRaf = requestAnimationFrame(() => {
+            scrollRaf = 0
+            draw(2.0, true)
+          })
+        }
+        return
+      }
+      syncScene()
+    }
     document.addEventListener('astro:page-load', onPageLoad)
-    // A same-page language choice can resize the list without navigation.
-    // Re-measure now so a shrinking touch page cannot retain an oversized
-    // absolute canvas below its footer, including under reduced motion.
-    document.addEventListener('site:language', onPageLoad)
+    document.addEventListener('site:language', syncScene)
     const onDetailsToggle = (event: Event) => {
-      if (event.target instanceof HTMLDetailsElement) onPageLoad()
+      if (event.target instanceof HTMLDetailsElement) syncScene()
     }
     document.addEventListener('toggle', onDetailsToggle, true)
     const onBeforeSwap = (event: Event) => {
@@ -640,45 +690,44 @@ export default function StarSky() {
     document.addEventListener('astro:before-swap', onBeforeSwap)
     // After all scroll-restoration listeners, paint the incoming scene before
     // View Transitions captures it. Otherwise the new snapshot has stale sky.
-    const onAfterSwap = () => queueMicrotask(onPageLoad)
+    const onAfterSwap = () => queueMicrotask(() => {
+      syncedAfterSwap = true
+      syncScene()
+    })
     document.addEventListener('astro:after-swap', onAfterSwap)
 
-    // Pacing.
-    // Desktop: while the page is scrolling the painting MUST re-render every
-    // vsync tick — a 40fps cap against a 60/120Hz display lands frames at
-    // uneven 16/33ms intervals, and for a scroll-locked layer that judder
-    // reads as single-digit fps next to the smooth foreground. Idle (twinkle
-    // only) keeps the 40fps cap; the boot ignition runs uncapped.
-    // Tall/touch: scroll involves NO JS at all — the in-flow canvas is
-    // scrolled natively by the compositor. Redraws only animate the twinkle:
-    // 20fps, scissored to the visible slice (30fps full-canvas during boot).
     let lastSy = -1
     const render = (now: number) => {
       raf = requestAnimationFrame(render)
       const sy = window.scrollY
-      const booting = bootStart >= 0 && now - bootStart < 1900
+      const booting = bootStart < 0 || now - bootStart < 2700
       if (tall) {
-        if (!journey && bootStart >= 0 && now - last < (booting ? 33 : 50)) return
+        if (!journey && bootStart >= 0 && now - last < (booting ? 29 : 46)) return
       } else {
         if (!journey && sy === lastSy && !booting && now - last < frameInterval) return
       }
       last = now
+      const scrolled = sy !== lastSy
       lastSy = sy
       // layout below can change height (async content); re-measure cheaply.
-      // NOTE: no per-frame resize() here — clientWidth/Height reads force
-      // layout and the iOS URL-bar animation would thrash the buffer size.
       if (++frame % 40 === 0) {
         measureDoc()
-        // tall canvas must physically grow/shrink with the painting
         if (tall && Math.abs(Math.min(skyH * vhRef, PAINT_CAP) - paintPx) > 2) {
-          resize()
+          resize(false)
           draw((now - start) / 1000, true)
           return
         }
       }
-      // first draw and boot-window draws paint the WHOLE canvas (so rows
-      // outside the slice end up fully lit); steady state draws the slice
-      draw((now - start) / 1000, booting || bootStart < 0)
+      // Below the aurora band (wy <= -0.12), the shader output has zero uTime
+      // dependence; skip idle GPU draws so backdrop-filter cards aren't
+      // dirtied 30 times/sec when reading further down the page.
+      if (!journey && !booting && !scrolled) {
+        const topVisibleWy = tall
+          ? 1 - Math.max(0, sy - 360) / vhRef
+          : 1 - Math.min((SKY_SCROLL_FACTOR * Math.max(sy, 0)) / vhRef, skyH - 1)
+        if (topVisibleWy <= -0.12) return
+      }
+      draw((now - start) / 1000, booting)
     }
 
     // reduced motion: frozen time, but keep the sky world-anchored on scroll —
@@ -724,7 +773,7 @@ export default function StarSky() {
       // the sky's bottom edge, or scrollHeight extending past the footer, the
       // class of bug tall mode must never reintroduce. One settled re-measure.
       settleTimer = window.setTimeout(() => {
-        resize()
+        resize(false)
         draw(2.0, true)
       }, 900)
       if (!tall) window.addEventListener('scroll', onScrollReduced, { passive: true })
@@ -733,13 +782,14 @@ export default function StarSky() {
     }
 
     return () => {
+      avoidObserver.disconnect()
       cancelAnimationFrame(raf)
       cancelAnimationFrame(scrollRaf)
       clearTimeout(settleTimer)
       window.removeEventListener('scroll', onScrollReduced)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('astro:page-load', onPageLoad)
-      document.removeEventListener('site:language', onPageLoad)
+      document.removeEventListener('site:language', syncScene)
       document.removeEventListener('toggle', onDetailsToggle, true)
       document.removeEventListener('astro:before-swap', onBeforeSwap)
       document.removeEventListener('astro:after-swap', onAfterSwap)
@@ -761,7 +811,7 @@ export default function StarSky() {
       // natively by the compositor (`tall`).
       // opacity-0: born invisible over the CSS .sky-fallback; the first drawn
       // WebGL frame fades it in (see `revealed` in draw)
-      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-lvh w-full opacity-0 transition-opacity duration-700 ease-out"
+      className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-lvh w-full opacity-0 transition-opacity duration-[1200ms] ease-[var(--ease-out)]"
       aria-hidden="true"
     />
   )

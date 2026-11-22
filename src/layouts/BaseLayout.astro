@@ -1,6 +1,8 @@
 ---
 import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
+import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url'
+import geistMonoLatinWoff2 from '@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2?url'
 import '../styles/global.css'
 import StarSky from '../components/StarSky'
 import CataloguedStars from '../components/CataloguedStars'
@@ -41,10 +43,11 @@ const ogImageUrl = new URL('/og.png', Astro.site)
 <!-- no bg-background utility here: global.css paints <html> in the shader
      sky's exact top color + gradient (the utility would override it with the
      darker token, which iOS letterboxes as a black bar) -->
-<html lang={lang} data-content-lang={Astro.props.lang}>
+<html lang={lang} data-content-lang={Astro.props.lang} style="background-color:rgb(11 19 57);color-scheme:dark">
   <head>
     <ClientRouter fallback="swap" />
     <meta charset="utf-8" />
+    <meta name="color-scheme" content="dark" />
     <!-- viewport-fit=cover: let the fixed StarSky canvas (top:0, h-lvh) bleed
          under the iOS status bar and home indicator so those system areas show
          sky instead of a black/theme-color band. Fixed UI (the header pill) is
@@ -53,6 +56,8 @@ const ogImageUrl = new URL('/og.png', Astro.site)
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" href="/favicon.png" />
+    <link rel="preload" href={geistMonoLatinWoff2} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={geistLatinWoff2} as="font" type="font/woff2" crossorigin />
     <link rel="alternate" type="application/rss+xml" title="Yi-Ting Chiu — Blog" href="/rss.xml" />
     <!-- Keep Apple Safari free of a static theme-color. Older Safari chrome
          and newer liquid-glass bars both sit over two different page colors
@@ -98,7 +103,7 @@ const ogImageUrl = new URL('/og.png', Astro.site)
         window.__edgeBg = true
         const NAVY = 'rgb(11 19 57)' /* shader sky top (nTop) */
         const GROUND = '#05070B' /* valley ground / footer */
-        let cur = ''
+        let cur = NAVY
         let raf = 0
         const apply = () => {
           raf = 0
@@ -119,8 +124,27 @@ const ogImageUrl = new URL('/og.png', Astro.site)
         }
         addEventListener('scroll', queue, { passive: true })
         addEventListener('resize', queue)
+        document.addEventListener('DOMContentLoaded', queue)
         document.addEventListener('astro:page-load', queue)
-        apply()
+      })()
+    </script>
+    <!-- Prevent the SSR-settled Hero copy from flashing on first paint and
+         then vanishing when HeroIntro hydrates to run its typewriter sequence.
+         No-JS browsers never run this script and keep readable SSR HTML. -->
+    <script is:inline>
+      ;(() => {
+        if (window.__heroBootGuard) return
+        window.__heroBootGuard = true
+        const arm = (doc) => {
+          if (!window.__heroIntroSeen && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            doc.documentElement.dataset.heroBoot = ''
+          } else {
+            delete doc.documentElement.dataset.heroBoot
+          }
+        }
+        arm(document)
+        setTimeout(() => delete document.documentElement.dataset.heroBoot, 2500)
+        document.addEventListener('astro:before-swap', (e) => arm(e.newDocument))
       })()
     </script>
     <link rel="canonical" href={canonicalUrl} />
