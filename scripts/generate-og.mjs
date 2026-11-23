@@ -84,7 +84,7 @@ await page.waitForFunction(() => {
 // Capture the original authored intro after its initial typewriter sequence.
 await page.waitForFunction(() => {
   const fun = document.querySelector('.fun-text')
-  return fun?.classList.contains('fun-settled') && /with Java$/.test((fun.closest('p')?.innerText ?? '').trim())
+  return fun?.classList.contains('fun-settled') && /around voice AI$/.test((fun.closest('p')?.innerText ?? '').trim())
 }, undefined, { timeout: 45_000 })
 await page.evaluate(() => document.fonts.ready)
 

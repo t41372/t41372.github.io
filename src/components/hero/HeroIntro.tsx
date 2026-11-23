@@ -21,55 +21,52 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
  *         wave gif -> "This is Yi-Ting Chiu." -> the name gets selected, then
  *         RGB-glitches forever.
  * Line 2: "A weird guy" -> deletes to "A nice guy" -> " (🥲)" ->
- *         " building [fun stuff] with " where "fun stuff" runs a font-iteration
- *         animation -> an endless cycle of tech words, re-flashing "fun stuff"'s
- *         font at set points.
+ *         " building [fun stuff]" where "fun stuff" runs a font-iteration
+ *         animation -> an endless cycle of muted connectors + aurora-lit
+ *         phrases, re-flashing "fun stuff"'s font (including a call-and-response
+ *         echo on "for fun").
  */
 
 const NAME = 'Yi-Ting Chiu'
-// Module state survives Swup remounts, including when the first intro was interrupted.
+// Module state survives ClientRouter remounts so returning to Home skips
+// re-typing the long preamble while keeping the phrase cycle alive.
 let introSeen = false
 
-// the font-cycle order the old site stepped "fun stuff" through
+// the font-cycle order "fun stuff" steps through
 const FONT_LIST = [
   'PlayfairDisplay-Italic',
-  'CascadiaMonoPL-BoldItalic',
   'PlayfairDisplay-BlackItalic',
+  'CascadiaMonoPL-BoldItalic',
   'PlayfairDisplay-ExtraBold',
   'Cascadia-Code',
   'PlayfairDisplay-Italic',
-  'PlayfairDisplay-Italic',
+  'Roboto-BlackItalic',
   'Roboto-ThinItalic',
   'Cascadia-Code',
   'Roboto-Bold',
 ]
 
-// one full loop of the tech words, with the exact per-word speed/hold the old
-// site used; `fun` marks where "fun stuff" re-flashes its font.
-type TechStep = {
+// one full loop of Line 2 endings: `prep` renders in muted grey-blue and `word`
+// in aurora green; `fun` marks where "fun stuff" re-flashes its font (`echo`
+// flashes both "fun stuff" and "fun" in matching display type).
+type PhraseStep = {
+  prep: string
   word: string
   speed: number
   hold: number
   append?: string
   appendHold?: number
-  fun?: 'step' | 'animate'
+  fun?: 'step' | 'echo' | 'animate'
   gapAfter?: number
 }
-const TECH_CYCLE: TechStep[] = [
-  { word: 'Java', speed: 132, hold: 1650 },
-  { word: 'C++', speed: 132, hold: 1600 },
-  { word: 'C#', speed: 132, hold: 1150 },
-  { word: 'Node.js', speed: 112, hold: 1600 },
-  { word: 'Express.js', speed: 132, hold: 1600 },
-  { word: 'SQLite', speed: 132, hold: 1600, fun: 'step', gapAfter: 2200 },
-  { word: 'HTML', speed: 132, hold: 1150 },
-  { word: 'CSS', speed: 92, hold: 1600 },
-  { word: 'JavaScript', speed: 132, hold: 1150, fun: 'step' },
-  { word: 'Unity', speed: 112, hold: 1150 },
-  { word: 'WinForm', speed: 92, hold: 750 },
-  { word: 'JavaFX', speed: 92, hold: 1150 },
-  { word: 'AWS', speed: 92, hold: 750 },
-  { word: 'Brain', speed: 92, hold: 750, append: '🧠', appendHold: 1600, fun: 'animate' },
+const PHRASE_CYCLE: PhraseStep[] = [
+  { prep: ' around ', word: 'voice AI', speed: 100, hold: 1200 },
+  { prep: ' for ', word: 'humans & agents', speed: 80, hold: 1200 },
+  { prep: ' on ', word: 'your own device', speed: 80, hold: 1200 },
+  { prep: ' that ', word: 'looks good', speed: 90, hold: 1000, fun: 'step', gapAfter: 800 },
+  { prep: ' in ', word: 'open source', speed: 90, hold: 1200 },
+  { prep: ' for ', word: 'fun', speed: 100, hold: 500, fun: 'echo' },
+  { prep: ' with ', word: 'my brain', speed: 80, hold: 500, append: ' 🧠', appendHold: 1200, fun: 'animate' },
 ]
 
 export default function HeroIntro() {
@@ -113,45 +110,69 @@ export default function HeroIntro() {
     // keep the single cursor right after whatever is being typed
     const putCursor = (node: HTMLElement) => node.after(el.cur)
 
-    const skipIntro =
-      introSeen ||
-      Boolean(window.__heroIntroSeen) ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const setWaveImg = () => {
+      el.wave.classList.remove('text-muted-dark')
+      el.wave.textContent = ''
+      const img = document.createElement('img')
+      img.src = '/assets/wave.gif'
+      img.alt = 'waving hand'
+      img.draggable = false // must not hijack the block's pointer-drag
+      img.style.cssText =
+        'display:inline-block;height:0.9em;width:auto;margin-left:0.18em;vertical-align:-0.08em'
+      el.wave.appendChild(img)
+    }
+
+    const resetTechStyle = () => {
+      el.tech.classList.remove('fun-flash', 'fun-echo-lit')
+      el.tech.style.fontFamily = ''
+    }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const skipIntro = introSeen || Boolean(window.__heroIntroSeen)
     introSeen = true
     window.__heroIntroSeen = true
-    const settle = () => {
+
+    const first = PHRASE_CYCLE[0]!
+    const settle = (staticOnly: boolean) => {
       el.hello.textContent = 'Hello!'
-      el.wave.textContent = ' 👋'
+      if (staticOnly) {
+        el.wave.classList.remove('text-muted-dark')
+        el.wave.textContent = ' 👋'
+      } else {
+        setWaveImg()
+      }
       el.this.textContent = 'This is '
       el.name.textContent = NAME
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) el.name.classList.add('text-glitch')
+      el.name.classList.remove('name-selected', 'name-hl')
+      if (!staticOnly) el.name.classList.add('text-glitch')
       el.dot.textContent = '.'
       el.l2a.textContent = 'A nice guy'
       el.sad.textContent = ' (🥲)'
       el.l2b.textContent = ' building '
       el.fun.textContent = 'fun stuff'
+      el.fun.classList.remove('fun-flash', 'fun-animate')
+      el.fun.style.fontFamily = ''
       el.fun.classList.add('fun-settled')
-      el.l2c.textContent = ' with '
-      el.tech.textContent = 'LLMs'
-      el.cur.style.display = 'none'
+      resetTechStyle()
+      el.l2c.textContent = first.prep
+      el.tech.textContent = first.word
+      if (staticOnly) {
+        el.cur.style.display = 'none'
+      } else {
+        el.cur.style.display = ''
+        putCursor(el.tech)
+      }
       delete document.documentElement.dataset.heroBoot
     }
-    if (skipIntro) {
-      settle()
+
+    if (reducedMotion) {
+      settle(true)
       return
     }
-    // Static HTML is readable without JS; clear synchronously before first
-    // paint after hydration and park the cursor on line 1 so it never jumps.
-    for (const node of [
-      el.hello, el.wave, el.this, el.name, el.dot,
-      el.l2a, el.sad, el.l2b, el.fun, el.l2c, el.tech,
-    ]) node.textContent = ''
-    putCursor(el.hello)
-    delete document.documentElement.dataset.heroBoot
 
-    // Warm the subsetted ~10KB WOFF2 display faces while line 1 is typing so
-    // the 1s "fun stuff" font-iteration sequence renders all 9 faces cleanly
-    // on its very first pass without network lag or late font-swap reflows.
+    // Warm the subsetted ~10KB WOFF2 display faces early so the "fun stuff"
+    // font-iteration and "for fun" echo render all 9 faces cleanly without
+    // network lag or late font-swap reflows.
     const warmFonts = () => {
       if (!document.fonts?.load) return
       for (const family of [
@@ -171,147 +192,190 @@ export default function HeroIntro() {
     if ('requestIdleCallback' in window) window.requestIdleCallback(warmFonts, { timeout: 2000 })
     else globalThis.setTimeout(warmFonts, 400)
 
-    const ac = new AbortController()
-    const { signal } = ac
-
-    const sleep = (ms: number) =>
-      new Promise<void>((resolve, reject) => {
-        if (signal.aborted) return reject(new Error('aborted'))
-        const abort = () => {
-          clearTimeout(t)
-          reject(new Error('aborted'))
-        }
-        const t = setTimeout(() => {
-          signal.removeEventListener('abort', abort)
-          resolve()
-        }, ms)
-        signal.addEventListener('abort', abort, { once: true })
-      })
-
     // TypeIt's EXACT lifeLike pace: randomInRange(speed, speed/2) reduces to a
     // uniform draw over [0.5x, 1.5x] of the base speed. Deletes default to
     // speed/3. This is the humanization that makes the typing feel alive.
     const paceOnce = (speed: number) => speed / 2 + Math.random() * speed
 
-    const type = async (node: HTMLElement, text: string, speed: number) => {
-      putCursor(node)
-      for (const ch of text) {
-        await sleep(paceOnce(speed))
-        node.textContent += ch
-      }
-    }
-    // delete `count` code points (grapheme-safe, so the 🧠 surrogate pair isn't
-    // split); TypeIt's deleteSpeed defaults to the instance speed / 3
-    const del = async (node: HTMLElement, count: number, speed: number) => {
-      putCursor(node)
-      const dSpeed = speed / 3
-      for (let i = 0; i < count; i++) {
-        await sleep(paceOnce(dSpeed))
-        const chars = Array.from(node.textContent ?? '')
-        chars.pop()
-        node.textContent = chars.join('')
-      }
-    }
-    const delAll = (node: HTMLElement, speed: number) =>
-      del(node, Array.from(node.textContent ?? '').length, speed)
-
     let fontIdx = 0
     const nextFont = () => FONT_LIST[fontIdx++ % FONT_LIST.length]!
 
-    // "fun stuff" re-flash while its font steps forward (old funStep/funAnimate:
-    // set bg + font, wait 500/2000; clear, wait 1000/1200)
-    const funFlash = async (kind: 'step' | 'animate') => {
-      el.fun.classList.add('fun-flash')
-      if (kind === 'animate') el.fun.classList.add('fun-animate')
-      el.fun.style.fontFamily = nextFont()
-      await sleep(kind === 'animate' ? 2000 : 500)
-      el.fun.classList.remove('fun-flash')
-      if (kind === 'animate') el.fun.classList.remove('fun-animate')
-      await sleep(kind === 'animate' ? 1200 : 1000)
-    }
-
-    const run = async () => {
-      // ===== line 1 — TypeIt instance { speed: 120, startDelay: 800 } =====
-      await sleep(800)
-      await type(el.hello, 'Hello!', 120)
-      await sleep(300)
-      // "./wave.gif" joke: grey filename @ speed 20 -> 50ms -> swap -> 500ms
-      el.wave.classList.add('text-muted-dark')
-      await type(el.wave, './wave.gif', 20)
-      await sleep(50)
-      el.wave.classList.remove('text-muted-dark')
-      el.wave.textContent = ''
-      const img = document.createElement('img')
-      img.src = '/assets/wave.gif'
-      img.alt = 'waving hand'
-      img.draggable = false // must not hijack the block's pointer-drag
-      img.style.cssText =
-        'display:inline-block;height:0.9em;width:auto;margin-left:0.18em;vertical-align:-0.08em'
-      el.wave.appendChild(img)
-      await sleep(500)
-      // one .type @120: "This is " + name (continuous), then 1000
-      await type(el.this, 'This is ', 120)
-      await type(el.name, NAME, 120)
-      await sleep(1000)
-      await type(el.dot, '.', 120)
-      await sleep(900)
-      // select (800) -> glitch, kept forever (800) -> unselect (1000)
-      el.name.classList.add('name-selected')
-      await sleep(800)
-      el.name.classList.remove('name-selected')
-      el.name.classList.add('text-glitch', 'name-hl')
-      await sleep(800)
-      el.name.classList.remove('name-hl')
-      await sleep(1000)
-
-      // ===== line 2 — new TypeIt instance { speed: 80, startDelay: 250 } =====
-      await sleep(250)
-      await type(el.l2a, 'A weird guy', 80)
-      await sleep(1000)
-      await del(el.l2a, 9, 80) // "weird guy" -> "A "
-      await sleep(500)
-      await type(el.l2a, 'nice guy', 80)
-      await sleep(300)
-      await type(el.sad, ' (🥲)', 80)
-      await sleep(500)
-      await type(el.l2b, ' building ', 80)
-      await type(el.fun, 'fun stuff', 80)
-      await type(el.l2c, ' with ', 80)
-      await sleep(500)
-      // initial "fun stuff" font-iteration -> settles into icy bold-italic
-      // (old: exec animate {500} -> exec settle {1000} -> exec unflash {0})
-      el.fun.classList.add('fun-flash', 'fun-animate')
-      await sleep(500)
-      el.fun.classList.add('fun-settled')
-      await sleep(1000)
-      el.fun.classList.remove('fun-flash', 'fun-animate')
-
-      // ===== tech cycle — each loop = new instance { speed: 80, startDelay: 800 } =====
-      for (;;) {
-        await sleep(800)
-        for (const step of TECH_CYCLE) {
-          await type(el.tech, step.word, step.speed)
-          await sleep(step.hold)
-          if (step.append) {
-            await type(el.tech, step.append, step.speed)
-            await sleep(step.appendHold ?? 0)
+    const makeRunner = (signal: AbortSignal) => {
+      const sleep = (ms: number) =>
+        new Promise<void>((resolve, reject) => {
+          if (signal.aborted) return reject(new Error('aborted'))
+          const abort = () => {
+            clearTimeout(t)
+            reject(new Error('aborted'))
           }
-          if (step.fun) await funFlash(step.fun)
-          await delAll(el.tech, 80)
-          if (step.gapAfter) await sleep(step.gapAfter)
+          const t = setTimeout(() => {
+            signal.removeEventListener('abort', abort)
+            resolve()
+          }, ms)
+          signal.addEventListener('abort', abort, { once: true })
+        })
+
+      const type = async (node: HTMLElement, text: string, speed: number) => {
+        putCursor(node)
+        for (const ch of text) {
+          await sleep(paceOnce(speed))
+          node.textContent += ch
         }
       }
+      // delete `count` code points (grapheme-safe, so the 🧠 surrogate pair isn't
+      // split); TypeIt's deleteSpeed defaults to the instance speed / 3
+      const del = async (node: HTMLElement, count: number, speed: number) => {
+        putCursor(node)
+        const dSpeed = speed / 3
+        for (let i = 0; i < count; i++) {
+          await sleep(paceOnce(dSpeed))
+          const chars = Array.from(node.textContent ?? '')
+          chars.pop()
+          node.textContent = chars.join('')
+        }
+      }
+      const delAll = (node: HTMLElement, speed: number) =>
+        del(node, Array.from(node.textContent ?? '').length, speed)
+
+      // "fun stuff" re-flash while its font steps forward
+      const funFlash = async (kind: 'step' | 'animate') => {
+        el.fun.classList.add('fun-flash')
+        if (kind === 'animate') el.fun.classList.add('fun-animate')
+        el.fun.style.fontFamily = nextFont()
+        await sleep(kind === 'animate' ? 2000 : 500)
+        el.fun.classList.remove('fun-flash')
+        if (kind === 'animate') el.fun.classList.remove('fun-animate')
+        await sleep(kind === 'animate' ? 1200 : 1000)
+      }
+
+      // Call-and-response wink on "building fun stuff for fun": "fun stuff"
+      // flashes into the next display font, and "fun" echoes it a beat later.
+      const funEcho = async () => {
+        const font = nextFont()
+        el.fun.classList.add('fun-flash')
+        el.fun.style.fontFamily = font
+        await sleep(120)
+        el.tech.classList.add('fun-flash', 'fun-echo-lit')
+        el.tech.style.fontFamily = font
+        await sleep(420)
+        el.fun.classList.remove('fun-flash')
+        el.tech.classList.remove('fun-flash')
+        await sleep(950)
+      }
+
+      const runCycle = async (startFromSettled: boolean) => {
+        let firstLoop = true
+        for (;;) {
+          if (!(firstLoop && startFromSettled)) await sleep(800)
+          for (let i = 0; i < PHRASE_CYCLE.length; i++) {
+            const step = PHRASE_CYCLE[i]!
+            if (!(firstLoop && startFromSettled && i === 0)) {
+              await type(el.l2c, step.prep, step.speed)
+              await type(el.tech, step.word, step.speed)
+            }
+            await sleep(step.hold)
+            if (step.append) {
+              await type(el.tech, step.append, step.speed)
+              await sleep(step.appendHold ?? 0)
+            }
+            if (step.fun === 'echo') await funEcho()
+            else if (step.fun) await funFlash(step.fun)
+            await delAll(el.tech, 80)
+            resetTechStyle()
+            await delAll(el.l2c, 80)
+            if (step.gapAfter) await sleep(step.gapAfter)
+          }
+          firstLoop = false
+        }
+      }
+
+      const runIntro = async (onEnterCycle: () => void) => {
+        // ===== line 1 — TypeIt instance { speed: 120, startDelay: 800 } =====
+        await sleep(800)
+        await type(el.hello, 'Hello!', 120)
+        await sleep(300)
+        // "./wave.gif" joke: grey filename @ speed 20 -> 50ms -> swap -> 500ms
+        el.wave.classList.add('text-muted-dark')
+        await type(el.wave, './wave.gif', 20)
+        await sleep(50)
+        setWaveImg()
+        await sleep(500)
+        // one .type @120: "This is " + name (continuous), then 1000
+        await type(el.this, 'This is ', 120)
+        await type(el.name, NAME, 120)
+        await sleep(1000)
+        await type(el.dot, '.', 120)
+        await sleep(900)
+        // select (800) -> glitch, kept forever (800) -> unselect (1000)
+        el.name.classList.add('name-selected')
+        await sleep(800)
+        el.name.classList.remove('name-selected')
+        el.name.classList.add('text-glitch', 'name-hl')
+        await sleep(800)
+        el.name.classList.remove('name-hl')
+        await sleep(1000)
+
+        // ===== line 2 — new TypeIt instance { speed: 80, startDelay: 250 } =====
+        await sleep(250)
+        await type(el.l2a, 'A weird guy', 80)
+        await sleep(1000)
+        await del(el.l2a, 9, 80) // "weird guy" -> "A "
+        await sleep(500)
+        await type(el.l2a, 'nice guy', 80)
+        await sleep(300)
+        await type(el.sad, ' (🥲)', 80)
+        await sleep(500)
+        await type(el.l2b, ' building ', 80)
+        await type(el.fun, 'fun stuff', 80)
+        await sleep(500)
+        // initial "fun stuff" font-iteration -> settles into icy bold-italic
+        el.fun.classList.add('fun-flash', 'fun-animate')
+        await sleep(500)
+        el.fun.classList.add('fun-settled')
+        await sleep(1000)
+        el.fun.classList.remove('fun-flash', 'fun-animate')
+
+        onEnterCycle()
+        await runCycle(false)
+      }
+
+      return { runIntro, runCycle }
     }
 
-    run().catch(() => {
-      /* aborted on unmount */
-    })
+    let ac = new AbortController()
+    let inCycle = skipIntro
+    let stopped = false
+
+    if (skipIntro) {
+      // Returning to Home: keep the headline immediately readable for incoming
+      // View Transitions without re-typing Line 1, then continue rotating Line 2.
+      settle(false)
+      makeRunner(ac.signal).runCycle(true).catch(() => {})
+    } else {
+      // Static HTML is readable without JS; clear synchronously before first
+      // paint after hydration and park the cursor on line 1 so it never jumps.
+      for (const node of [
+        el.hello, el.wave, el.this, el.name, el.dot,
+        el.l2a, el.sad, el.l2b, el.fun, el.l2c, el.tech,
+      ]) node.textContent = ''
+      putCursor(el.hello)
+      delete document.documentElement.dataset.heroBoot
+      makeRunner(ac.signal).runIntro(() => { inCycle = true }).catch(() => {})
+    }
+
     const skip = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      ac.abort()
-      el.name.classList.remove('name-selected', 'name-hl')
-      el.fun.classList.remove('fun-flash', 'fun-animate')
-      settle()
+      if (!inCycle) {
+        ac.abort()
+        ac = new AbortController()
+        inCycle = true
+        settle(false)
+        makeRunner(ac.signal).runCycle(true).catch(() => {})
+      } else if (!stopped) {
+        stopped = true
+        ac.abort()
+        settle(true)
+      }
     }
     addEventListener('keydown', skip)
     return () => {
@@ -374,12 +438,12 @@ export default function HeroIntro() {
       const step = (now: number) => {
         const dt = Math.min((now - lastT) / 1000, 0.032)
         lastT = now
-        const K = 88 // cushioned precision spring; damping 15.5 ≈ silky critical settle
-        vel.x += (-K * pos.x - 15.5 * vel.x) * dt
-        vel.y += (-K * pos.y - 15.5 * vel.y) * dt
+        const K = 180 // stiffness; damping 24 ≈ 0.9 ratio — one soft bounce
+        vel.x += (-K * pos.x - 24 * vel.x) * dt
+        vel.y += (-K * pos.y - 24 * vel.y) * dt
         pos.x += vel.x * dt
         pos.y += vel.y * dt
-        if (Math.hypot(pos.x, pos.y) < 0.25 && Math.hypot(vel.x, vel.y) < 4) {
+        if (Math.hypot(pos.x, pos.y) < 0.5 && Math.hypot(vel.x, vel.y) < 8) {
           pos.x = 0
           pos.y = 0
           raf = 0
@@ -497,7 +561,7 @@ export default function HeroIntro() {
       <div
         ref={ghostRef}
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-2xl border border-dashed border-foreground/30 opacity-0 transition-opacity duration-500 ease-[var(--ease-out)]"
+        className="pointer-events-none absolute -inset-x-5 -inset-y-4 rounded-2xl border border-dashed border-foreground/30 opacity-0 transition-opacity duration-300"
       />
       <div
         ref={dragRef}
@@ -530,15 +594,15 @@ export default function HeroIntro() {
         <p
           ref={l2Ref}
           aria-label="A nice guy building fun stuff."
-          className="min-h-14 font-mono text-lg text-muted sm:text-xl md:text-2xl"
+          className="min-h-14 font-mono text-lg text-muted sm:text-xl md:min-h-16 md:text-2xl"
           data-aurora-avoid
         >
           <span ref={l2aRef}>A nice guy</span>
           <small ref={sadRef} className="text-muted-dark"> (🥲)</small>
           <span ref={l2bRef}> building </span>
           <span ref={funRef} className="fun-text">fun stuff</span>
-          <span ref={l2cRef}> with </span>
-          <span ref={techRef} className="text-aurora">LLMs</span>
+          <span ref={l2cRef}> around </span>
+          <span ref={techRef} className="text-aurora">voice AI</span>
         </p>
       </div>
     </div>
